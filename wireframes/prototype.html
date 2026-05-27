@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newcastle Fan Poll — LDSG Components</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <style>
+    /* ═══════════════════════════════════════════
+       LDSG Design Tokens
+       Brand Primary: Newcastle #41b6e6
+    ═══════════════════════════════════════════ */
+    :root {
+      /* Brand */
+      --c-primary:       #41b6e6;
+      --c-primary-dim:   rgba(65,182,230,0.12);
+      --c-primary-dark:  #1a9fd4;
+      --c-primary-on:    #ffffff;
+
+      /* Neutral */
+      --c-black:         #111111;
+      --c-gray-1:        #333333;
+      --c-gray-2:        #666666;
+      --c-gray-3:        #a8a8a8;
+      --c-gray-4:        #d4d4d4;
+      --c-disabled:      #ebebeb;
+
+      /* Surface */
+      --c-bg:            #f2f3f5;
+      --c-surface:       #ffffff;
+
+      /* Role */
+      --c-positive:      #2e9e4f;
+      --c-positive-dim:  #e6f4ea;
+      --c-negative:      #d93025;
+      --c-negative-dim:  #fce8e6;
+
+      /* Radius — LDSG ldsg-radius-* scale */
+      --r-xs:   3px;    /* ldsg-radius-100 — badge */
+      --r-sm:   5px;    /* ldsg-radius-200 — button, input */
+      --r-md:   7px;    /* ldsg-radius-300 — card */
+      --r-lg:   12px;   /* ldsg-radius-400 — bottom sheet, popup */
+      --r-pill: 9999px; /* chip */
+
+      /* Border — ldsg-border-* */
+      --b-50:   0.5px;
+      --b-100:  1px;
+      --b-200:  2px;
+
+      /* Shadow — LDSG on-white / on-gray separation */
+      /* On White background */
+      --sh-w100: 0px 0px 2px rgba(0,0,0,.07), 0px 1px 2px rgba(0,0,0,.07);   /* small: chip, badge */
+      --sh-w200: 0px 1px 6px rgba(0,0,0,.12);                                  /* medium: button */
+      --sh-w300: 0px 1px 20px rgba(0,0,0,.07);                                 /* large: card, sheet */
+      /* On Gray (#f2f3f5) background */
+      --sh-g100: 0px 0px 1px rgba(0,0,0,.05), 0px 1px 1px rgba(0,0,0,.05);   /* small */
+      --sh-g200: 0px 1px 4px rgba(0,0,0,.06);                                  /* card on gray */
+      --sh-g300: 0px 1px 15px rgba(0,0,0,.04);                                 /* large sheet on gray */
+
+      /* Spacing (4/8 base) */
+      --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+      --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
+
+      /* Typography */
+      --font: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+
+      /* Type scale — title (tight lh) / text (loose lh) */
+      --t-title-xl:  20px; --lh-title-xl:  1.2;
+      --t-title-l:   18px; --lh-title-l:   1.25;
+      --t-title-m:   16px; --lh-title-m:   1.3;
+      --t-title-s:   14px; --lh-title-s:   1.35;
+      --t-title-xs:  12px; --lh-title-xs:  1.4;
+
+      --t-text-m:    15px; --lh-text-m:    1.6;
+      --t-text-s:    14px; --lh-text-s:    1.65;
+      --t-text-xs:   12px; --lh-text-xs:   1.5;
+      --t-text-xxs:  11px; --lh-text-xxs:  1.45;
+    }
+
+    /* ═══ Base ═══ */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #0f172a;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 32px 0 96px;
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+    }
+    p, h1, h2, h3, h4 { margin: 0; }
+    button { font-family: var(--font); cursor: pointer; }
+    textarea, input { font-family: var(--font); }
+
+    /* ═══ Proto shell ═══ */
+    .proto-label {
+      color: rgba(255,255,255,.3);
+      font-size: 11px; letter-spacing: .1em;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .mobile-frame {
+      width: 390px; height: 844px;
+      background: var(--c-bg);
+      border-radius: 40px;
+      overflow: hidden; position: relative;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 32px 72px rgba(0,0,0,.55);
+      flex-shrink: 0;
+    }
+
+    /* ═══ Screen ═══ */
+    .screen {
+      position: absolute; inset: 0;
+      display: none; flex-direction: column;
+      overflow: hidden;
+      background: var(--c-bg);
+    }
+    .screen.active { display: flex; }
+    .scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; }
+    .scroll-area::-webkit-scrollbar { width: 0; }
+
+    /* ═══ Modal / Bottom Sheet ═══ */
+    .modal-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.46);
+      display: none; align-items: flex-end;
+      z-index: 100;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-sheet {
+      width: 100%;
+      background: var(--c-surface);
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+      padding: var(--sp-5) var(--sp-5) 40px;
+      box-shadow: var(--sh-w300);
+    }
+    .modal-handle {
+      width: 36px; height: 4px;
+      background: var(--c-gray-4);
+      border-radius: var(--r-pill);
+      margin: 0 auto var(--sp-5);
+    }
+    /* Modal typography — ldsg popup spec */
+    .modal-title {
+      font-size: var(--t-title-m); font-weight: 700;
+      color: var(--c-black); line-height: var(--lh-title-m);
+      margin-bottom: 6px;
+    }
+    .modal-desc {
+      font-size: var(--t-text-s); color: var(--c-gray-2);
+      line-height: var(--lh-text-s); margin-bottom: var(--sp-5);
+    }
+
+    /* ═══ Header ═══ */
+    .app-header {
+      background: var(--c-surface);
+      padding: var(--sp-4) var(--sp-5);
+      display: flex; align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: var(--sh-w100);
+      position: relative; z-index: 5;
+    }
+    .sub-header {
+      background: var(--c-surface);
+      padding: 13px var(--sp-4);
+      display: flex; align-items: center;
+      flex-shrink: 0; gap: var(--sp-3);
+      box-shadow: var(--sh-w100);
+      position: relative; z-index: 5;
+    }
+    .back-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      color: var(--c-gray-2);
+      background: none; border: none;
+      transition: opacity .15s;
+      flex-shrink: 0;
+    }
+    .back-btn:hover { opacity: .7; }
+
+    /* Logo */
+    .logo {
+      font-size: 16px; font-weight: 800;
+      color: var(--c-black); letter-spacing: -.4px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .logo-dot {
+      width: 7px; height: 7px;
+      background: var(--c-primary); border-radius: 50%;
+    }
+
+    /* Avatar — icon-button-circle (L: 32px) */
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--c-primary);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 12px; font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s;
+      flex-shrink: 0;
+    }
+    .avatar:hover { opacity: .7; }
+    .avatar:active { opacity: .5; }
+
+    /* ═══ Section label ═══ */
+    .section-label {
+      font-size: var(--t-text-xxs); font-weight: 600;
+      color: var(--c-gray-3);
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+
+    /* ═══ Chip — ldsg-radius-pill, Pill border-radius ═══ */
+    .chip {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px;
+      border-radius: var(--r-pill);
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .01em;
+      line-height: 1.4;
+    }
+    .chip-eval     { background: #fff3e0; color: #d46a00; }
+    .chip-select   { background: var(--c-positive-dim); color: var(--c-positive); }
+    .chip-closed   { background: var(--c-disabled); color: var(--c-gray-3); }
+    .chip-deadline { background: var(--c-negative-dim); color: var(--c-negative); }
+    .chip-primary  { background: var(--c-primary-dim); color: var(--c-primary-dark); }
+    .chip-done     { background: var(--c-positive-dim); color: var(--c-positive); }
+    /* Comment vote badges */
+    .chip-vote     { background: var(--c-primary-dim); color: var(--c-primary-dark); }
+    .chip-vote-neg { background: var(--c-negative-dim); color: var(--c-negative); }
+    .chip-vote-neutral { background: var(--c-disabled); color: var(--c-gray-2); }
+
+    /* ═══ Poll Card (on gray bg → on-gray shadow) ═══ */
+    .poll-card {
+      background: var(--c-surface);
+      border-radius: var(--r-md);
+      overflow: hidden;
+      box-shadow: var(--sh-g200);
+      cursor: pointer;
+      transition: opacity .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .poll-card:active { opacity: .7; }
+
+    /* ═══ Radio Button — LDSG radio-button component ═══ */
+    .radio-btn {
+      width: 100%;
+      padding: 14px var(--sp-4);
+      border-radius: var(--r-sm);
+      border: var(--b-100) solid var(--c-gray-4);
+      background: var(--c-surface);
+      display: flex; align-items: center;
+      gap: var(--sp-3);
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      -webkit-tap-highlight-color: transparent;
+      text-align: left;
+      font-family: var(--font);
+      box-shadow: var(--sh-w100);
+    }
+    .radio-btn:hover { opacity: .7; }
+    .radio-btn:active { opacity: .5; }
+    .radio-indicator {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid var(--c-gray-4);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .15s;
+      background: var(--c-surface);
+    }
+    .radio-indicator::after {
+      content: '';
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--c-primary);
+      display: none;
+    }
+    .radio-btn.selected {
+      border-color: var(--c-primary);
+      background: var(--c-primary-dim);
+    }
+    .radio-btn.selected .radio-indicator {
+      border-color: var(--c-primary);
+      border-width: 1.5px;
+      background: var(--c-primary-dim);
+    }
+    .radio-btn.selected .radio-indicator::after { display: block; }
+    .radio-label {
+      font-size: var(--t-text-m); font-weight: 600;
+      color: var(--c-black); flex: 1;
+      line-height: 1;
+    }
+    .radio-btn.selected .radio-label { color: var(--c-primary-dark); }
+
+    /* ═══ Action Button — ldsg action-button ═══ */
+    .btn {
+      display: flex; align-items: center; justify-content: center;
+      gap: var(--sp-2);
+      border-radius: var(--r-sm);
+      font-size: var(--t-text-m); font-weight: 700;
+      font-family: var(--font);
+      transition: opacity .15s;
+      cursor: pointer; border: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover  { opacity: .7; }
+    .btn:active { opacity: .5; }
+
+    /* Contained */
+    .btn-c {
+      background: var(--c-primary);
+      color: var(--c-primary-on);
+      padding: 14px var(--sp-5);
+      width: 100%;
+      box-shadow: var(--sh-w200);
+    }
+    .btn-c.disabled {
+      background: var(--c-disabled);
+      color: var(--c-gray-3);
+      pointer-events: none;
+      opacity: 1;
+      box-shadow: none;
+    }
+    /* Outlined */
+    .btn-o {
+      background: transparent;
+      color: var(--c-black);
+      border: var(--b-100) solid var(--c-gray-4) !important;
+      padding: 14px var(--sp-5);
+      width: 100%;
+    }
+    /* Ghost */
+    .btn-g {
+      background: transparent;
+      color: var(--c-gray-2);
+      padding: 14px var(--sp-5);
+      width: 100%;
+    }
+    /* Destructive outlined */
+    .btn-neg {
+      background: var(--c-negative-dim);
+      color: var(--c-negative);
+      border: var(--b-100) solid rgba(217,48,37,.2) !important;
+      padding: 14px var(--sp-5);
+      width: 100%;
+    }
+    /* action-button-full-bleed — iPhone X+ bottom primary CTA */
+    .btn-full-bleed {
+      border-radius: 0;
+      width: 100%;
+      padding: 17px var(--sp-5);
+      background: var(--c-primary);
+      color: var(--c-primary-on);
+      font-size: var(--t-text-m); font-weight: 700;
+      font-family: var(--font);
+      border: none;
+      cursor: pointer;
+      transition: opacity .15s;
+      flex-shrink: 0;
+    }
+    .btn-full-bleed:hover  { opacity: .7; }
+    .btn-full-bleed:active { opacity: .5; }
+    .btn-full-bleed.disabled {
+      background: var(--c-disabled);
+      color: var(--c-gray-3);
+      pointer-events: none;
+    }
+
+    /* Small inline btn (comment submit) */
+    .btn-sm {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 7px 15px;
+      border-radius: var(--r-sm);
+      font-size: 13px; font-weight: 700;
+      font-family: var(--font);
+      background: var(--c-primary);
+      color: var(--c-primary-on);
+      border: none; cursor: pointer;
+      transition: opacity .15s;
+      box-shadow: var(--sh-w200);
+    }
+    .btn-sm:hover { opacity: .7; }
+
+    /* ═══ Text Input — ldsg text-input ═══ */
+    .text-input {
+      width: 100%;
+      padding: 11px 13px;
+      border: var(--b-100) solid var(--c-gray-4);
+      border-radius: var(--r-sm);
+      font-size: var(--t-text-s);
+      font-family: var(--font);
+      color: var(--c-black);
+      background: var(--c-surface);
+      transition: border-color .15s;
+      resize: none;
+      outline: none;
+      line-height: 1.55;
+    }
+    .text-input:focus { border-color: var(--c-primary); }
+    .text-input::placeholder { color: var(--c-gray-3); }
+
+    /* ═══ List Item — LDSG list pattern ═══ */
+    .list-group {
+      background: var(--c-surface);
+      border-radius: var(--r-md);
+      overflow: hidden;
+      box-shadow: var(--sh-g200);
+    }
+    .list-item {
+      padding: var(--sp-4);
+      display: flex; align-items: center;
+      gap: var(--sp-3);
+      cursor: pointer;
+      transition: opacity .15s;
+      -webkit-tap-highlight-color: transparent;
+      background: var(--c-surface);
+    }
+    .list-item:hover  { opacity: .7; }
+    .list-item:active { opacity: .5; }
+    .list-item + .list-item {
+      border-top: var(--b-50) solid var(--c-disabled);
+    }
+
+    /* ═══ Result bar ═══ */
+    .result-bar-track {
+      height: 5px;
+      background: var(--c-bg);
+      border-radius: var(--r-pill);
+      overflow: hidden;
+    }
+    .result-bar-fill {
+      height: 100%; border-radius: var(--r-pill);
+      background: var(--c-gray-4);
+    }
+    .result-bar-fill.mine { background: var(--c-primary); }
+    .result-bar-fill.neg  { background: #fca5a5; }
+
+    /* ═══ Carousel dot ═══ */
+    .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--c-gray-4);
+      transition: all .2s;
+    }
+    .dot.active { background: var(--c-primary); width: 14px; border-radius: var(--r-pill); }
+
+    /* ═══ Divider ═══ */
+    .divider-row {
+      display: flex; align-items: center; gap: var(--sp-3);
+    }
+    .divider-line { flex: 1; height: 1px; background: var(--c-disabled); }
+
+    /* ═══ Prototype nav (outside frame) ═══ */
+    .screen-nav {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: var(--r-pill);
+      padding: 6px 12px;
+      display: flex; gap: 2px;
+      backdrop-filter: blur(12px); z-index: 9999;
+    }
+    .snav-btn {
+      padding: 5px 10px; border-radius: var(--r-pill);
+      border: none; background: transparent;
+      color: rgba(255,255,255,.4);
+      font-size: 11px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+      font-family: var(--font);
+      transition: all .15s;
+    }
+    .snav-btn:hover { color: white; background: rgba(255,255,255,.12); }
+    .snav-btn.sn-on { background: var(--c-primary); color: white; }
+  </style>
+</head>
+<body>
+
+<div class="proto-label">Newcastle Fan Poll · LDSG Components</div>
+
+<div class="mobile-frame">
+
+  <!-- ═══════════════════════════════════════════
+       S0 — 홈 (Landing)
+  ═══════════════════════════════════════════ -->
+  <div id="s0" class="screen active" style="background:#0a0f1e;">
+    <!-- Subtle stripe decoration -->
+    <div style="position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none;">
+      <div style="position:absolute; left:18%; top:0; bottom:0; width:52px; background:white; opacity:.03;"></div>
+      <div style="position:absolute; left:46%; top:0; bottom:0; width:52px; background:white; opacity:.03;"></div>
+      <div style="position:absolute; left:74%; top:0; bottom:0; width:52px; background:white; opacity:.03;"></div>
+    </div>
+
+    <div style="position:relative; z-index:1; display:flex; flex-direction:column; height:100%; padding:var(--sp-8) var(--sp-6) 0;">
+      <div style="flex:1;"></div>
+
+      <!-- Logo + Headline -->
+      <div style="margin-bottom:var(--sp-6);">
+        <div style="display:flex; align-items:center; gap:var(--sp-2); margin-bottom:var(--sp-5);">
+          <div style="width:36px; height:36px; background:var(--c-primary); border-radius:var(--r-sm); display:flex; align-items:center; justify-content:center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+          <span style="font-size:20px; font-weight:800; color:white; letter-spacing:-.3px;">NUFC<span style="color:var(--c-primary);">VOTE</span></span>
+        </div>
+        <p style="font-size:26px; font-weight:800; color:white; line-height:1.2; margin-bottom:var(--sp-3);">시즌이 끝났다.<br>이제 당신의 차례.</p>
+        <p style="font-size:14px; color:rgba(255,255,255,.5); line-height:1.7;">선수 평가, 이적 의견, 시즌 총평을<br>투표로 남기고 팬들과 비교해보세요.</p>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:flex; border:1px solid rgba(255,255,255,.1); border-radius:var(--r-md); overflow:hidden; margin-bottom:var(--sp-5);">
+        <div style="flex:1; text-align:center; padding:var(--sp-4) 0; border-right:1px solid rgba(255,255,255,.1);">
+          <p style="font-size:20px; font-weight:800; color:white; margin-bottom:2px;">12</p>
+          <p style="font-size:11px; color:rgba(255,255,255,.4); font-weight:500;">진행 중</p>
+        </div>
+        <div style="flex:1; text-align:center; padding:var(--sp-4) 0; border-right:1px solid rgba(255,255,255,.1);">
+          <p style="font-size:20px; font-weight:800; color:var(--c-primary); margin-bottom:2px;">8,341</p>
+          <p style="font-size:11px; color:rgba(255,255,255,.4); font-weight:500;">총 참여</p>
+        </div>
+        <div style="flex:1; text-align:center; padding:var(--sp-4) 0;">
+          <p style="font-size:20px; font-weight:800; color:white; margin-bottom:2px;">3</p>
+          <p style="font-size:11px; color:rgba(255,255,255,.4); font-weight:500;">공개 예정</p>
+        </div>
+      </div>
+
+      <!-- CTA buttons -->
+      <div style="display:flex; flex-direction:column; gap:var(--sp-2); margin-bottom:var(--sp-3);">
+        <button onclick="showModal('login-modal')"
+          style="width:100%; padding:14px; border-radius:var(--r-sm); background:white; border:none;
+                 font-size:15px; font-weight:700; color:var(--c-black); cursor:pointer;
+                 display:flex; align-items:center; justify-content:center; gap:10px;
+                 font-family:var(--font); transition:opacity .15s; box-shadow:0 1px 6px rgba(0,0,0,.25);"
+          onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Google로 시작하기
+        </button>
+        <button onclick="goTo('s1')"
+          style="width:100%; padding:13px; border-radius:var(--r-sm); background:transparent;
+                 border:1px solid rgba(255,255,255,.2); font-size:14px; font-weight:600;
+                 color:rgba(255,255,255,.65); cursor:pointer; font-family:var(--font); transition:opacity .15s;"
+          onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'">
+          먼저 둘러보기
+        </button>
+      </div>
+      <div style="flex:.4;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       S1 — 투표 목록
+  ═══════════════════════════════════════════ -->
+  <div id="s1" class="screen">
+    <div class="app-header">
+      <div class="logo"><div class="logo-dot"></div>NUFCVOTE</div>
+      <div class="avatar" onclick="goTo('s6')">J</div>
+    </div>
+
+    <div class="scroll-area" style="padding:var(--sp-4); display:flex; flex-direction:column; gap:var(--sp-3); padding-bottom:var(--sp-6);">
+
+      <p class="section-label">진행 중 · 2개</p>
+
+      <!-- Card 1 — Type A active -->
+      <div class="poll-card" onclick="goTo('s2')">
+        <div style="display:flex;">
+          <img src="https://placehold.co/88x104/0c2340/41b6e6?text=ISK" style="width:88px; height:104px; object-fit:cover; flex-shrink:0; display:block;">
+          <div style="padding:var(--sp-3) var(--sp-4); flex:1; display:flex; flex-direction:column; justify-content:space-between; min-width:0;">
+            <div>
+              <div style="display:flex; gap:var(--sp-1); flex-wrap:wrap; margin-bottom:var(--sp-2);">
+                <span class="chip chip-eval">평가</span>
+                <span class="chip chip-deadline">D-7</span>
+              </div>
+              <p style="font-size:var(--t-title-s); font-weight:700; color:var(--c-black); line-height:var(--lh-title-s); margin-bottom:var(--sp-1);">이사크를 재계약해야 할까요?</p>
+              <p style="font-size:var(--t-text-xs); color:var(--c-gray-3);">#14 · 공격수</p>
+            </div>
+            <p style="font-size:var(--t-text-xs); color:var(--c-gray-3);">1,247명 참여</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 — Type B active -->
+      <div class="poll-card" onclick="goTo('s5')">
+        <div style="display:flex;">
+          <img src="https://placehold.co/88x104/0a3d2e/34a853?text=MVP" style="width:88px; height:104px; object-fit:cover; flex-shrink:0; display:block;">
+          <div style="padding:var(--sp-3) var(--sp-4); flex:1; display:flex; flex-direction:column; justify-content:space-between; min-width:0;">
+            <div>
+              <div style="display:flex; gap:var(--sp-1); flex-wrap:wrap; margin-bottom:var(--sp-2);">
+                <span class="chip chip-select">선택</span>
+                <span class="chip chip-deadline">D-14</span>
+              </div>
+              <p style="font-size:var(--t-title-s); font-weight:700; color:var(--c-black); line-height:var(--lh-title-s); margin-bottom:var(--sp-1);">2024-25 시즌 MVP는?</p>
+              <p style="font-size:var(--t-text-xs); color:var(--c-gray-3);">5명의 후보</p>
+            </div>
+            <p style="font-size:var(--t-text-xs); color:var(--c-gray-3);">892명 참여</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider: 공개 예정 -->
+      <div class="divider-row" style="margin-top:var(--sp-1);">
+        <div class="divider-line"></div>
+        <p class="section-label">공개 예정</p>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- Card 3 — Scheduled (blur) -->
+      <div style="position:relative; border-radius:var(--r-md); overflow:hidden; background:var(--c-surface); box-shadow:var(--sh-g200);">
+        <div style="display:flex; filter:blur(3px); pointer-events:none; user-select:none;">
+          <div style="width:88px; height:104px; background:var(--c-disabled); flex-shrink:0;"></div>
+          <div style="padding:var(--sp-3) var(--sp-4); flex:1;">
+            <div style="height:13px; width:36px; background:var(--c-disabled); border-radius:var(--r-xs); margin-bottom:var(--sp-2);"></div>
+            <div style="height:13px; width:120px; background:var(--c-disabled); border-radius:var(--r-xs); margin-bottom:var(--sp-2);"></div>
+            <div style="height:11px; width:72px; background:var(--c-disabled); border-radius:var(--r-xs);"></div>
+          </div>
+        </div>
+        <div style="position:absolute; inset:0; backdrop-filter:blur(4px); background:rgba(255,255,255,.72); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--sp-1);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary)" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <p style="font-size:13px; font-weight:700; color:var(--c-black);">트리피어 방출 여부</p>
+          <p style="font-size:12px; color:var(--c-primary-dark); font-weight:600;">D-3 공개 예정</p>
+        </div>
+      </div>
+
+      <!-- Divider: 종료됨 -->
+      <div class="divider-row" style="margin-top:var(--sp-1);">
+        <div class="divider-line"></div>
+        <p class="section-label">종료됨</p>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- Card 4 — Closed -->
+      <div class="poll-card" style="opacity:.55; cursor:default;">
+        <div style="display:flex;">
+          <img src="https://placehold.co/88x104/e8e8e8/aaaaaa?text=END" style="width:88px; height:104px; object-fit:cover; flex-shrink:0; display:block; filter:grayscale(.5);">
+          <div style="padding:var(--sp-3) var(--sp-4); flex:1; display:flex; flex-direction:column; justify-content:space-between; min-width:0;">
+            <div>
+              <div style="margin-bottom:var(--sp-2);"><span class="chip chip-closed">투표 종료</span></div>
+              <p style="font-size:var(--t-title-s); font-weight:700; color:var(--c-black); line-height:var(--lh-title-s); margin-bottom:var(--sp-1);">포프 이적 동의하시나요?</p>
+              <p style="font-size:var(--t-text-xs); color:var(--c-gray-3);">결과 열람 가능</p>
+            </div>
+            <p style="font-size:var(--t-text-xs); color:var(--c-gray-3);">3,104명 참여</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       S2 — Type A 투표 상세
+  ═══════════════════════════════════════════ -->
+  <div id="s2" class="screen">
+    <!-- Floating back — floating-action-button-pill style -->
+    <button onclick="goTo('s1')" style="position:absolute; top:16px; left:16px; z-index:20; display:flex; align-items:center; gap:5px; background:rgba(0,0,0,.32); backdrop-filter:blur(8px); border:none; border-radius:var(--r-pill); padding:6px 13px; color:white; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font); transition:opacity .15s;" onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      돌아가기
+    </button>
+
+    <div class="scroll-area" style="padding-bottom:58px;">
+
+      <!-- Cover image -->
+      <div style="position:relative; height:150px; overflow:hidden;">
+        <img src="https://placehold.co/390x150/0c2340/41b6e6?text=Alexander+Isak" style="width:100%; height:100%; object-fit:cover; display:block;">
+        <div style="position:absolute; inset:0; background:linear-gradient(to bottom, transparent 15%, rgba(0,0,0,.55) 60%, rgba(0,0,0,.9) 100%);"></div>
+        <div style="position:absolute; bottom:0; left:0; right:0; padding:var(--sp-3) var(--sp-5) var(--sp-4);">
+          <p style="font-size:19px; font-weight:800; color:white; line-height:1.25;">이사크를 재계약해야 할까요?</p>
+        </div>
+      </div>
+
+      <!-- White content area -->
+      <div style="background:var(--c-surface); padding:var(--sp-5); display:flex; flex-direction:column; gap:var(--sp-4);">
+
+        <!-- Meta -->
+        <div style="display:flex; gap:var(--sp-1); flex-wrap:wrap; align-items:center;">
+          <span class="chip chip-eval">평가</span>
+          <span class="chip chip-deadline">D-7 마감</span>
+          <span style="font-size:var(--t-text-xs); color:var(--c-gray-3);">1,247명 참여</span>
+        </div>
+
+        <!-- Description -->
+        <p style="font-size:var(--t-text-s); color:var(--c-gray-2); line-height:var(--lh-text-s);">이번 시즌 21골 11어시스트로 팀 최다 득점. 여러분의 의견을 남겨주세요.</p>
+
+        <!-- Radio options -->
+        <div style="display:flex; flex-direction:column; gap:var(--sp-2);">
+          <button class="radio-btn" onclick="selectOption(this,'재계약')">
+            <span class="radio-indicator"></span>
+            <span class="radio-label">재계약</span>
+          </button>
+          <button class="radio-btn" onclick="selectOption(this,'보류')">
+            <span class="radio-indicator"></span>
+            <span class="radio-label">보류</span>
+          </button>
+          <button class="radio-btn" onclick="selectOption(this,'방출')">
+            <span class="radio-indicator"></span>
+            <span class="radio-label">방출</span>
+          </button>
+        </div>
+
+        <!-- Player reference -->
+        <div style="padding-top:var(--sp-4); border-top:var(--b-50) solid var(--c-disabled);">
+          <p class="section-label" style="margin-bottom:var(--sp-2);">선수 정보</p>
+          <div style="display:flex; align-items:center; gap:var(--sp-3); background:var(--c-bg); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4);">
+            <img src="https://placehold.co/44x44/e8f6fd/41b6e6?text=ISK" style="width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0;">
+            <div>
+              <p style="font-size:var(--t-title-s); font-weight:700; color:var(--c-black); margin-bottom:3px;">알렉산더 이사크</p>
+              <div style="display:flex; gap:var(--sp-2); align-items:center;">
+                <span style="font-size:var(--t-text-xs); color:var(--c-gray-3);">공격수</span>
+                <span style="width:2px; height:2px; border-radius:50%; background:var(--c-gray-4); display:inline-block;"></span>
+                <span style="font-size:var(--t-text-xs); font-weight:700; color:var(--c-primary);">#14</span>
+                <span style="width:2px; height:2px; border-radius:50%; background:var(--c-gray-4); display:inline-block;"></span>
+                <span style="font-size:var(--t-text-xs); color:var(--c-gray-3);">스웨덴</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- action-button-full-bleed -->
+    <button class="btn-full-bleed disabled" id="submit-btn" onclick="openConfirmModal()">투표하기</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       S4 — 결과
+  ═══════════════════════════════════════════ -->
+  <div id="s4" class="screen">
+    <div class="sub-header">
+      <button class="back-btn" onclick="goTo('s1')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <p style="flex:1; font-size:var(--t-title-s); font-weight:700; color:var(--c-black); line-height:1.3;">이사크를 재계약해야 할까요?</p>
+      <span class="chip chip-done" style="flex-shrink:0;">✓ 완료</span>
+    </div>
+
+    <div class="scroll-area" style="padding:var(--sp-4); display:flex; flex-direction:column; gap:var(--sp-3); padding-bottom:var(--sp-6);">
+
+      <!-- Winner card (on gray bg → on-gray shadow) -->
+      <div style="background:var(--c-primary); border-radius:var(--r-md); padding:var(--sp-5); box-shadow:var(--sh-g200);">
+        <p style="font-size:var(--t-text-xxs); font-weight:600; color:rgba(255,255,255,.7); letter-spacing:.06em; text-transform:uppercase; margin-bottom:var(--sp-2);">최다 득표</p>
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:var(--sp-3);">
+          <p style="font-size:26px; font-weight:800; color:white; line-height:1;">재계약</p>
+          <p style="font-size:40px; font-weight:800; color:white; line-height:1; opacity:.92;">62%</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:var(--sp-2);">
+          <span style="display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,.18); border-radius:var(--r-pill); padding:3px 10px; font-size:11px; font-weight:600; color:white;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            내 선택
+          </span>
+          <p style="font-size:var(--t-text-xs); color:rgba(255,255,255,.6);">총 1,248명 참여</p>
+        </div>
+      </div>
+
+      <!-- Breakdown card (on gray → on-gray shadow) -->
+      <div style="background:var(--c-surface); border-radius:var(--r-md); padding:var(--sp-4) var(--sp-5); box-shadow:var(--sh-g200);">
+        <p class="section-label" style="margin-bottom:var(--sp-4);">전체 집계</p>
+
+        <div style="margin-bottom:var(--sp-4);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <div style="display:flex; align-items:center; gap:var(--sp-2);">
+              <span style="font-size:13px; font-weight:700; color:var(--c-primary-dark);">재계약</span>
+              <span class="chip chip-primary" style="font-size:10px; padding:2px 7px;">내 선택</span>
+            </div>
+            <span style="font-size:13px; font-weight:800; color:var(--c-primary-dark);">62%</span>
+          </div>
+          <div class="result-bar-track"><div class="result-bar-fill mine" style="width:62%;"></div></div>
+        </div>
+
+        <div style="margin-bottom:var(--sp-4);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:600; color:var(--c-black);">보류</span>
+            <span style="font-size:13px; font-weight:700; color:var(--c-gray-2);">25%</span>
+          </div>
+          <div class="result-bar-track"><div class="result-bar-fill" style="width:25%;"></div></div>
+        </div>
+
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:13px; font-weight:600; color:var(--c-black);">방출</span>
+            <span style="font-size:13px; font-weight:700; color:var(--c-gray-2);">13%</span>
+          </div>
+          <div class="result-bar-track"><div class="result-bar-fill neg" style="width:13%;"></div></div>
+        </div>
+      </div>
+
+      <!-- Comment section header -->
+      <div class="divider-row">
+        <div class="divider-line"></div>
+        <p class="section-label">댓글 18개</p>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- Comment input (text-input component) -->
+      <div style="background:var(--c-surface); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); box-shadow:var(--sh-g200);">
+        <textarea class="text-input" placeholder="이 투표에 대한 생각을 남겨보세요" style="height:68px;"></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:var(--sp-2); border-top:var(--b-50) solid var(--c-disabled); margin-top:var(--sp-1);">
+          <span style="font-size:12px; color:var(--c-gray-3);">0 / 500</span>
+          <button class="btn-sm">등록</button>
+        </div>
+      </div>
+
+      <!-- Comment list (list-group pattern) -->
+      <div class="list-group">
+
+        <!-- Comment 1 -->
+        <div class="list-item" style="align-items:flex-start; cursor:default;">
+          <div style="width:28px; height:28px; border-radius:50%; background:var(--c-primary-dim); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--c-primary-dark); flex-shrink:0; margin-top:1px;">N</div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+              <div style="display:flex; align-items:center; gap:var(--sp-2); min-width:0;">
+                <span style="font-size:13px; font-weight:700; color:var(--c-black); white-space:nowrap;">Nufc_Fan92</span>
+                <span class="chip chip-vote" style="font-size:10px; padding:2px 7px; flex-shrink:0;">재계약</span>
+              </div>
+              <span style="font-size:11px; color:var(--c-gray-3); flex-shrink:0; margin-left:var(--sp-2);">2시간 전</span>
+            </div>
+            <p style="font-size:var(--t-text-s); color:var(--c-black); line-height:var(--lh-text-s); margin-bottom:var(--sp-2);">이사크 없이는 상상도 못해. 무조건 재계약이지 ⚫⚪</p>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--c-primary)" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span style="font-size:12px; font-weight:600; color:var(--c-primary);">47</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comment 2 -->
+        <div class="list-item" style="align-items:flex-start; cursor:default;">
+          <div style="width:28px; height:28px; border-radius:50%; background:#fff3e0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#d46a00; flex-shrink:0; margin-top:1px;">M</div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+              <div style="display:flex; align-items:center; gap:var(--sp-2); min-width:0;">
+                <span style="font-size:13px; font-weight:700; color:var(--c-black); white-space:nowrap;">MagpiesForever</span>
+                <span class="chip chip-vote-neutral" style="font-size:10px; padding:2px 7px; flex-shrink:0;">보류</span>
+              </div>
+              <span style="font-size:11px; color:var(--c-gray-3); flex-shrink:0; margin-left:var(--sp-2);">3시간 전</span>
+            </div>
+            <p style="font-size:var(--t-text-s); color:var(--c-black); line-height:var(--lh-text-s); margin-bottom:var(--sp-2);">부상 리스크가 너무 크긴 한데... 그래도 퀄리티는 최고야</p>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-gray-4)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span style="font-size:12px; font-weight:600; color:var(--c-gray-3);">23</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comment 3 -->
+        <div class="list-item" style="align-items:flex-start; cursor:default;">
+          <div style="width:28px; height:28px; border-radius:50%; background:var(--c-negative-dim); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--c-negative); flex-shrink:0; margin-top:1px;">T</div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+              <div style="display:flex; align-items:center; gap:var(--sp-2); min-width:0;">
+                <span style="font-size:13px; font-weight:700; color:var(--c-black); white-space:nowrap;">Toon_Ultras</span>
+                <span class="chip chip-vote-neg" style="font-size:10px; padding:2px 7px; flex-shrink:0;">방출</span>
+              </div>
+              <span style="font-size:11px; color:var(--c-gray-3); flex-shrink:0; margin-left:var(--sp-2);">5시간 전</span>
+            </div>
+            <p style="font-size:var(--t-text-s); color:var(--c-black); line-height:var(--lh-text-s); margin-bottom:var(--sp-2);">계속 다치면 의미 없잖아요. 차라리 새 선수 사는 게 낫지 않나</p>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-gray-4)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span style="font-size:12px; font-weight:600; color:var(--c-gray-3);">11</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       S5 — Type B 투표 (캐러셀)
+  ═══════════════════════════════════════════ -->
+  <div id="s5" class="screen">
+    <!-- Floating back -->
+    <button onclick="goTo('s1')" style="position:absolute; top:16px; left:16px; z-index:20; display:flex; align-items:center; gap:5px; background:rgba(0,0,0,.32); backdrop-filter:blur(8px); border:none; border-radius:var(--r-pill); padding:6px 13px; color:white; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font); transition:opacity .15s;" onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      돌아가기
+    </button>
+
+    <div class="scroll-area" style="padding-bottom:58px;">
+
+      <!-- Cover image -->
+      <div style="position:relative; height:150px; overflow:hidden;">
+        <img src="https://placehold.co/390x150/0a3d2e/34a853?text=Season+MVP+2024-25" style="width:100%; height:100%; object-fit:cover; display:block;">
+        <div style="position:absolute; inset:0; background:linear-gradient(to bottom, transparent 15%, rgba(0,0,0,.55) 60%, rgba(0,0,0,.9) 100%);"></div>
+        <div style="position:absolute; bottom:0; left:0; right:0; padding:var(--sp-3) var(--sp-5) var(--sp-4);">
+          <p style="font-size:19px; font-weight:800; color:white; line-height:1.25;">2024-25 시즌 MVP는?</p>
+        </div>
+      </div>
+
+      <!-- White content -->
+      <div style="background:var(--c-surface);">
+        <div style="padding:var(--sp-4) var(--sp-5) 0;">
+          <div style="display:flex; gap:var(--sp-1); flex-wrap:wrap; align-items:center; margin-bottom:var(--sp-2);">
+            <span class="chip chip-select">선택</span>
+            <span style="font-size:var(--t-text-xs); color:var(--c-gray-3);">5명 후보</span>
+            <span class="chip chip-deadline">D-14 마감</span>
+          </div>
+          <p style="font-size:var(--t-text-s); color:var(--c-gray-2); line-height:var(--lh-text-s);">이번 시즌 가장 인상적이었던 선수를 선택해주세요.</p>
+        </div>
+
+        <!-- Carousel -->
+        <div style="overflow:hidden; padding:var(--sp-5) 0 var(--sp-3);">
+          <div id="carousel-track" style="display:flex; transition:transform .3s ease; padding-bottom:4px;"></div>
+        </div>
+
+        <!-- Dot indicator -->
+        <div style="display:flex; justify-content:center; gap:var(--sp-1); padding-bottom:var(--sp-4);">
+          <div class="dot active" id="dot-0"></div>
+          <div class="dot" id="dot-1"></div>
+          <div class="dot" id="dot-2"></div>
+          <div class="dot" id="dot-3"></div>
+          <div class="dot" id="dot-4"></div>
+        </div>
+
+        <!-- Selected label -->
+        <div style="padding:0 var(--sp-5) var(--sp-5);">
+          <div style="display:flex; align-items:center; gap:var(--sp-2); background:var(--c-primary-dim); border-radius:var(--r-sm); padding:var(--sp-3) var(--sp-4);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary)" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            <span style="font-size:13px; font-weight:600; color:var(--c-primary-dark);">선택: <span id="selected-player-name">알렉산더 이사크</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- action-button-full-bleed -->
+    <button class="btn-full-bleed" onclick="openConfirmModal5()">투표하기</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       S6 — 마이페이지
+  ═══════════════════════════════════════════ -->
+  <div id="s6" class="screen">
+    <div class="sub-header">
+      <button class="back-btn" onclick="goTo('s1')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <p style="font-size:var(--t-title-m); font-weight:700; color:var(--c-black); flex:1; text-align:center;">마이페이지</p>
+      <div style="width:32px;"></div>
+    </div>
+
+    <div class="scroll-area" style="padding:var(--sp-4); display:flex; flex-direction:column; gap:var(--sp-3); padding-bottom:var(--sp-6);">
+
+      <!-- Profile card -->
+      <div style="background:var(--c-surface); border-radius:var(--r-md); padding:var(--sp-5); display:flex; align-items:center; gap:var(--sp-4); box-shadow:var(--sh-g200);">
+        <div style="width:52px; height:52px; border-radius:50%; background:var(--c-primary); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:800; color:white; flex-shrink:0;">J</div>
+        <div>
+          <p style="font-size:var(--t-title-s); font-weight:700; color:var(--c-black); margin-bottom:3px;">James Wilson</p>
+          <p style="font-size:var(--t-text-xs); color:var(--c-gray-3);">james@example.com</p>
+        </div>
+      </div>
+
+      <!-- Vote history — list-group -->
+      <p class="section-label">참여한 투표 3개</p>
+      <div class="list-group">
+
+        <div class="list-item" onclick="goTo('s4')">
+          <div style="flex:1; min-width:0;">
+            <p style="font-size:var(--t-title-s); font-weight:600; color:var(--c-black); margin-bottom:var(--sp-1); line-height:var(--lh-title-s);">이사크를 재계약해야 할까요?</p>
+            <div style="display:flex; align-items:center; gap:var(--sp-2);">
+              <span class="chip chip-vote" style="font-size:11px;">재계약</span>
+              <span style="font-size:11px; color:var(--c-gray-3);">2026.05.20</span>
+            </div>
+          </div>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--c-gray-4)" stroke-width="2" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+
+        <div class="list-item">
+          <div style="flex:1; min-width:0;">
+            <p style="font-size:var(--t-title-s); font-weight:600; color:var(--c-black); margin-bottom:var(--sp-1); line-height:var(--lh-title-s);">2024-25 시즌 MVP는?</p>
+            <div style="display:flex; align-items:center; gap:var(--sp-2);">
+              <span class="chip chip-select" style="font-size:11px;">알렉산더 이사크</span>
+              <span style="font-size:11px; color:var(--c-gray-3);">2026.05.18</span>
+            </div>
+          </div>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--c-gray-4)" stroke-width="2" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+
+        <div class="list-item">
+          <div style="flex:1; min-width:0;">
+            <p style="font-size:var(--t-title-s); font-weight:600; color:var(--c-black); margin-bottom:var(--sp-1); line-height:var(--lh-title-s);">포프 이적 동의하시나요?</p>
+            <div style="display:flex; align-items:center; gap:var(--sp-2);">
+              <span class="chip chip-vote-neutral" style="font-size:11px;">반대</span>
+              <span style="font-size:11px; color:var(--c-gray-3);">2026.05.10</span>
+            </div>
+          </div>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--c-gray-4)" stroke-width="2" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+
+      </div>
+
+      <!-- Account actions -->
+      <div style="display:flex; flex-direction:column; gap:var(--sp-2); margin-top:var(--sp-2);">
+        <button class="btn btn-o">로그아웃</button>
+        <button onclick="showModal('delete-modal')" class="btn btn-neg">회원 탈퇴</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL — 투표 확인 (Bottom Sheet)
+  ═══════════════════════════════════════════ -->
+  <div id="confirm-modal" class="modal-overlay" onclick="handleBg(event,'confirm-modal')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <p class="modal-title">이 선택으로 투표하시겠어요?</p>
+      <p class="modal-desc">제출 후에는 변경할 수 없습니다</p>
+
+      <!-- My selection summary -->
+      <div style="background:var(--c-primary-dim); border-radius:var(--r-sm); padding:var(--sp-3) var(--sp-4); margin-bottom:var(--sp-5); display:flex; align-items:center; gap:var(--sp-3);">
+        <div class="radio-indicator" style="border-color:var(--c-primary);">
+          <span style="width:9px; height:9px; border-radius:50%; background:var(--c-primary); display:block;"></span>
+        </div>
+        <div>
+          <p style="font-size:11px; color:var(--c-gray-3); margin-bottom:2px;">내 선택</p>
+          <p style="font-size:var(--t-title-s); font-weight:700; color:var(--c-primary-dark);" id="modal-selection">재계약</p>
+        </div>
+      </div>
+
+      <!-- Horizontal buttons (Ghost left, Contained right — LDSG: priority on right) -->
+      <div style="display:flex; gap:var(--sp-2);">
+        <button onclick="hideModal('confirm-modal')" class="btn btn-o" style="flex:1;">취소</button>
+        <button onclick="submitVote()" class="btn btn-c" style="flex:2;">최종 제출</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL — 로그인 유도 (Bottom Sheet)
+  ═══════════════════════════════════════════ -->
+  <div id="login-modal" class="modal-overlay" onclick="handleBg(event,'login-modal')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="text-align:center; padding:var(--sp-2) 0 var(--sp-5);">
+        <div style="width:52px; height:52px; background:var(--c-primary-dim); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto var(--sp-4);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <p class="modal-title">로그인이 필요해요</p>
+        <p class="modal-desc" style="margin-bottom:0;">투표에 참여하려면<br>로그인이 필요합니다</p>
+      </div>
+      <!-- Google login — contained (primary CTA) -->
+      <button onclick="goTo('s1'); hideModal('login-modal');"
+        style="width:100%; padding:14px; border-radius:var(--r-sm);
+               border:var(--b-100) solid var(--c-disabled); background:var(--c-surface);
+               font-size:var(--t-text-s); font-weight:700; color:var(--c-black);
+               cursor:pointer; display:flex; align-items:center; justify-content:center;
+               gap:var(--sp-2); font-family:var(--font); margin-bottom:var(--sp-2);
+               transition:opacity .15s; box-shadow:var(--sh-w200);"
+        onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'">
+        <svg width="17" height="17" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Google로 로그인
+      </button>
+      <button onclick="hideModal('login-modal')" class="btn btn-g" style="border-radius:var(--r-sm); font-size:var(--t-text-s);">닫기</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL — 탈퇴 확인 (Bottom Sheet)
+  ═══════════════════════════════════════════ -->
+  <div id="delete-modal" class="modal-overlay" onclick="handleBg(event,'delete-modal')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="text-align:center; padding:var(--sp-2) 0 var(--sp-4);">
+        <div style="width:52px; height:52px; background:var(--c-negative-dim); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto var(--sp-4);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-negative)" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </div>
+        <p class="modal-title">정말 탈퇴하시겠어요?</p>
+        <p class="modal-desc">탈퇴 시 계정 정보가 삭제됩니다.<br>기존 투표 데이터는 익명으로 유지됩니다.</p>
+      </div>
+      <!-- Priority button on right -->
+      <div style="display:flex; gap:var(--sp-2);">
+        <button onclick="hideModal('delete-modal')" class="btn btn-o" style="flex:1;">취소</button>
+        <button class="btn" style="flex:1; padding:14px; border-radius:var(--r-sm); background:var(--c-negative); color:white; font-size:var(--t-text-m); font-weight:700; border:none;">탈퇴하기</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /mobile-frame -->
+
+<!-- Prototype nav -->
+<div class="screen-nav">
+  <button class="snav-btn sn-on" id="snav-s0" onclick="goTo('s0')">홈</button>
+  <button class="snav-btn" id="snav-s1" onclick="goTo('s1')">목록</button>
+  <button class="snav-btn" id="snav-s2" onclick="goTo('s2')">Type A</button>
+  <button class="snav-btn" id="snav-s4" onclick="goTo('s4')">결과</button>
+  <button class="snav-btn" id="snav-s5" onclick="goTo('s5')">Type B</button>
+  <button class="snav-btn" id="snav-s6" onclick="goTo('s6')">마이</button>
+  <button class="snav-btn" onclick="showModal('login-modal')">로그인↑</button>
+</div>
+
+<script>
+  let currentScreen = 's0';
+  let selectedOption = null;
+  let carouselIndex = 0;
+
+  const players = [
+    { name:'알렉산더 이사크',   pos:'공격수',   num:'#14', c:'0c2340/41b6e6' },
+    { name:'브루노 기마랑이스', pos:'미드필더', num:'#39', c:'0a3d2e/34a853' },
+    { name:'키에란 트리피어',   pos:'수비수',   num:'#2',  c:'2d1f00/f57c00' },
+    { name:'닉 포프',           pos:'골키퍼',   num:'#22', c:'1a0a3d/7c3aed' },
+    { name:'하비 반스',         pos:'공격수',   num:'#11', c:'3d1a0a/ea4335' },
+  ];
+
+  function goTo(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    currentScreen = id;
+    document.querySelectorAll('.snav-btn[id]').forEach(b => b.classList.remove('sn-on'));
+    document.getElementById('snav-' + id)?.classList.add('sn-on');
+  }
+  function showModal(id) { document.getElementById(id).classList.add('active'); }
+  function hideModal(id) { document.getElementById(id).classList.remove('active'); }
+  function handleBg(e, id) { if (e.target.id === id) hideModal(id); }
+
+  function selectOption(el, value) {
+    document.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedOption = value;
+    const btn = document.getElementById('submit-btn');
+    btn.classList.remove('disabled');
+    document.getElementById('modal-selection').textContent = value;
+  }
+
+  function openConfirmModal() { if (selectedOption) showModal('confirm-modal'); }
+  function openConfirmModal5() {
+    document.getElementById('modal-selection').textContent = players[carouselIndex].name;
+    showModal('confirm-modal');
+  }
+  function submitVote() { hideModal('confirm-modal'); goTo('s4'); }
+
+  // Carousel
+  function buildCarousel() {
+    const track = document.getElementById('carousel-track');
+    track.innerHTML = '';
+    const W = 200, gap = 12;
+    players.forEach((p, i) => {
+      const item = document.createElement('div');
+      item.id = 'ci-' + i;
+      item.style.cssText = `flex-shrink:0; width:${W}px; transition:all .3s ease; cursor:pointer;`;
+      item.onclick = () => { carouselIndex = i; updateCarousel(); };
+      item.innerHTML = `
+        <div id="pcard-${i}" style="background:#fff; border-radius:7px; overflow:hidden;
+             border:1px solid #e4e4e7; transition:all .3s ease;
+             box-shadow:0 0 1px rgba(0,0,0,.05),0 1px 1px rgba(0,0,0,.05);">
+          <img src="https://placehold.co/${W}x220/${p.c}?text=${encodeURIComponent(p.num)}"
+               style="width:100%;height:220px;object-fit:cover;display:block;">
+          <div style="padding:10px 12px 12px;">
+            <p style="font-size:13px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;">${p.name}</p>
+            <p style="font-size:11px;color:#a8a8a8;">${p.pos} · ${p.num}</p>
+          </div>
+        </div>`;
+      track.appendChild(item);
+    });
+    updateCarousel();
+  }
+
+  function updateCarousel() {
+    const W = 200, gap = 12;
+    const cx = (390 - W) / 2;
+    const offset = cx - carouselIndex * (W + gap);
+    document.getElementById('carousel-track').style.transform = `translateX(${offset}px)`;
+    players.forEach((_, i) => {
+      const item = document.getElementById('ci-' + i);
+      const card = document.getElementById('pcard-' + i);
+      const d = Math.abs(i - carouselIndex);
+      if (item) { item.style.transform = d === 0 ? 'scale(1)' : 'scale(0.87)'; item.style.opacity = d > 1 ? '.45' : '1'; }
+      if (card) {
+        card.style.borderColor = i === carouselIndex ? 'var(--c-primary)' : '#e4e4e7';
+        card.style.boxShadow = i === carouselIndex
+          ? '0 4px 16px rgba(65,182,230,.22)'
+          : '0 0 1px rgba(0,0,0,.05),0 1px 1px rgba(0,0,0,.05)';
+      }
+      const dot = document.getElementById('dot-' + i);
+      if (dot) dot.classList.toggle('active', i === carouselIndex);
+    });
+    const el = document.getElementById('selected-player-name');
+    if (el) el.textContent = players[carouselIndex].name;
+  }
+
+  document.getElementById('s5').addEventListener('touchstart', e => { window._tx = e.touches[0].clientX; });
+  document.getElementById('s5').addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - window._tx;
+    if (Math.abs(dx) > 40) { carouselIndex = Math.max(0, Math.min(players.length-1, carouselIndex + (dx<0?1:-1))); updateCarousel(); }
+  });
+
+  buildCarousel();
+</script>
+</body>
+</html>

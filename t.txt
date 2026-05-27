@@ -1,0 +1,2 @@
+  docs/SPEC_INDEX.md 를 먼저 읽고,
+  필요한 spec 파일만 골라 읽은 후 작업해줘.

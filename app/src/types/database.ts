@@ -27,6 +27,8 @@ export interface Database {
           squad_number: number | null
           photo_url: string | null
           is_active: boolean
+          nationality: string | null
+          birth_date: string | null
         }
         Insert: Omit<Database['public']['Tables']['players']['Row'], 'id' | 'is_active'>
         Update: Partial<Database['public']['Tables']['players']['Insert']>
@@ -125,4 +127,27 @@ export type CommentWithMeta = CommentRow & {
   user: Pick<UserRow, 'display_name' | 'avatar_url'>
   like_count: number
   is_liked: boolean
+}
+
+// club_status 테이블
+export type ClubStatusRow = {
+  id: number
+  league_rank: number | null
+  next_match_opponent: string | null
+  next_match_date: string | null
+  next_match_venue: 'home' | 'away' | null
+  top_appearances_player_id: string | null
+  top_appearances_count: number | null
+  top_goals_player_id: string | null
+  top_goals_count: number | null
+  top_assists_player_id: string | null
+  top_assists_count: number | null
+  updated_at: string
+}
+
+// 구단 정보 페이지용 조합 타입
+export type ClubStatusWithStats = ClubStatusRow & {
+  top_appearances_player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
+  top_goals_player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
+  top_assists_player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
 }

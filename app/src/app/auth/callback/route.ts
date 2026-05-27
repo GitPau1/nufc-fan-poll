@@ -14,13 +14,13 @@ export async function GET(request: Request) {
       // 신규 가입자 판별: public.users.display_name이 null이면 온보딩으로
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('users')
           .select('display_name')
           .eq('id', user.id)
           .single()
 
-        if (!profile?.display_name) {
+        if (!profileError && !profile?.display_name) {
           return NextResponse.redirect(`${origin}/onboarding?next=${encodeURIComponent(next)}`)
         }
       }

@@ -1,26 +1,31 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { IS_MOCK } from '@/lib/config'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { isAdmin } from '@/lib/admin'
 import { LoginButton } from './LoginButton'
+import { UserMenu } from './UserMenu'
 
 export async function AppHeader() {
-  let user: { id: string; user_metadata?: { name?: string; avatar_url?: string | null } } | null = null
+  let user: { id: string; email?: string; user_metadata?: { name?: string; avatar_url?: string | null } } | null = null
+  let userEmail: string | null = null
 
   if (IS_MOCK) {
     const cookieStore = await cookies()
     if (cookieStore.get('mock-auth')?.value === 'true') {
       user = { id: 'mock-user', user_metadata: { name: '뉴캐슬 팬', avatar_url: null } }
+      userEmail = 'mock@example.com'
     }
   } else {
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
     const { data } = await supabase.auth.getUser()
     user = data.user
+    userEmail = data.user?.email ?? null
   }
 
-  const avatarUrl   = user?.user_metadata?.avatar_url as string | undefined
-  const displayName = user?.user_metadata?.name as string | undefined
+  const avatarUrl   = user?.user_metadata?.avatar_url ?? undefined
+  const displayName = user?.user_metadata?.name ?? undefined
+  const admin = isAdmin(userEmail)
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
@@ -33,14 +38,7 @@ export async function AppHeader() {
         </Link>
 
         {user ? (
-          <Link href="/my">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={avatarUrl} alt={displayName ?? 'profile'} />
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                {displayName?.[0]?.toUpperCase() ?? 'U'}
-              </AvatarFallback>
-            </Avatar>
-          </Link>
+          <UserMenu avatarUrl={avatarUrl} displayName={displayName} isAdmin={admin} />
         ) : (
           <LoginButton />
         )}

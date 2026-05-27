@@ -1,5 +1,7 @@
 // app/src/lib/admin.ts
 
+import 'server-only'
+
 /**
  * 주어진 이메일이 관리자인지 확인한다.
  * ADMIN_EMAILS 환경변수에 쉼표로 구분된 이메일 목록을 설정한다.

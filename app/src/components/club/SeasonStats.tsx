@@ -27,7 +27,7 @@ function StatCard({ label, player, count, unit, emoji }: StatCardProps) {
         )}
       </div>
       <p className="text-[12px] font-extrabold text-foreground line-clamp-1">
-        {player?.name ?? '—'}
+        {player ? (player.name.split(' ').slice(-1)[0]) : '—'}
       </p>
       <p className="text-[18px] font-black text-primary">{count ?? '—'}</p>
       <p className="text-[9px] text-muted-foreground mt-0.5">{unit}</p>

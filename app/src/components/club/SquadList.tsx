@@ -36,7 +36,7 @@ export default function SquadList({ players }: Props) {
           className="bg-white border border-border rounded-[20px] overflow-hidden mb-2.5"
         >
           {/* Position header */}
-          <div className="px-4 py-3 border-b border-border">
+          <div className="px-3.5 pt-3 pb-2 border-b border-border">
             <span className="text-[11px] font-extrabold text-primary tracking-widest">
               {POSITION_LABEL[position]}
             </span>
@@ -47,8 +47,8 @@ export default function SquadList({ players }: Props) {
             const age = calcAge(player.birth_date)
             return (
               <div key={player.id}>
-                {idx > 0 && <div className="h-px bg-border mx-4" />}
-                <div className="flex items-center gap-3 px-4 py-2.5">
+                {idx > 0 && <div className="h-px bg-border mx-3.5" />}
+                <div className="flex items-center gap-3 px-3.5 py-2.5">
                   {/* Squad number */}
                   <div className="w-7 flex-shrink-0 text-center">
                     <span className="text-[15px] font-black text-muted-foreground">

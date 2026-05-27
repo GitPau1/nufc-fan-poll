@@ -17,6 +17,15 @@ export default async function AdminPage() {
     if (!user?.email || !isAdmin(user.email)) redirect('/')
   }
 
+  // Admin email for display
+  let adminEmail = process.env.ADMIN_EMAILS?.split(',')[0]?.trim() ?? ''
+  if (!IS_MOCK) {
+    const { createClient: getClient } = await import('@/lib/supabase/server')
+    const _s = await getClient()
+    const { data: { user } } = await _s.auth.getUser()
+    adminEmail = user?.email ?? adminEmail
+  }
+
   // Fetch players and club status (real mode only)
   let players: Array<{
     id: string; name: string; position: string | null
@@ -41,5 +50,5 @@ export default async function AdminPage() {
     clubStatus = cs ?? null
   }
 
-  return <AdminDashboard players={players} clubStatus={clubStatus} />
+  return <AdminDashboard adminEmail={adminEmail} players={players} clubStatus={clubStatus} />
 }

@@ -8,14 +8,8 @@ export default function ClubStatusCard({ status }: Props) {
   if (!status) return null
 
   const venueLabel = status.next_match_venue === 'home' ? '홈' : '원정'
-
-  const matchDate = status.next_match_date
-    ? new Date(status.next_match_date).toLocaleDateString('ko-KR', {
-        month: 'long',
-        day: 'numeric',
-        weekday: 'short',
-      })
-    : null
+  // next_match_date는 text 컬럼 — 그대로 표시 (ISO 파싱 시도 안 함)
+  const matchDate = status.next_match_date ?? null
 
   return (
     <div

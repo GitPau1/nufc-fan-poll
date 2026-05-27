@@ -1,0 +1,208 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import type { PollDetail } from '@/lib/queries/polls'
+import { submitVote } from '@/lib/actions/vote'
+import { cn } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { ConfirmModal } from './ConfirmModal'
+import { LoginModal } from './LoginModal'
+import { PollPageHeader } from './PollPageHeader'
+
+interface TypeAPollClientProps {
+  poll: PollDetail
+  isAuthenticated: boolean
+}
+
+export function TypeAPollClient({ poll, isAuthenticated }: TypeAPollClientProps) {
+  const [selectedId, setSelectedId]   = useState<string | null>(null)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [showLogin, setShowLogin]     = useState(false)
+  const [errorMsg, setErrorMsg]       = useState<string | null>(null)
+  const [isPending, startTransition]  = useTransition()
+  const router                        = useRouter()
+
+  const selectedOption = poll.poll_options.find(o => o.id === selectedId)
+
+  function handleSubmitClick() {
+    if (!selectedId) return
+    if (!isAuthenticated) { setShowLogin(true); return }
+    setShowConfirm(true)
+  }
+
+  function handleConfirm() {
+    if (!selectedId) return
+    setErrorMsg(null)
+    startTransition(async () => {
+      const result = await submitVote(poll.id, selectedId)
+      if ('success' in result) {
+        setShowConfirm(false)
+        router.refresh()
+      } else {
+        setShowConfirm(false)
+        setErrorMsg(
+          result.error === 'already_voted'
+            ? '이미 참여한 투표입니다'
+            : '제출에 실패했습니다. 다시 시도해주세요'
+        )
+      }
+    })
+  }
+
+  const coverUrl = poll.player?.photo_url
+    ?? `https://placehold.co/480x160/0c2340/41b6e6?text=${encodeURIComponent(poll.title.slice(0, 4))}`
+
+  const daysLeft = Math.ceil(
+    (new Date(poll.closes_at).getTime() - Date.now()) / 86400000
+  )
+
+  return (
+    <div className="relative flex flex-col min-h-screen">
+      {/* 페이지 헤더 */}
+      <PollPageHeader />
+
+      {/* 스크롤 영역 */}
+      <div className="flex-1 overflow-y-auto hide-scrollbar pb-[72px] animate-enter">
+
+        {/* 커버 이미지 — 칩 → 제목 순서로 오버레이 */}
+        <div className="relative h-[160px] overflow-hidden">
+          <img src={coverUrl} alt={poll.title} className="w-full h-full object-cover" />
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.45) 50%, rgba(0,0,0,.85) 100%)' }}
+          />
+          <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
+            {/* 칩 (제목 위) */}
+            <div className="flex items-center gap-1.5 mb-2">
+              <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm text-[11px] font-semibold pointer-events-none">
+                평가
+              </Badge>
+              {daysLeft > 0 ? (
+                <Badge className="bg-primary text-white border-0 text-[11px] font-semibold hover:bg-primary pointer-events-none">
+                  D-{daysLeft} 마감
+                </Badge>
+              ) : (
+                <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm text-[11px] font-semibold pointer-events-none">
+                  마감
+                </Badge>
+              )}
+            </div>
+            {/* 제목 */}
+            <p className="text-[18px] font-black text-white leading-tight">{poll.title}</p>
+          </div>
+        </div>
+
+        {/* 콘텐츠 */}
+        <div className="px-4 py-4 flex flex-col gap-4">
+
+          {/* 설명 */}
+          {poll.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed">{poll.description}</p>
+          )}
+
+          {/* 에러 */}
+          {errorMsg && (
+            <p className="text-sm text-destructive font-medium">{errorMsg}</p>
+          )}
+
+          {/* 선택지 */}
+          <div className="flex flex-col gap-2">
+            {poll.poll_options.map(option => {
+              const selected = selectedId === option.id
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => setSelectedId(option.id)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-4 py-4 rounded-xl border-2 text-left',
+                    'transition-all duration-100 focus:outline-none focus-visible:outline-none focus-visible:ring-0',
+                  'active:scale-[0.98]',
+                    selected
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/40 bg-card'
+                  )}
+                >
+                  {/* 라디오 인디케이터 */}
+                  <div className={cn(
+                    'w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center',
+                    selected ? 'border-primary' : 'border-muted-foreground/40'
+                  )}>
+                    {selected && (
+                      <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    )}
+                  </div>
+                  <span className={cn(
+                    'text-sm font-semibold',
+                    selected ? 'text-primary' : 'text-foreground'
+                  )}>
+                    {option.label}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* 선수 정보 카드 */}
+          {poll.player && (
+            <Card className="mt-1">
+              <CardContent className="p-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  선수 정보
+                </p>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={poll.player.photo_url
+                      ?? `https://placehold.co/44x44/0c2340/41b6e6?text=${poll.player.squad_number}`}
+                    alt={poll.player.name}
+                    className="w-11 h-11 rounded-full object-cover flex-shrink-0 ring-2 ring-border"
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{poll.player.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {poll.player.position}
+                      <span className="mx-1.5">·</span>
+                      <span className="font-semibold text-primary">#{poll.player.squad_number}</span>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* 하단 고정 제출 버튼 */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur border-t">
+        <Button
+          className="w-full h-12 text-sm font-bold rounded-xl"
+          disabled={!selectedId || isPending}
+          onClick={handleSubmitClick}
+        >
+          {isPending
+            ? <><Loader2 className="h-4 w-4 animate-spin" />제출 중…</>
+            : '투표하기'
+          }
+        </Button>
+      </div>
+
+      {/* 모달 */}
+      {selectedOption && (
+        <ConfirmModal
+          open={showConfirm}
+          selectedLabel={selectedOption.label}
+          onCancel={() => setShowConfirm(false)}
+          onConfirm={handleConfirm}
+          isPending={isPending}
+        />
+      )}
+      <LoginModal
+        open={showLogin}
+        onClose={() => setShowLogin(false)}
+      />
+    </div>
+  )
+}

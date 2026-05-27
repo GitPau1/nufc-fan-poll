@@ -1,0 +1,64 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Newcastle 화이트 + 블루 테마 ── */
+    --background:         0 0% 98%;        /* #fafafa */
+    --foreground:         222 47% 11%;     /* #0f172a slate-900 */
+
+    --card:               0 0% 100%;
+    --card-foreground:    222 47% 11%;
+
+    --popover:            0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary:            200 74% 58%;     /* #41b6e6 Newcastle blue */
+    --primary-foreground: 0 0% 100%;       /* white */
+
+    --secondary:          210 40% 96%;     /* slate-100 */
+    --secondary-foreground: 222 47% 20%;
+
+    --muted:              210 40% 96%;
+    --muted-foreground:   215 16% 47%;     /* slate-500 */
+
+    --accent:             199 89% 96%;     /* sky-50 */
+    --accent-foreground:  200 74% 38%;
+
+    --destructive:        0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border:             214 32% 91%;     /* slate-200 */
+    --input:              214 32% 91%;
+    --ring:               200 74% 58%;     /* #41b6e6 */
+    --radius:             0.625rem;        /* 10px */
+  }
+
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .animate-enter {
+    animation: page-enter 0.2s ease-out both;
+  }
+}
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

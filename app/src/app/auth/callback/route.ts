@@ -18,7 +18,7 @@ export async function GET(request: Request) {
           .from('users')
           .select('display_name')
           .eq('id', user.id)
-          .single()
+          .single() as { data: { display_name: string | null } | null; error: unknown }
 
         if (!profileError && !profile?.display_name) {
           return NextResponse.redirect(`${origin}/onboarding?next=${encodeURIComponent(next)}`)

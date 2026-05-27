@@ -25,7 +25,8 @@ export async function saveNickname(formData: FormData): Promise<{ error?: string
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: '로그인이 필요합니다.' }
 
-  const { error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
     .from('users')
     .update({ display_name: displayName })
     .eq('id', user.id)

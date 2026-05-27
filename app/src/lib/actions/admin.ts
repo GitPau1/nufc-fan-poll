@@ -15,12 +15,19 @@ function parseIntOrNull(value: FormDataEntryValue | null): number | null {
 }
 
 async function requireAdmin(): Promise<AnySupabase> {
+  // 1단계: 일반 클라이언트로 사용자 인증 확인
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdmin(user?.email)) {
     throw new Error('권한이 없습니다.')
   }
-  return supabase as AnySupabase
+
+  // 2단계: RLS를 우회하는 service role 클라이언트 반환 (쓰기 작업에 필요)
+  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  ) as AnySupabase
 }
 
 export async function updateClubStatus(formData: FormData): Promise<{ error?: string }> {

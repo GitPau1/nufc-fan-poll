@@ -28,8 +28,10 @@ INSERT INTO public.club_status (id) VALUES (1)
 -- RLS
 ALTER TABLE public.club_status ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "club_status_public_read" ON public.club_status;
 CREATE POLICY "club_status_public_read" ON public.club_status
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "club_status_admin_write" ON public.club_status;
 CREATE POLICY "club_status_admin_write" ON public.club_status
   FOR ALL USING (true) WITH CHECK (true);

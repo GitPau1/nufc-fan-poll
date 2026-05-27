@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { BottomNav } from '@/components/layout/BottomNav'
 
 export const metadata: Metadata = {
   title: 'NUFC Vote',
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-background min-h-screen">
         <div className="max-w-[480px] mx-auto min-h-screen bg-background relative">
           {children}
+          <BottomNav />
         </div>
       </body>
     </html>

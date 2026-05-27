@@ -26,13 +26,17 @@ interface Props {
 }
 
 export function AdminDashboard({ players, clubStatus }: Props) {
-  const [isPending, startTransition] = useTransition()
+  const [isClubPending, startClubTransition] = useTransition()
+  const [isPlayerPending, startPlayerTransition] = useTransition()
+  const [isTogglePending, startToggleTransition] = useTransition()
   const [message, setMessage] = useState<{ text: string; type: 'ok' | 'err' } | undefined>()
   const addPlayerFormRef = useRef<HTMLFormElement>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function toast(text: string, type: 'ok' | 'err') {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setMessage({ text, type })
-    setTimeout(() => setMessage(undefined), 3000)
+    toastTimerRef.current = setTimeout(() => setMessage(undefined), 3000)
   }
 
   const activePlayers = players.filter(p => p.is_active)
@@ -40,7 +44,7 @@ export function AdminDashboard({ players, clubStatus }: Props) {
   function handleClubStatusSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
-    startTransition(async () => {
+    startClubTransition(async () => {
       const result = await updateClubStatus(fd)
       if (result.error) toast(result.error, 'err')
       else toast('구단 현황이 저장되었습니다.', 'ok')
@@ -50,7 +54,7 @@ export function AdminDashboard({ players, clubStatus }: Props) {
   function handleCreatePlayerSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
-    startTransition(async () => {
+    startPlayerTransition(async () => {
       const result = await createPlayer(fd)
       if (result.error) toast(result.error, 'err')
       else {
@@ -61,7 +65,7 @@ export function AdminDashboard({ players, clubStatus }: Props) {
   }
 
   function handleToggleActive(playerId: string, currentActive: boolean) {
-    startTransition(async () => {
+    startToggleTransition(async () => {
       const result = await togglePlayerActive(playerId, !currentActive)
       if (result.error) toast(result.error, 'err')
       else toast(currentActive ? '선수가 비활성화되었습니다.' : '선수가 활성화되었습니다.', 'ok')
@@ -95,8 +99,9 @@ export function AdminDashboard({ players, clubStatus }: Props) {
             {/* 리그 순위 + 홈/원정 */}
             <div className="flex gap-3">
               <div className="flex-1 space-y-1">
-                <label className="text-[12px] font-medium text-muted-foreground">리그 순위</label>
+                <label htmlFor="league_rank" className="text-[12px] font-medium text-muted-foreground">리그 순위</label>
                 <input
+                  id="league_rank"
                   type="number"
                   name="league_rank"
                   defaultValue={clubStatus?.league_rank ?? ''}
@@ -107,8 +112,9 @@ export function AdminDashboard({ players, clubStatus }: Props) {
                 />
               </div>
               <div className="flex-1 space-y-1">
-                <label className="text-[12px] font-medium text-muted-foreground">홈/원정</label>
+                <label htmlFor="next_match_venue" className="text-[12px] font-medium text-muted-foreground">홈/원정</label>
                 <select
+                  id="next_match_venue"
                   name="next_match_venue"
                   defaultValue={clubStatus?.next_match_venue ?? ''}
                   className="input-field"
@@ -122,8 +128,9 @@ export function AdminDashboard({ players, clubStatus }: Props) {
 
             {/* 다음 경기 상대 */}
             <div className="space-y-1">
-              <label className="text-[12px] font-medium text-muted-foreground">다음 경기 상대</label>
+              <label htmlFor="next_match_opponent" className="text-[12px] font-medium text-muted-foreground">다음 경기 상대</label>
               <input
+                id="next_match_opponent"
                 type="text"
                 name="next_match_opponent"
                 defaultValue={clubStatus?.next_match_opponent ?? ''}
@@ -134,8 +141,9 @@ export function AdminDashboard({ players, clubStatus }: Props) {
 
             {/* 경기 일시 */}
             <div className="space-y-1">
-              <label className="text-[12px] font-medium text-muted-foreground">경기 일시</label>
+              <label htmlFor="next_match_date" className="text-[12px] font-medium text-muted-foreground">경기 일시</label>
               <input
+                id="next_match_date"
                 type="text"
                 name="next_match_date"
                 defaultValue={clubStatus?.next_match_date ?? ''}
@@ -150,9 +158,10 @@ export function AdminDashboard({ players, clubStatus }: Props) {
 
               {/* 최다 출전 */}
               <div className="space-y-1">
-                <label className="text-[11px] text-muted-foreground">최다 출전</label>
+                <label htmlFor="top_appearances_player_id" className="text-[11px] text-muted-foreground">최다 출전</label>
                 <div className="flex gap-2">
                   <select
+                    id="top_appearances_player_id"
                     name="top_appearances_player_id"
                     defaultValue={clubStatus?.top_appearances_player_id ?? ''}
                     className="input-field flex-1"
@@ -177,9 +186,10 @@ export function AdminDashboard({ players, clubStatus }: Props) {
 
               {/* 최다 득점 */}
               <div className="space-y-1">
-                <label className="text-[11px] text-muted-foreground">최다 득점</label>
+                <label htmlFor="top_goals_player_id" className="text-[11px] text-muted-foreground">최다 득점</label>
                 <div className="flex gap-2">
                   <select
+                    id="top_goals_player_id"
                     name="top_goals_player_id"
                     defaultValue={clubStatus?.top_goals_player_id ?? ''}
                     className="input-field flex-1"
@@ -204,9 +214,10 @@ export function AdminDashboard({ players, clubStatus }: Props) {
 
               {/* 최다 어시 */}
               <div className="space-y-1">
-                <label className="text-[11px] text-muted-foreground">최다 어시</label>
+                <label htmlFor="top_assists_player_id" className="text-[11px] text-muted-foreground">최다 어시</label>
                 <div className="flex gap-2">
                   <select
+                    id="top_assists_player_id"
                     name="top_assists_player_id"
                     defaultValue={clubStatus?.top_assists_player_id ?? ''}
                     className="input-field flex-1"
@@ -230,7 +241,7 @@ export function AdminDashboard({ players, clubStatus }: Props) {
               </div>
             </div>
 
-            <button type="submit" disabled={isPending} className="btn-primary">
+            <button type="submit" disabled={isClubPending} className="btn-primary">
               저장하기
             </button>
           </form>
@@ -243,8 +254,9 @@ export function AdminDashboard({ players, clubStatus }: Props) {
             {/* 이름 + 등번호 */}
             <div className="flex gap-3">
               <div className="flex-1 space-y-1">
-                <label className="text-[12px] font-medium text-muted-foreground">이름 *</label>
+                <label htmlFor="player_name" className="text-[12px] font-medium text-muted-foreground">이름 *</label>
                 <input
+                  id="player_name"
                   type="text"
                   name="name"
                   required
@@ -253,8 +265,9 @@ export function AdminDashboard({ players, clubStatus }: Props) {
                 />
               </div>
               <div className="w-24 space-y-1">
-                <label className="text-[12px] font-medium text-muted-foreground">등번호</label>
+                <label htmlFor="squad_number" className="text-[12px] font-medium text-muted-foreground">등번호</label>
                 <input
+                  id="squad_number"
                   type="number"
                   name="squad_number"
                   min={1}
@@ -268,8 +281,8 @@ export function AdminDashboard({ players, clubStatus }: Props) {
             {/* 포지션 + 국적 */}
             <div className="flex gap-3">
               <div className="flex-1 space-y-1">
-                <label className="text-[12px] font-medium text-muted-foreground">포지션</label>
-                <select name="position" className="input-field">
+                <label htmlFor="position" className="text-[12px] font-medium text-muted-foreground">포지션</label>
+                <select id="position" name="position" className="input-field">
                   <option value="">선택</option>
                   <option value="GK">GK</option>
                   <option value="DEF">DEF</option>
@@ -279,8 +292,9 @@ export function AdminDashboard({ players, clubStatus }: Props) {
                 </select>
               </div>
               <div className="flex-1 space-y-1">
-                <label className="text-[12px] font-medium text-muted-foreground">국적</label>
+                <label htmlFor="nationality" className="text-[12px] font-medium text-muted-foreground">국적</label>
                 <input
+                  id="nationality"
                   type="text"
                   name="nationality"
                   className="input-field"
@@ -292,17 +306,19 @@ export function AdminDashboard({ players, clubStatus }: Props) {
             {/* 생년월일 + 사진 URL */}
             <div className="flex gap-3">
               <div className="flex-1 space-y-1">
-                <label className="text-[12px] font-medium text-muted-foreground">생년월일</label>
+                <label htmlFor="birth_date" className="text-[12px] font-medium text-muted-foreground">생년월일</label>
                 <input
+                  id="birth_date"
                   type="date"
                   name="birth_date"
                   className="input-field"
                 />
               </div>
               <div className="flex-1 space-y-1">
-                <label className="text-[12px] font-medium text-muted-foreground">사진 URL</label>
+                <label htmlFor="photo_url" className="text-[12px] font-medium text-muted-foreground">사진 URL</label>
                 <input
-                  type="text"
+                  id="photo_url"
+                  type="url"
                   name="photo_url"
                   className="input-field"
                   placeholder="https://..."
@@ -310,7 +326,7 @@ export function AdminDashboard({ players, clubStatus }: Props) {
               </div>
             </div>
 
-            <button type="submit" disabled={isPending} className="btn-primary">
+            <button type="submit" disabled={isPlayerPending} className="btn-primary">
               + 선수 추가
             </button>
           </form>
@@ -344,7 +360,7 @@ export function AdminDashboard({ players, clubStatus }: Props) {
                   </div>
                   <button
                     onClick={() => handleToggleActive(player.id, player.is_active)}
-                    disabled={isPending}
+                    disabled={isTogglePending}
                     className={`shrink-0 text-[12px] font-semibold px-3 py-1 rounded-lg transition-colors disabled:opacity-60 ${
                       player.is_active
                         ? 'bg-red-100 text-red-600 hover:bg-red-200'

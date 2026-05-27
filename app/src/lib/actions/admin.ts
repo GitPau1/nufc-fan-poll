@@ -29,9 +29,9 @@ export async function updateClubStatus(formData: FormData): Promise<{ error?: st
 
     const payload = {
       league_rank: parseIntOrNull(formData.get('league_rank')),
-      next_match_opponent: formData.get('next_match_opponent') as string || null,
-      next_match_date: formData.get('next_match_date') as string || null,
-      next_match_venue: formData.get('next_match_venue') as string || null,
+      next_match_opponent: (formData.get('next_match_opponent') as string)?.trim() || null,
+      next_match_date: (formData.get('next_match_date') as string)?.trim() || null,
+      next_match_venue: (formData.get('next_match_venue') as string)?.trim() as 'home' | 'away' | null || null,
       top_appearances_player_id: formData.get('top_appearances_player_id') as string || null,
       top_appearances_count: parseIntOrNull(formData.get('top_appearances_count')),
       top_goals_player_id: formData.get('top_goals_player_id') as string || null,

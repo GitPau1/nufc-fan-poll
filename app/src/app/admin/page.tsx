@@ -6,6 +6,8 @@ import { AdminDashboard } from './AdminDashboard'
 export default async function AdminPage() {
   // Admin check
   if (IS_MOCK) {
+    // In mock mode, any visitor can access admin if ADMIN_EMAILS is set.
+    // This is intentional for local development only — never deploy with IS_MOCK=true.
     const adminEmails = process.env.ADMIN_EMAILS ?? ''
     if (!adminEmails) redirect('/')
   } else {

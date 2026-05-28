@@ -8,12 +8,15 @@ import { UserMenu } from './UserMenu'
 export async function AppHeader() {
   let user: { id: string; email?: string; user_metadata?: { name?: string; avatar_url?: string | null } } | null = null
   let userEmail: string | null = null
+  let displayName: string | undefined
+  let avatarUrl: string | undefined
 
   if (IS_MOCK) {
     const cookieStore = await cookies()
     if (cookieStore.get('mock-auth')?.value === 'true') {
       user = { id: 'mock-user', user_metadata: { name: '뉴캐슬 팬', avatar_url: null } }
       userEmail = 'mock@example.com'
+      displayName = cookieStore.get('mock-display-name')?.value ?? '뉴캐슬 팬'
     }
   } else {
     const { createClient } = await import('@/lib/supabase/server')
@@ -21,10 +24,20 @@ export async function AppHeader() {
     const { data } = await supabase.auth.getUser()
     user = data.user
     userEmail = data.user?.email ?? null
+    avatarUrl = data.user?.user_metadata?.avatar_url ?? undefined
+
+    if (data.user) {
+      // public.users.display_name (온보딩에서 설정한 닉네임) 우선, 없으면 Google 이름 fallback
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase as any)
+        .from('users')
+        .select('display_name')
+        .eq('id', data.user.id)
+        .single()
+      displayName = profile?.display_name ?? data.user.user_metadata?.name ?? undefined
+    }
   }
 
-  const avatarUrl   = user?.user_metadata?.avatar_url ?? undefined
-  const displayName = user?.user_metadata?.name ?? undefined
   const admin = isAdmin(userEmail)
 
   return (

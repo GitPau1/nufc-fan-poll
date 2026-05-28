@@ -14,7 +14,7 @@ function StatCard({ label, player, count, unit, emoji }: StatCardProps) {
       <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">
         {label}
       </p>
-      <div className="w-10 h-10 rounded-full bg-primary/10 mx-auto mb-1.5 flex items-center justify-center overflow-hidden">
+      <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto mb-1.5 flex items-center justify-center overflow-hidden">
         {player?.photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

@@ -57,7 +57,7 @@ export default function SquadList({ players }: Props) {
                   </div>
 
                   {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
                     {player.photo_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img

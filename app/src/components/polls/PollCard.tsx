@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Lock } from 'lucide-react'
+import { Lock, Users } from 'lucide-react'
 import type { PollListItem } from '@/lib/queries/polls'
 import { formatScheduled } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -11,8 +11,9 @@ interface PollCardProps {
 }
 
 function getThumbnailUrl(poll: PollListItem): string {
+  if (poll.thumbnail_url) return poll.thumbnail_url
   if (poll.player?.photo_url) return poll.player.photo_url
-  return `https://placehold.co/72x72/0c2340/41b6e6?text=${encodeURIComponent(poll.title.slice(0, 2))}`
+  return `https://placehold.co/96x96/0c2340/41b6e6?text=${encodeURIComponent(poll.title.slice(0, 2))}`
 }
 
 // ── 활성 / 마감 카드 ──────────────────────────────────────────
@@ -22,9 +23,9 @@ function ActiveCard({ poll }: { poll: PollListItem }) {
   return (
     <Link href={`/polls/${poll.id}`} className="block active:scale-[0.98] transition-transform duration-100">
       <Card className={`rounded-2xl hover:shadow-md transition-shadow duration-200 cursor-pointer ${!isActive ? 'opacity-60' : ''}`}>
-        <div className="flex gap-3 p-3 items-start">
+        <div className="flex gap-3.5 p-3.5 items-start">
           {/* 정사각형 썸네일 */}
-          <div className="w-[72px] h-[72px] flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+          <div className="w-[96px] h-[96px] flex-shrink-0 rounded-xl overflow-hidden bg-muted">
             <img
               src={getThumbnailUrl(poll)}
               alt={poll.title}
@@ -33,7 +34,7 @@ function ActiveCard({ poll }: { poll: PollListItem }) {
           </div>
 
           {/* 콘텐츠 */}
-          <div className="flex-1 flex flex-col justify-between min-w-0 py-0.5" style={{ minHeight: 72 }}>
+          <div className="flex-1 flex flex-col justify-between min-w-0 py-0.5" style={{ minHeight: 96 }}>
             <div>
               {/* 배지 */}
               <div className="flex items-center gap-1.5 mb-1 flex-wrap">
@@ -52,17 +53,25 @@ function ActiveCard({ poll }: { poll: PollListItem }) {
                 )}
               </div>
               {/* 제목 */}
-              <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2 mt-0.5">
+              <p className="text-[15px] font-bold text-foreground leading-snug line-clamp-2 mt-0.5">
                 {poll.title}
               </p>
+              {poll.description && (
+                <p className="text-[12px] text-muted-foreground leading-snug line-clamp-1 mt-1">
+                  {poll.description}
+                </p>
+              )}
             </div>
 
             {/* 하단 정보 */}
-            <p className="text-[11px] leading-none text-muted-foreground mt-2">
-              {isActive
-                ? `${poll.vote_count.toLocaleString()}명 참여`
-                : '결과 열람 가능'}
-            </p>
+            <div className="flex items-center gap-1.5 text-[11px] leading-none text-muted-foreground mt-2">
+              <Users className="h-3.5 w-3.5" />
+              <span>
+                {isActive
+                  ? `${poll.vote_count.toLocaleString()}명 참여`
+                  : '결과 열람 가능'}
+              </span>
+            </div>
           </div>
         </div>
       </Card>
@@ -76,7 +85,7 @@ function ScheduledCard({ poll }: { poll: PollListItem }) {
     <Card className="rounded-2xl overflow-hidden">
       <div className="relative flex gap-3 p-3 items-start">
         {/* 블러 처리된 썸네일 */}
-        <div className="w-[72px] h-[72px] flex-shrink-0 rounded-xl overflow-hidden bg-muted">
+        <div className="w-[96px] h-[96px] flex-shrink-0 rounded-xl overflow-hidden bg-muted">
           <img
             src={getThumbnailUrl(poll)}
             alt=""

@@ -3,6 +3,7 @@
 export type PollType   = 'evaluation' | 'selection'
 export type PollStatus = 'scheduled' | 'active' | 'closed'
 export type Position   = 'GK' | 'DEF' | 'MID' | 'FWD' | 'MGR'
+export type PlayerStatus = 'first_team' | 'loan' | 'u21'
 
 export interface Database {
   public: {
@@ -27,6 +28,7 @@ export interface Database {
           squad_number: number | null
           photo_url: string | null
           is_active: boolean
+          squad_status: PlayerStatus
           nationality: string | null
           birth_date: string | null
         }
@@ -41,6 +43,7 @@ export interface Database {
           description: string | null
           player_id: string | null     // Type A only
           status: PollStatus
+          thumbnail_url: string | null
           scheduled_at: string | null
           closes_at: string
           created_at: string

@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { isAdmin } from '@/lib/admin'
 import { revalidatePath } from 'next/cache'
-import type { PollType, Position } from '@/types/database'
+import type { PlayerStatus, PollType, Position } from '@/types/database'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabase = any
@@ -12,6 +12,11 @@ function parseIntOrNull(value: FormDataEntryValue | null): number | null {
   if (!value) return null
   const n = parseInt(value as string, 10)
   return isNaN(n) ? null : n
+}
+
+function isMissingColumnError(error: unknown): boolean {
+  const message = String((error as { message?: string } | null)?.message ?? '')
+  return message.includes('column') && message.includes('does not exist')
 }
 
 async function requireAdmin(): Promise<AnySupabase> {
@@ -72,11 +77,24 @@ export async function createPlayer(formData: FormData): Promise<{ error?: string
       position: formData.get('position') as Position,
       squad_number: parseIntOrNull(formData.get('squad_number')),
       photo_url: formData.get('photo_url') as string || null,
+      squad_status: (formData.get('squad_status') as PlayerStatus) || 'first_team',
       nationality: formData.get('nationality') as string || null,
       birth_date: formData.get('birth_date') as string || null,
     }
 
-    const { error } = await supabase.from('players').insert(payload)
+    let { error } = await supabase.from('players').insert(payload)
+    if (error && isMissingColumnError(error)) {
+      const fallbackPayload = {
+        name: payload.name,
+        position: payload.position,
+        squad_number: payload.squad_number,
+        photo_url: payload.photo_url,
+        nationality: payload.nationality,
+        birth_date: payload.birth_date,
+      }
+      const fallback = await supabase.from('players').insert(fallbackPayload)
+      error = fallback.error
+    }
     if (error) throw new Error(error.message)
 
     revalidatePath('/club')
@@ -96,11 +114,39 @@ export async function updatePlayer(playerId: string, formData: FormData): Promis
       position: ((formData.get('position') as string)?.trim() as Position) || null,
       squad_number: parseIntOrNull(formData.get('squad_number')),
       photo_url: formData.get('photo_url') as string || null,
+      squad_status: (formData.get('squad_status') as PlayerStatus) || 'first_team',
       nationality: formData.get('nationality') as string || null,
       birth_date: formData.get('birth_date') as string || null,
     }
 
-    const { error } = await supabase.from('players').update(payload).eq('id', playerId)
+    let { error } = await supabase.from('players').update(payload).eq('id', playerId)
+    if (error && isMissingColumnError(error)) {
+      const fallbackPayload = {
+        name: payload.name,
+        position: payload.position,
+        squad_number: payload.squad_number,
+        photo_url: payload.photo_url,
+        nationality: payload.nationality,
+        birth_date: payload.birth_date,
+      }
+      const fallback = await supabase.from('players').update(fallbackPayload).eq('id', playerId)
+      error = fallback.error
+    }
+    if (error) throw new Error(error.message)
+
+    revalidatePath('/club')
+    revalidatePath('/admin')
+    return {}
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
+
+export async function deletePlayer(playerId: string): Promise<{ error?: string }> {
+  try {
+    const supabase = await requireAdmin()
+
+    const { error } = await supabase.from('players').update({ is_active: false }).eq('id', playerId)
     if (error) throw new Error(error.message)
 
     revalidatePath('/club')
@@ -144,41 +190,84 @@ export async function createPoll(formData: FormData): Promise<{ error?: string }
       type,
       description: formData.get('description') as string || null,
       player_id: formData.get('player_id') as string || null,
+      thumbnail_url: formData.get('thumbnail_url') as string || null,
       status,
       scheduled_at,
       closes_at,
     }
 
-    const { data: poll, error: pollError } = await supabase
+    let { data: poll, error: pollError } = await supabase
       .from('polls')
       .insert(pollPayload)
       .select('id')
       .single()
+    if (pollError && isMissingColumnError(pollError)) {
+      const fallbackPayload = {
+        title: pollPayload.title,
+        type: pollPayload.type,
+        description: pollPayload.description,
+        player_id: pollPayload.player_id,
+        status: pollPayload.status,
+        scheduled_at: pollPayload.scheduled_at,
+        closes_at: pollPayload.closes_at,
+      }
+      const fallback = await supabase
+        .from('polls')
+        .insert(fallbackPayload)
+        .select('id')
+        .single()
+      poll = fallback.data
+      pollError = fallback.error
+    }
     if (pollError) throw new Error(pollError.message)
 
-    if (type === 'selection') {
-      const optionsRaw = formData.get('options') as string
-      if (optionsRaw) {
-        let options: Array<{ label: string; player_id?: string }> = []
-        try {
-          options = JSON.parse(optionsRaw) as Array<{ label: string; player_id?: string }>
-        } catch {
-          return { error: '옵션 형식이 올바르지 않습니다.' }
-        }
-        const optionRows = options.map((opt, index) => ({
-          poll_id: poll.id,
-          label: opt.label,
-          player_id: opt.player_id ?? null,
-          display_order: index,
-        }))
-        const { error: optError } = await supabase.from('poll_options').insert(optionRows)
-        if (optError) throw new Error(optError.message)
+    // Save options for both types (evaluation = text options for one player; selection = player choices)
+    const optionsRaw = formData.get('options') as string
+    if (optionsRaw) {
+      let options: Array<{ label: string; player_id?: string }> = []
+      try {
+        options = JSON.parse(optionsRaw) as Array<{ label: string; player_id?: string }>
+      } catch {
+        return { error: '옵션 형식이 올바르지 않습니다.' }
       }
+      const optionRows = options.map((opt, index) => ({
+        poll_id: poll.id,
+        label: opt.label,
+        player_id: opt.player_id ?? null,
+        display_order: index,
+      }))
+      const { error: optError } = await supabase.from('poll_options').insert(optionRows)
+      if (optError) throw new Error(optError.message)
     }
 
     revalidatePath('/')
     revalidatePath('/admin')
     return {}
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
+
+export async function uploadPhoto(formData: FormData): Promise<{ url?: string; error?: string }> {
+  try {
+    const supabase = await requireAdmin()
+
+    const file = formData.get('file') as File | null
+    if (!file || file.size === 0) return { error: '파일이 없어요.' }
+
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const folder = (formData.get('folder') as string) || 'players'
+    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+    const bytes = await file.arrayBuffer()
+    const { error } = await supabase.storage
+      .from('player-photos')
+      .upload(path, bytes, { contentType: file.type, upsert: true })
+
+    if (error) return { error: error.message }
+
+    const { data } = supabase.storage.from('player-photos').getPublicUrl(path)
+    return { url: data.publicUrl }
   } catch (e) {
     return { error: (e as Error).message }
   }

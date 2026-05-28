@@ -4,32 +4,32 @@ import type { PollDetail, PollListItem, VoteCountMap } from '@/lib/queries/polls
 // ── 선수 ────────────────────────────────────────────────────
 const isak: PlayerRow = {
   id: 'p-isak', name: '알렉산더 이삭', position: 'FWD',
-  squad_number: 14, photo_url: null, is_active: true,
+  squad_number: 14, photo_url: null, is_active: true, squad_status: 'first_team',
   nationality: null, birth_date: null,
 }
 const bruno: PlayerRow = {
   id: 'p-bruno', name: '브루노 기마랑이스', position: 'MID',
-  squad_number: 39, photo_url: null, is_active: true,
+  squad_number: 39, photo_url: null, is_active: true, squad_status: 'first_team',
   nationality: null, birth_date: null,
 }
 const trippier: PlayerRow = {
   id: 'p-trippier', name: '키어런 트리피어', position: 'DEF',
-  squad_number: 2, photo_url: null, is_active: true,
+  squad_number: 2, photo_url: null, is_active: true, squad_status: 'first_team',
   nationality: null, birth_date: null,
 }
 const gordon: PlayerRow = {
   id: 'p-gordon', name: '앤서니 고든', position: 'FWD',
-  squad_number: 10, photo_url: null, is_active: true,
+  squad_number: 10, photo_url: null, is_active: true, squad_status: 'first_team',
   nationality: null, birth_date: null,
 }
 const wilson: PlayerRow = {
   id: 'p-wilson', name: '캘럼 윌슨', position: 'FWD',
-  squad_number: 9, photo_url: null, is_active: true,
+  squad_number: 9, photo_url: null, is_active: true, squad_status: 'first_team',
   nationality: null, birth_date: null,
 }
 const pope: PlayerRow = {
   id: 'p-pope', name: '닉 포프', position: 'GK',
-  squad_number: 22, photo_url: null, is_active: true,
+  squad_number: 22, photo_url: null, is_active: true, squad_status: 'first_team',
   nationality: null, birth_date: null,
 }
 

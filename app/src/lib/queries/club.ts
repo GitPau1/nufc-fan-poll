@@ -21,14 +21,14 @@ const MOCK_STATUS: ClubStatusWithStats = {
 }
 
 const MOCK_PLAYERS: PlayerRow[] = [
-  { id: 'p1', name: 'Nick Pope',       position: 'GK',  squad_number: 1,    photo_url: null, is_active: true, nationality: 'England',     birth_date: '1992-04-22' },
-  { id: 'p4', name: 'Kieran Trippier', position: 'DEF', squad_number: 2,    photo_url: null, is_active: true, nationality: 'England',     birth_date: '1990-09-19' },
-  { id: 'p5', name: 'Fabian Schär',    position: 'DEF', squad_number: 5,    photo_url: null, is_active: true, nationality: 'Switzerland', birth_date: '1991-12-20' },
-  { id: 'p3', name: 'Anthony Gordon',  position: 'MID', squad_number: 7,    photo_url: null, is_active: true, nationality: 'England',     birth_date: '2001-02-24' },
-  { id: 'p6', name: 'Sandro Tonali',   position: 'MID', squad_number: 8,    photo_url: null, is_active: true, nationality: 'Italy',       birth_date: '2000-05-08' },
-  { id: 'p2', name: 'Alexander Isak',  position: 'FWD', squad_number: 14,   photo_url: null, is_active: true, nationality: 'Sweden',      birth_date: '1999-09-21' },
-  { id: 'p7', name: 'Callum Wilson',   position: 'FWD', squad_number: 9,    photo_url: null, is_active: true, nationality: 'England',     birth_date: '1992-02-27' },
-  { id: 'p8', name: 'Eddie Howe',      position: 'MGR', squad_number: null, photo_url: null, is_active: true, nationality: 'England',     birth_date: '1977-11-29' },
+  { id: 'p1', name: 'Nick Pope',       position: 'GK',  squad_number: 1,    photo_url: null, is_active: true, squad_status: 'first_team', nationality: 'England',     birth_date: '1992-04-22' },
+  { id: 'p4', name: 'Kieran Trippier', position: 'DEF', squad_number: 2,    photo_url: null, is_active: true, squad_status: 'first_team', nationality: 'England',     birth_date: '1990-09-19' },
+  { id: 'p5', name: 'Fabian Schär',    position: 'DEF', squad_number: 5,    photo_url: null, is_active: true, squad_status: 'first_team', nationality: 'Switzerland', birth_date: '1991-12-20' },
+  { id: 'p3', name: 'Anthony Gordon',  position: 'MID', squad_number: 7,    photo_url: null, is_active: true, squad_status: 'first_team', nationality: 'England',     birth_date: '2001-02-24' },
+  { id: 'p6', name: 'Sandro Tonali',   position: 'MID', squad_number: 8,    photo_url: null, is_active: true, squad_status: 'first_team', nationality: 'Italy',       birth_date: '2000-05-08' },
+  { id: 'p2', name: 'Alexander Isak',  position: 'FWD', squad_number: 14,   photo_url: null, is_active: true, squad_status: 'first_team', nationality: 'Sweden',      birth_date: '1999-09-21' },
+  { id: 'p7', name: 'Callum Wilson',   position: 'FWD', squad_number: 9,    photo_url: null, is_active: true, squad_status: 'first_team', nationality: 'England',     birth_date: '1992-02-27' },
+  { id: 'p8', name: 'Eddie Howe',      position: 'MGR', squad_number: null, photo_url: null, is_active: true, squad_status: 'first_team', nationality: 'England',     birth_date: '1977-11-29' },
 ]
 
 // ── getClubStatus ─────────────────────────────────────────────

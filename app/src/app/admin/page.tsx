@@ -41,15 +41,29 @@ export default async function AdminPage() {
     top_goals_player_id: string | null; top_goals_count: number | null
     top_assists_player_id: string | null; top_assists_count: number | null
   } | null = null
+  let farewells: Array<{
+    id: string; player_id: string; departure_type: string
+    destination_club: string | null; is_published: boolean; created_at: string
+    player: { id: string; name: string; squad_number: number | null; photo_url: string | null } | null
+  }> = []
   const polls = await getPollList()
 
   if (!IS_MOCK) {
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
+    const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+    const serviceSupabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     type PlayerWithoutStatus = Omit<(typeof players)[number], 'squad_status'>
-    const [{ data: ps, error: playersError }, { data: cs }] = await Promise.all([
+    const [{ data: ps, error: playersError }, { data: cs }, { data: fs }] = await Promise.all([
       supabase.from('players').select('id, name, position, squad_number, is_active, squad_status, nationality, birth_date, photo_url').eq('is_active', true).order('squad_number'),
       supabase.from('club_status').select('*').eq('id', 1).single(),
+      serviceSupabase
+        .from('farewells')
+        .select('id, player_id, departure_type, destination_club, is_published, created_at, player:players(id, name, squad_number, photo_url)')
+        .order('created_at', { ascending: false }),
     ])
     let playerRows = (ps ?? []) as typeof players
     if (playersError) {
@@ -63,7 +77,15 @@ export default async function AdminPage() {
     }
     players = playerRows
     clubStatus = cs ?? null
+    farewells = ((fs ?? []) as Array<{
+      id: string; player_id: string; departure_type: string
+      destination_club: string | null; is_published: boolean; created_at: string
+      player: { id: string; name: string; squad_number: number | null; photo_url: string | null } | { id: string; name: string; squad_number: number | null; photo_url: string | null }[] | null
+    }>).map(farewell => ({
+      ...farewell,
+      player: Array.isArray(farewell.player) ? farewell.player[0] ?? null : farewell.player,
+    }))
   }
 
-  return <AdminDashboard adminEmail={adminEmail} players={players} polls={polls} clubStatus={clubStatus} />
+  return <AdminDashboard adminEmail={adminEmail} players={players} polls={polls} clubStatus={clubStatus} farewells={farewells} />
 }

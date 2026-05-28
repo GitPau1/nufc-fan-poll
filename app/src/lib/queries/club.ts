@@ -66,8 +66,25 @@ export async function getSquad(): Promise<PlayerRow[]> {
     .eq('is_active', true)
     .order('squad_number')
 
+  if (error && String(error.message ?? '').includes('squad_status')) {
+    const fallback = await supabase
+      .from('players')
+      .select('id, name, position, squad_number, photo_url, is_active, nationality, birth_date')
+      .eq('is_active', true)
+      .order('squad_number')
+
+    if (fallback.error || !fallback.data) return []
+    return (fallback.data as Array<Omit<PlayerRow, 'squad_status'>>).map(player => ({
+      ...player,
+      squad_status: 'first_team',
+    }))
+  }
+
   if (error || !data) return []
-  return data as PlayerRow[]
+  return (data as PlayerRow[]).map(player => ({
+    ...player,
+    squad_status: player.squad_status ?? 'first_team',
+  }))
 }
 
 // ── calcAge ───────────────────────────────────────────────────

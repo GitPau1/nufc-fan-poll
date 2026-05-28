@@ -3,9 +3,14 @@ import ClubStatusCard from '@/components/club/ClubStatusCard'
 import SeasonStats from '@/components/club/SeasonStats'
 import SquadList from '@/components/club/SquadList'
 import { getClubStatus, getSquad } from '@/lib/queries/club'
+import { getLatestFarewells } from '@/lib/queries/farewells'
 
 export default async function ClubPage() {
-  const [status, players] = await Promise.all([getClubStatus(), getSquad()])
+  const [status, players, farewells] = await Promise.all([
+    getClubStatus(),
+    getSquad(),
+    getLatestFarewells(50),
+  ])
 
   return (
     <>
@@ -20,7 +25,7 @@ export default async function ClubPage() {
             </h2>
             <span className="text-[12px] text-muted-foreground">{players.length}명</span>
           </div>
-          <SquadList players={players} />
+          <SquadList players={players} farewells={farewells} />
         </div>
       </main>
     </>

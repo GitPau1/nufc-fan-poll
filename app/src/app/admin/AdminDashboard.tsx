@@ -3,6 +3,7 @@
 import { useTransition, useState, useRef } from 'react'
 import Link from 'next/link'
 import { updateClubStatus, createPlayer, updatePlayer, deletePlayer, createPoll, uploadPhoto } from '@/lib/actions/admin'
+import { createFarewell, toggleFarewellPublished } from '@/lib/actions/farewells'
 import type { PollListItem } from '@/lib/queries/polls'
 
 type PlayerStatus = 'first_team' | 'loan' | 'u21'
@@ -25,10 +26,21 @@ interface Player {
   photo_url: string | null
 }
 
+interface AdminFarewell {
+  id: string
+  player_id: string
+  departure_type: string
+  destination_club: string | null
+  is_published: boolean
+  created_at: string
+  player: { id: string; name: string; squad_number: number | null; photo_url: string | null } | null
+}
+
 interface Props {
   adminEmail: string
   players: Player[]
   polls: PollListItem[]
+  farewells: AdminFarewell[]
   clubStatus: {
     league_rank: number | null
     next_match_opponent: string | null
@@ -41,6 +53,106 @@ interface Props {
     top_assists_player_id: string | null
     top_assists_count: number | null
   } | null
+}
+
+function FarewellCreateForm({
+  player,
+  isPending,
+  onClose,
+  onSubmit,
+}: {
+  player: Player
+  isPending: boolean
+  onClose: () => void
+  onSubmit: (e: React.FormEvent<HTMLFormElement>, player: Player) => void
+}) {
+  return (
+    <div className="bg-white border border-primary/20 rounded-2xl p-4 mb-2">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <p className="text-[13px] font-bold text-foreground">작별 등록</p>
+          <p className="text-[12px] text-muted-foreground mt-0.5">
+            {player.squad_number ? `#${player.squad_number} ` : ''}{player.name} 선수를 방출 목록으로 보냅니다.
+          </p>
+        </div>
+        <button type="button" onClick={onClose} className="text-[12px] font-semibold text-muted-foreground">
+          닫기
+        </button>
+      </div>
+
+      <form onSubmit={e => onSubmit(e, player)} className="space-y-2.5">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">구분</label>
+            <select name="departure_type" defaultValue="released" className="input-field mt-0.5">
+              <option value="released">방출</option>
+              <option value="transferred">이적</option>
+              <option value="loan_end">임대 종료</option>
+              <option value="retired">은퇴</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">이적/행선지</label>
+            <input name="destination_club" className="input-field mt-0.5" placeholder="Free agent" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">입단일</label>
+            <input name="joined_at" type="date" className="input-field mt-0.5" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">퇴단일</label>
+            <input name="left_at" type="date" className="input-field mt-0.5" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">출전</label>
+            <input name="appearances" type="number" min={0} className="input-field mt-0.5 text-center" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">골</label>
+            <input name="goals" type="number" min={0} className="input-field mt-0.5 text-center" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">도움</label>
+            <input name="assists" type="number" min={0} className="input-field mt-0.5 text-center" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">클린시트</label>
+            <input name="clean_sheets" type="number" min={0} className="input-field mt-0.5 text-center" />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[11px] font-semibold text-muted-foreground">요약 메모</label>
+          <textarea
+            name="departure_note"
+            rows={3}
+            className="input-field mt-0.5 resize-none"
+            placeholder="팬들에게 보여줄 짧은 설명을 적어주세요."
+          />
+        </div>
+
+        <label className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
+          <input name="is_published" type="checkbox" className="h-4 w-4 rounded border-border" />
+          홈과 상세 페이지에 바로 공개
+        </label>
+
+        <div className="flex gap-2 pt-1">
+          <button type="submit" disabled={isPending} className="flex-1 py-2 bg-primary text-white text-[12px] font-bold rounded-lg disabled:opacity-60">
+            {isPending ? '등록 중...' : '작별 등록'}
+          </button>
+          <button type="button" onClick={onClose} className="flex-1 py-2 bg-secondary text-foreground text-[12px] font-semibold rounded-lg">
+            취소
+          </button>
+        </div>
+      </form>
+    </div>
+  )
 }
 
 // ── 이미지 업로드 헬퍼 (서버 액션 경유 → service role key로 RLS 우회) ──
@@ -361,7 +473,7 @@ function PollCreateForm({
 }
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────
-export function AdminDashboard({ adminEmail, players, polls, clubStatus }: Props) {
+export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewells }: Props) {
   const [isClubPending, startClubTransition] = useTransition()
   const [isPlayerPending, startPlayerTransition] = useTransition()
   const [message, setMessage] = useState<{ text: string; type: 'ok' | 'err' } | undefined>()
@@ -374,6 +486,7 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus }: Props
   const [editingId, setEditingId] = useState<string | null>(null)
   // editPhotoUrl: undefined = not changed (keep existing); string = new URL
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | undefined>(undefined)
+  const [farewellPlayer, setFarewellPlayer] = useState<Player | null>(null)
 
   const [showPollForm, setShowPollForm] = useState(false)
 
@@ -440,9 +553,33 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus }: Props
     })
   }
 
+  function handleCreateFarewell(e: React.FormEvent<HTMLFormElement>, player: Player) {
+    e.preventDefault()
+    if (!confirm(`${player.name} 선수를 작별 목록으로 보내고 선수 목록에서 제외할까요?`)) return
+    const fd = new FormData(e.currentTarget)
+    startPlayerTransition(async () => {
+      const result = await createFarewell(player.id, fd)
+      if (result.error) {
+        toast(result.error, 'err')
+      } else {
+        toast('작별을 등록했어요', 'ok')
+        setFarewellPlayer(null)
+      }
+    })
+  }
+
+  function handleToggleFarewellPublished(farewell: AdminFarewell) {
+    startPlayerTransition(async () => {
+      const result = await toggleFarewellPublished(farewell.id, !farewell.is_published)
+      if (result.error) toast(result.error, 'err')
+      else toast(!farewell.is_published ? 'Farewell을 공개했어요' : 'Farewell을 비공개로 바꿨어요', 'ok')
+    })
+  }
+
   function startEditing(player: Player) {
     setEditingId(player.id)
     setEditPhotoUrl(undefined) // reset: no change yet
+    setFarewellPlayer(null)
   }
 
   return (
@@ -648,6 +785,15 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus }: Props
             </div>
           )}
 
+          {farewellPlayer && (
+            <FarewellCreateForm
+              player={farewellPlayer}
+              isPending={isPlayerPending}
+              onClose={() => setFarewellPlayer(null)}
+              onSubmit={handleCreateFarewell}
+            />
+          )}
+
           {/* 선수 목록 */}
           <div className="bg-white border border-border rounded-2xl overflow-hidden">
             {players.length === 0 ? (
@@ -817,6 +963,16 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus }: Props
                       </div>
                       <div className="flex gap-1.5 flex-shrink-0">
                         <button
+                          onClick={() => {
+                            setFarewellPlayer(player)
+                            setEditingId(null)
+                          }}
+                          disabled={isPlayerPending}
+                          className="px-2.5 py-1 border border-primary/30 text-[11px] font-semibold text-primary bg-primary/5 rounded-md hover:bg-primary/10 transition-colors disabled:opacity-60"
+                        >
+                          작별
+                        </button>
+                        <button
                           onClick={() => startEditing(player)}
                           className="px-2.5 py-1 border border-border text-[11px] font-semibold text-muted-foreground bg-white rounded-md hover:border-primary/40 hover:text-primary transition-colors"
                         >
@@ -834,6 +990,62 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus }: Props
                   )}
                 </div>
               ))
+            )}
+          </div>
+        </section>
+
+        {/* ── 작별 관리 ── */}
+        <section>
+          <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2">
+            작별 관리
+          </p>
+          <div className="bg-white border border-border rounded-2xl overflow-hidden">
+            <div className="px-4 py-3.5 border-b border-border">
+              <p className="text-[14px] font-bold text-foreground">방출/이적 선수 작별</p>
+              <p className="text-[12px] text-muted-foreground mt-0.5">공개 토글로 홈 노출 여부를 관리합니다</p>
+            </div>
+
+            {farewells.length === 0 ? (
+              <p className="px-4 py-5 text-[13px] text-muted-foreground text-center">
+                등록된 Farewell이 없어요
+              </p>
+            ) : (
+              <div className="divide-y divide-border">
+                {farewells.map(farewell => (
+                  <div key={farewell.id} className="flex items-center gap-3 px-4 py-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                      {farewell.player?.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={farewell.player.photo_url} alt={farewell.player.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[13px] font-bold text-primary">
+                          {farewell.player?.squad_number ?? 'FW'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground truncate">
+                        {farewell.player?.name ?? '선수 정보 없음'}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {farewell.destination_club || '행선지 미정'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFarewellPublished(farewell)}
+                      disabled={isPlayerPending}
+                      className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold transition-colors disabled:opacity-60 ${
+                        farewell.is_published
+                          ? 'border-primary/30 bg-primary/5 text-primary'
+                          : 'border-border bg-white text-muted-foreground'
+                      }`}
+                    >
+                      {farewell.is_published ? 'Published' : 'Draft'}
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </section>

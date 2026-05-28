@@ -4,6 +4,7 @@ export type PollType   = 'evaluation' | 'selection'
 export type PollStatus = 'scheduled' | 'active' | 'closed'
 export type Position   = 'GK' | 'DEF' | 'MID' | 'FWD' | 'MGR'
 export type PlayerStatus = 'first_team' | 'loan' | 'u21'
+export type DepartureType = 'released' | 'transferred' | 'loan_end' | 'retired'
 
 export interface Database {
   public: {
@@ -95,6 +96,38 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['comment_likes']['Row'], 'id' | 'created_at'>
         Update: never
       }
+      farewells: {
+        Row: {
+          id: string
+          player_id: string
+          departure_type: DepartureType
+          destination_club: string | null
+          departure_note: string | null
+          appearances: number | null
+          goals: number | null
+          assists: number | null
+          clean_sheets: number | null
+          joined_at: string | null
+          left_at: string | null
+          is_published: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['farewells']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['farewells']['Insert']>
+      }
+      farewell_comments: {
+        Row: {
+          id: string
+          farewell_id: string
+          user_id: string
+          content: string
+          is_hidden: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['farewell_comments']['Row'], 'id' | 'is_hidden' | 'created_at'>
+        Update: Pick<Database['public']['Tables']['farewell_comments']['Row'], 'is_hidden'>
+      }
     }
     Views: {
       [_ in never]: never
@@ -117,6 +150,8 @@ export type PollOptionRow   = Database['public']['Tables']['poll_options']['Row'
 export type VoteRow         = Database['public']['Tables']['votes']['Row']
 export type CommentRow      = Database['public']['Tables']['comments']['Row']
 export type CommentLikeRow  = Database['public']['Tables']['comment_likes']['Row']
+export type FarewellRow     = Database['public']['Tables']['farewells']['Row']
+export type FarewellCommentRow = Database['public']['Tables']['farewell_comments']['Row']
 
 // ── 조합 타입 (UI에서 주로 사용) ──
 export type PollWithOptions = PollRow & {

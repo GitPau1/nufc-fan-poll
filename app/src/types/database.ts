@@ -140,6 +140,11 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['farewells']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['farewells']['Insert']>
       }
+      transfers: {
+        Row: TransferRow
+        Insert: Omit<Database['public']['Tables']['transfers']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['transfers']['Insert']>
+      }
       player_season_stats: {
         Row: {
           id: string
@@ -202,6 +207,7 @@ export type CommentRow      = Database['public']['Tables']['comments']['Row']
 export type CommentLikeRow  = Database['public']['Tables']['comment_likes']['Row']
 export type PublicProfileRow = Database['public']['Tables']['public_profiles']['Row']
 export type FarewellRow     = Database['public']['Tables']['farewells']['Row']
+export type TransferTableRow = Database['public']['Tables']['transfers']['Row']
 export type FarewellCommentRow = Database['public']['Tables']['farewell_comments']['Row']
 export type PlayerSeasonStatsRow = Database['public']['Tables']['player_season_stats']['Row']
 export type PlayerCommentRow = Database['public']['Tables']['player_comments']['Row']
@@ -223,6 +229,7 @@ export type CommentWithMeta = CommentRow & {
 // club_status 테이블
 export type ClubStatusRow = {
   id: number
+  current_season: string | null
   league_rank: number | null
   next_match_opponent: string | null
   next_match_date: string | null

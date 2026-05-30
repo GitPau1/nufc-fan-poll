@@ -4,16 +4,15 @@ import { useEffect, useState } from 'react'
 import { formatDeadline } from '@/lib/utils'
 
 export function CountdownTimer({ closesAt }: { closesAt: string }) {
-  const [text, setText] = useState(formatDeadline(closesAt))
+  // 빈 문자열로 초기화: 서버·클라이언트 모두 '' → hydration 불일치 없음
+  // useEffect에서 실제 값 세팅 (클라이언트 전용)
+  const [text, setText] = useState('')
 
   useEffect(() => {
-    // D-N 표시면 1분마다, HH:MM:SS면 1초마다
-    const isHourly = !text.startsWith('D-') && text !== '종료'
-    const interval = isHourly ? 1000 : 60_000
-
-    const timer = setInterval(() => setText(formatDeadline(closesAt)), interval)
+    setText(formatDeadline(closesAt))
+    const timer = setInterval(() => setText(formatDeadline(closesAt)), 1000)
     return () => clearInterval(timer)
-  }, [closesAt, text])
+  }, [closesAt])
 
   return <>{text}</>
 }

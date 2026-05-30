@@ -54,13 +54,17 @@ export function MyPageClient({
   async function handleSaveName() {
     const trimmed = editInput.trim()
     if (!trimmed) return
+    // 낙관적 UI 업데이트
     setNameValue(trimmed)
     setIsEditingName(false)
-    if (isMockMode) return
-    // 실제 모드: Supabase 프로필 업데이트
-    const { createClient } = await import('@/lib/supabase/client')
-    const supabase = createClient()
-    await supabase.auth.updateUser({ data: { name: trimmed } })
+    // public.users.display_name 저장
+    const { updateNickname } = await import('@/lib/actions/onboarding')
+    const result = await updateNickname(trimmed)
+    if (result.error) {
+      // 저장 실패 시 원래 값으로 복원
+      setNameValue(displayName)
+      alert(result.error)
+    }
   }
 
   async function handleLogout() {

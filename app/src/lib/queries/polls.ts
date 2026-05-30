@@ -16,7 +16,9 @@ export type PollListItem = {
   id: string
   type: PollType
   title: string
+  description?: string | null
   status: PollStatus
+  thumbnail_url?: string | null
   closes_at: string
   scheduled_at: string | null
   created_at: string
@@ -33,6 +35,7 @@ export type PollDetail = {
   title: string
   description: string | null
   status: PollStatus
+  thumbnail_url?: string | null
   closes_at: string
   player_id: string | null
   player: PlayerRow | null
@@ -47,6 +50,19 @@ export type VoteCountMap = Record<string, number>  // option_id → count
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRow = any
 
+function isMissingColumnError(error: AnyRow): boolean {
+  const message = String(error?.message ?? '')
+  return message.includes('column') && message.includes('does not exist')
+}
+
+function normalizePlayer(player: PlayerRow | null): PlayerRow | null {
+  if (!player) return null
+  return {
+    ...player,
+    squad_status: player.squad_status ?? 'first_team',
+  }
+}
+
 // ── 투표 목록 조회 ────────────────────────────────────────────
 export async function getPollList(page = 0): Promise<PollListItem[]> {
   if (IS_MOCK) return mockGetPollList(page)
@@ -54,16 +70,32 @@ export async function getPollList(page = 0): Promise<PollListItem[]> {
   const from = page * PAGE_SIZE
   const to   = from + PAGE_SIZE - 1
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('polls')
     .select(`
-      id, type, title, status, closes_at, scheduled_at, created_at, player_id,
-      player:players(id, name, position, squad_number, photo_url, is_active),
+      id, type, title, description, status, thumbnail_url, closes_at, scheduled_at, created_at, player_id,
+      player:players(id, name, position, squad_number, photo_url, is_active, squad_status),
       poll_options(id, label, player_id, display_order),
       vote_count:votes(count)
     `)
     .order('created_at', { ascending: false })
     .range(from, to) as { data: AnyRow[] | null; error: AnyRow }
+
+  if (error && isMissingColumnError(error)) {
+    const fallback = await supabase
+      .from('polls')
+      .select(`
+        id, type, title, description, status, closes_at, scheduled_at, created_at, player_id,
+        player:players(id, name, position, squad_number, photo_url, is_active),
+        poll_options(id, label, player_id, display_order),
+        vote_count:votes(count)
+      `)
+      .order('created_at', { ascending: false })
+      .range(from, to) as { data: AnyRow[] | null; error: AnyRow }
+
+    data = fallback.data
+    error = fallback.error
+  }
 
   if (error) {
     console.error('getPollList error:', error)
@@ -74,12 +106,14 @@ export async function getPollList(page = 0): Promise<PollListItem[]> {
     id:           row.id          as string,
     type:         row.type        as PollType,
     title:        row.title       as string,
+    description:  row.description as string | null,
     status:       row.status      as PollStatus,
+    thumbnail_url: row.thumbnail_url as string | null,
     closes_at:    row.closes_at   as string,
     scheduled_at: row.scheduled_at as string | null,
     created_at:   row.created_at  as string,
     player_id:    row.player_id   as string | null,
-    player:       (row.player     as PlayerRow | null),
+    player:       normalizePlayer(row.player as PlayerRow | null),
     poll_options: (row.poll_options as PollOptionRow[]) ?? [],
     // supabase 집계: [{count: N}] 형태로 반환
     vote_count:   (row.vote_count as { count: number }[])?.[0]?.count ?? 0,
@@ -91,16 +125,32 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
   if (IS_MOCK) return mockGetPollById(id)
   const supabase = await createClient()
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('polls')
     .select(`
-      id, type, title, description, status, closes_at, player_id,
-      player:players(id, name, position, squad_number, photo_url, is_active),
+      id, type, title, description, status, thumbnail_url, closes_at, player_id,
+      player:players(id, name, position, squad_number, photo_url, is_active, squad_status),
       poll_options(id, label, player_id, display_order,
-        option_player:players(id, name, position, squad_number, photo_url, is_active))
+        option_player:players(id, name, position, squad_number, photo_url, is_active, squad_status))
     `)
     .eq('id', id)
     .single() as { data: AnyRow | null; error: AnyRow }
+
+  if (error && isMissingColumnError(error)) {
+    const fallback = await supabase
+      .from('polls')
+      .select(`
+        id, type, title, description, status, closes_at, player_id,
+        player:players(id, name, position, squad_number, photo_url, is_active),
+        poll_options(id, label, player_id, display_order,
+          option_player:players(id, name, position, squad_number, photo_url, is_active))
+      `)
+      .eq('id', id)
+      .single() as { data: AnyRow | null; error: AnyRow }
+
+    data = fallback.data
+    error = fallback.error
+  }
 
   if (error || !data) return null
 
@@ -111,7 +161,7 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
   const option_players: Record<string, PlayerRow> = {}
   for (const opt of (data.poll_options as AnyRow[]) ?? []) {
     if (opt.player_id && opt.option_player) {
-      option_players[opt.player_id] = opt.option_player as PlayerRow
+      option_players[opt.player_id] = normalizePlayer(opt.option_player as PlayerRow) as PlayerRow
     }
   }
 
@@ -121,9 +171,10 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
     title:        data.title       as string,
     description:  data.description as string | null,
     status:       data.status      as PollStatus,
+    thumbnail_url: data.thumbnail_url as string | null,
     closes_at:    data.closes_at   as string,
     player_id:    data.player_id   as string | null,
-    player:       (data.player     as PlayerRow | null),
+    player:       normalizePlayer(data.player as PlayerRow | null),
     poll_options: options,
     ...(Object.keys(option_players).length > 0 && { option_players }),
   }

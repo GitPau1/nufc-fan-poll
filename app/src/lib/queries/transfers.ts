@@ -1,14 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
+import { getTransferMovementGroup, type TransferMovementGroup } from '@/lib/transfers/group'
 import type { PlayerRow, TransferDirection, TransferTableRow, TransferType } from '@/types/database'
 
 type AnyRow = Record<string, unknown>
 
 export type TransferItem = TransferTableRow & {
+  movement_group: TransferMovementGroup
   player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
 }
 
-const MOCK_TRANSFERS: TransferItem[] = [
+const MOCK_TRANSFER_ROWS: Array<Omit<TransferItem, 'movement_group'>> = [
   {
     id: 'transfer-1',
     player_id: 'p-new',
@@ -45,6 +47,11 @@ const MOCK_TRANSFERS: TransferItem[] = [
   },
 ]
 
+const MOCK_TRANSFERS: TransferItem[] = MOCK_TRANSFER_ROWS.map(transfer => ({
+  ...transfer,
+  movement_group: getTransferMovementGroup(transfer.transfer_type),
+}))
+
 function isMissingRelationError(error: AnyRow | null | undefined): boolean {
   const message = String(error?.message ?? '')
   return message.includes('schema cache') || message.includes('does not exist')
@@ -75,12 +82,14 @@ function normalizeType(value: unknown): TransferType {
 function mapTransferRow(row: AnyRow): TransferItem {
   const player = row.player as PlayerRow | PlayerRow[] | null | undefined
   const normalizedPlayer = Array.isArray(player) ? (player[0] ?? null) : (player ?? null)
+  const transferType = normalizeType(row.transfer_type)
 
   return {
     id: String(row.id),
     player_id: String(row.player_id),
     direction: normalizeDirection(row.direction),
-    transfer_type: normalizeType(row.transfer_type),
+    transfer_type: transferType,
+    movement_group: getTransferMovementGroup(transferType),
     season: String(row.season),
     club_name: typeof row.club_name === 'string' ? row.club_name : null,
     note: typeof row.note === 'string' ? row.note : null,

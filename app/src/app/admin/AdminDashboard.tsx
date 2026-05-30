@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createPlayer, createPoll, deletePlayer, updateClubStatus, updatePlayer, updatePlayerSeasonStats, uploadPhoto } from '@/lib/actions/admin'
+import { createPlayer, createPoll, createTransfer, deletePlayer, updateClubStatus, updatePlayer, updatePlayerSeasonStats, uploadPhoto } from '@/lib/actions/admin'
 import { createFarewell } from '@/lib/actions/farewells'
 import type { PollListItem } from '@/lib/queries/polls'
 import type { DepartureType } from '@/types/database'
@@ -19,7 +19,7 @@ const PLAYER_STATUS_LABEL: Record<PlayerStatus, string> = {
   u21: 'U21',
 }
 
-const PLAYER_GROUPS: Array<{ value: PlayerStatus; label: string }> = [
+const INTERNAL_PLAYER_GROUPS: Array<{ value: PlayerStatus; label: string }> = [
   { value: 'first_team', label: '1군' },
   { value: 'loan', label: '임대' },
   { value: 'u21', label: 'U21' },
@@ -51,6 +51,7 @@ interface Props {
   polls: PollListItem[]
   farewells: AdminFarewell[]
   clubStatus: {
+    current_season: string | null
     league_rank: number | null
     next_match_opponent: string | null
     next_match_date: string | null
@@ -89,6 +90,14 @@ function removeSeasonStatFields(formData: FormData) {
 
 function setPublished(formData: FormData) {
   formData.set('is_published', 'on')
+}
+
+function mapInboundTransferType(type: PlayerCreateTransferType): PlayerCreateTransferType {
+  return type
+}
+
+function mapOutboundTransferType(type: string): Extract<DepartureType, 'transferred' | 'contract_expired' | 'loan_out' | 'released'> {
+  return type === 'contract_expired' || type === 'loan_out' || type === 'released' ? type : 'transferred'
 }
 
 type SeasonStatDraft = {
@@ -288,6 +297,9 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
   const [message, setMessage] = useState<{ text: string; type: 'ok' | 'err' } | null>(null)
   const [isPending, startTransition] = useTransition()
   const addFormRef = useRef<HTMLFormElement>(null)
+  const currentSeason = clubStatus?.current_season?.trim() ?? ''
+  const internalPlayers = players.filter(player => player.is_active)
+  const externalPlayers = players.filter(player => !player.is_active)
 
   function toast(text: string, type: 'ok' | 'err' = 'ok') {
     setMessage({ text, type })
@@ -298,7 +310,9 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
     const transferType = (fd.get('transfer_type') as PlayerCreateTransferType) || 'signing'
+    const createInTransfer = fd.get('create_in_transfer') === 'on'
     fd.delete('transfer_type')
+    fd.delete('create_in_transfer')
     if (transferType === 'loan_in') fd.set('squad_status', 'loan')
 
     startTransition(async () => {
@@ -308,18 +322,23 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
         return
       }
 
-      const transferForm = new FormData()
-      transferForm.set('departure_type', transferType)
-      transferForm.set('destination_club', String(fd.get('destination_club') ?? ''))
-      transferForm.set('departure_note', String(fd.get('departure_note') ?? ''))
-      setPublished(transferForm)
-      const transferResult = await createFarewell(result.playerId, transferForm)
-      if (transferResult.error) {
-        toast(transferResult.error, 'err')
-        return
+      if (createInTransfer) {
+        const transferForm = new FormData()
+        transferForm.set('player_id', result.playerId)
+        transferForm.set('direction', 'in')
+        transferForm.set('transfer_type', mapInboundTransferType(transferType))
+        transferForm.set('season', currentSeason)
+        transferForm.set('club_name', String(fd.get('destination_club') ?? ''))
+        transferForm.set('note', String(fd.get('departure_note') ?? ''))
+        setPublished(transferForm)
+        const transferResult = await createTransfer(transferForm)
+        if (transferResult.error) {
+          toast(transferResult.error, 'err')
+          return
+        }
       }
 
-      toast('선수와 이적 소식이 추가됐어요.')
+      toast(createInTransfer ? '선수와 In 이력이 추가됐어요.' : '선수가 추가됐어요.')
       addFormRef.current?.reset()
       setShowAddForm(false)
     })
@@ -389,11 +408,27 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
     }
 
     startTransition(async () => {
-      const result = await createFarewell(player.id, fd)
-      if (result.error) {
-        toast(result.error, 'err')
+      const farewellResult = await createFarewell(player.id, fd)
+      if (farewellResult.error) {
+        toast(farewellResult.error, 'err')
         return
       }
+
+      const transferForm = new FormData()
+      transferForm.set('player_id', player.id)
+      transferForm.set('direction', 'out')
+      transferForm.set('transfer_type', mapOutboundTransferType(type))
+      transferForm.set('season', currentSeason)
+      transferForm.set('club_name', String(fd.get('destination_club') ?? ''))
+      transferForm.set('note', String(fd.get('departure_note') ?? ''))
+      if (fd.get('is_published') === 'on') setPublished(transferForm)
+
+      const transferResult = await createTransfer(transferForm)
+      if (transferResult.error) {
+        toast(transferResult.error, 'err')
+        return
+      }
+
       toast('이적 소식이 등록됐어요.')
       setTransferPlayer(null)
     })
@@ -537,8 +572,12 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
                     <input name="nationality" className="input-field" placeholder="국적" />
                   </div>
                   <input name="birth_date" type="date" className="input-field" />
-                  <input name="destination_club" className="input-field" placeholder="구단" />
+                  <input name="destination_club" className="input-field" placeholder="원소속 구단 또는 Free Agent" />
                   <textarea name="departure_note" rows={3} className="input-field resize-none" placeholder="이적 메모" />
+                  <label className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
+                    <input name="create_in_transfer" type="checkbox" className="h-4 w-4 rounded border-border" />
+                    이번 시즌 In 이력 생성
+                  </label>
                   <button type="submit" disabled={isPending} className="btn-primary mt-1">
                     + 선수 추가
                   </button>
@@ -575,8 +614,41 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
             )}
 
             <div className="space-y-3">
-              {PLAYER_GROUPS.map(group => {
-                const groupPlayers = players.filter(player => player.squad_status === group.value)
+              <div className="overflow-hidden rounded-2xl border border-border bg-white">
+                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                  <p className="text-[13px] font-bold text-foreground">구단 외 선수</p>
+                  <span className="text-[11px] font-semibold text-muted-foreground">{externalPlayers.length}명</span>
+                </div>
+                {externalPlayers.length === 0 ? (
+                  <p className="px-4 py-5 text-center text-[13px] text-muted-foreground">구단 외 선수가 없어요.</p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {externalPlayers.map(player => (
+                      <div key={player.id} className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-black text-primary">
+                            {player.photo_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={player.photo_url} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              player.squad_number ?? player.name.slice(0, 2)
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[13px] font-bold text-foreground">{player.name}</p>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              #{player.squad_number ?? '-'} · {player.position ?? '포지션 없음'} · 구단 외
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {INTERNAL_PLAYER_GROUPS.map(group => {
+                const groupPlayers = internalPlayers.filter(player => player.squad_status === group.value)
                 return (
                   <div key={group.value} className="overflow-hidden rounded-2xl border border-border bg-white">
                     <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -628,6 +700,7 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
                               <div className="flex items-center gap-3">
                                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-black text-primary">
                                   {player.photo_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img src={player.photo_url} alt="" className="h-full w-full object-cover" />
                                   ) : (
                                     player.squad_number ?? player.name.slice(0, 2)
@@ -656,13 +729,14 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
         )}
 
         {activeSection === 'transfers' && (
-          <AdminTransfersPanel farewells={farewells} onToast={toast} />
+          <AdminTransfersPanel farewells={farewells} currentSeason={currentSeason} onToast={toast} />
         )}
 
         {activeSection === 'club' && (
           <section>
             <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-primary">구단 현황 관리</p>
             <form onSubmit={handleClubStatusSubmit} className="space-y-2.5 rounded-2xl border border-border bg-white p-4">
+              <input name="current_season" defaultValue={clubStatus?.current_season ?? ''} className="input-field" placeholder="현재 시즌 (예: 2025-26)" />
               <input name="league_rank" type="number" defaultValue={clubStatus?.league_rank ?? ''} className="input-field" placeholder="리그 순위" />
               <input name="next_match_opponent" defaultValue={clubStatus?.next_match_opponent ?? ''} className="input-field" placeholder="다음 경기 상대" />
               <div className="grid grid-cols-2 gap-2">

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { restorePlayerFromFarewell, updateFarewell } from '@/lib/actions/farewells'
+import { restoreExternalPlayer, updateFarewell } from '@/lib/actions/farewells'
 import type { DepartureType } from '@/types/database'
 
 export interface AdminFarewell {
@@ -28,12 +28,14 @@ const TRANSFER_LABEL: Record<DepartureType, string> = {
 
 interface Props {
   farewells: AdminFarewell[]
+  currentSeason: string
   onToast: (text: string, type?: 'ok' | 'err') => void
 }
 
-export function AdminTransfersPanel({ farewells, onToast }: Props) {
+export function AdminTransfersPanel({ farewells, currentSeason, onToast }: Props) {
   const router = useRouter()
   const [editingTransferId, setEditingTransferId] = useState<string | null>(null)
+  const [restoringTransferId, setRestoringTransferId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function handleUpdateTransfer(e: React.FormEvent<HTMLFormElement>, farewell: AdminFarewell) {
@@ -63,18 +65,27 @@ export function AdminTransfersPanel({ farewells, onToast }: Props) {
     })
   }
 
-  function handleRestoreTransfer(farewell: AdminFarewell) {
+  function handleRestoreTransfer(e: React.FormEvent<HTMLFormElement>, farewell: AdminFarewell) {
+    e.preventDefault()
     if (!farewell.player_id) return
-    if (!confirm('이 선수를 1군으로 복귀시킬까요?')) return
+    const fd = new FormData(e.currentTarget)
 
     startTransition(async () => {
-      const result = await restorePlayerFromFarewell(farewell.id, farewell.player_id)
+      fd.set('player_id', farewell.player_id)
+      fd.set('farewell_id', farewell.id)
+      fd.set('current_season', currentSeason)
+      if (!String(fd.get('club_name') ?? '').trim()) {
+        fd.delete('club_name')
+      }
+
+      const result = await restoreExternalPlayer(fd)
       if (result.error) {
         onToast(result.error, 'err')
         return
       }
 
-      onToast('선수가 1군으로 복귀됐어요.')
+      onToast(fd.get('restore_only') === 'on' ? '선수가 단순 복귀 처리됐어요.' : '선수 복귀와 In 이력이 등록됐어요.')
+      setRestoringTransferId(null)
       router.refresh()
     })
   }
@@ -112,6 +123,29 @@ export function AdminTransfersPanel({ farewells, onToast }: Props) {
                         <button type="button" onClick={() => setEditingTransferId(null)} className="flex-1 rounded-lg bg-secondary py-2 text-[12px] font-semibold text-foreground">취소</button>
                       </div>
                     </form>
+                  ) : restoringTransferId === farewell.id ? (
+                    <form onSubmit={e => handleRestoreTransfer(e, farewell)} className="space-y-2.5">
+                      <label className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
+                        <input name="restore_only" type="checkbox" defaultChecked className="h-4 w-4 rounded border-border" />
+                        단순 복귀로 처리
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select name="transfer_type" defaultValue="signing" className="input-field">
+                          <option value="signing">재영입</option>
+                          <option value="loan_in">임대 복귀 후 재등록</option>
+                        </select>
+                        <input name="club_name" defaultValue={farewell.destination_club ?? ''} className="input-field" placeholder="원소속 구단 또는 Free Agent" />
+                      </div>
+                      <textarea name="note" rows={3} defaultValue={farewell.departure_note ?? ''} className="input-field resize-none" placeholder="복귀 메모" />
+                      <label className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
+                        <input name="is_published" type="checkbox" defaultChecked className="h-4 w-4 rounded border-border" />
+                        In 이력을 이적 탭에 공개
+                      </label>
+                      <div className="flex gap-2">
+                        <button type="submit" disabled={isPending} className="flex-1 rounded-lg bg-primary py-2 text-[12px] font-bold text-white">복귀 저장</button>
+                        <button type="button" onClick={() => setRestoringTransferId(null)} className="flex-1 rounded-lg bg-secondary py-2 text-[12px] font-semibold text-foreground">취소</button>
+                      </div>
+                    </form>
                   ) : (
                     <div className="flex items-center gap-3">
                       <div className="min-w-0 flex-1">
@@ -124,7 +158,7 @@ export function AdminTransfersPanel({ farewells, onToast }: Props) {
                       <button type="button" onClick={() => setEditingTransferId(farewell.id)} className="rounded-lg bg-secondary px-3 py-2 text-[12px] font-bold text-foreground">
                         수정
                       </button>
-                      <button type="button" onClick={() => handleRestoreTransfer(farewell)} className="rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-white">
+                      <button type="button" onClick={() => setRestoringTransferId(farewell.id)} className="rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-white">
                         복귀
                       </button>
                     </div>

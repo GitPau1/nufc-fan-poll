@@ -36,6 +36,7 @@ export default async function AdminPage() {
     season_stats: Array<{ id: string; season: string; appearances: number; goals: number; assists: number }>
   }> = []
   let clubStatus: {
+    current_season: string | null
     league_rank: number | null; next_match_opponent: string | null
     next_match_date: string | null; next_match_venue: string | null
     top_appearances_player_id: string | null; top_appearances_count: number | null
@@ -62,7 +63,6 @@ export default async function AdminPage() {
       supabase
         .from('players')
         .select('id, name, position, squad_number, is_active, squad_status, nationality, birth_date, photo_url')
-        .eq('is_active', true)
         .order('squad_number'),
       supabase.from('club_status').select('*').eq('id', 1).single(),
       serviceSupabase
@@ -78,7 +78,6 @@ export default async function AdminPage() {
       const fallback = await supabase
         .from('players')
         .select('id, name, position, squad_number, is_active, nationality, birth_date, photo_url')
-        .eq('is_active', true)
         .order('squad_number')
       playerBaseRows = ((fallback.data as Omit<PlayerBase, 'squad_status'>[] | null) ?? [])
         .map(player => ({ ...player, squad_status: 'first_team' as const }))

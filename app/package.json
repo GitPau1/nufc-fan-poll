@@ -2,11 +2,15 @@
   "name": "app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.6.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:transfer-groups": "node --no-warnings --experimental-strip-types --test src/lib/transfers/group.test.mjs",
     "test:transfers": "node --no-warnings --experimental-strip-types --test src/lib/transfers/format.test.mjs",
     "test:vote-eligibility": "node --test src/lib/polls/vote-eligibility.test.mjs",
     "types:supabase": "supabase gen types typescript --linked --schema public > src/types/database.generated.ts"

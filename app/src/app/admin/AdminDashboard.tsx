@@ -21,7 +21,6 @@ const PLAYER_STATUS_LABEL: Record<PlayerStatus, string> = {
 
 const INTERNAL_PLAYER_GROUPS: Array<{ value: PlayerStatus; label: string }> = [
   { value: 'first_team', label: '1군' },
-  { value: 'loan', label: '임대' },
   { value: 'u21', label: 'U21' },
 ]
 
@@ -298,8 +297,8 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
   const [isPending, startTransition] = useTransition()
   const addFormRef = useRef<HTMLFormElement>(null)
   const currentSeason = clubStatus?.current_season?.trim() ?? ''
-  const internalPlayers = players.filter(player => player.is_active)
-  const externalPlayers = players.filter(player => !player.is_active)
+  const visiblePlayers = players.filter(player => player.is_active && player.squad_status !== 'loan')
+  const hiddenPlayers = players.filter(player => !player.is_active || player.squad_status === 'loan')
 
   function toast(text: string, type: 'ok' | 'err' = 'ok') {
     setMessage({ text, type })
@@ -614,41 +613,8 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
             )}
 
             <div className="space-y-3">
-              <div className="overflow-hidden rounded-2xl border border-border bg-white">
-                <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                  <p className="text-[13px] font-bold text-foreground">구단 외 선수</p>
-                  <span className="text-[11px] font-semibold text-muted-foreground">{externalPlayers.length}명</span>
-                </div>
-                {externalPlayers.length === 0 ? (
-                  <p className="px-4 py-5 text-center text-[13px] text-muted-foreground">구단 외 선수가 없어요.</p>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {externalPlayers.map(player => (
-                      <div key={player.id} className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-black text-primary">
-                            {player.photo_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={player.photo_url} alt="" className="h-full w-full object-cover" />
-                            ) : (
-                              player.squad_number ?? player.name.slice(0, 2)
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[13px] font-bold text-foreground">{player.name}</p>
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">
-                              #{player.squad_number ?? '-'} · {player.position ?? '포지션 없음'} · 구단 외
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               {INTERNAL_PLAYER_GROUPS.map(group => {
-                const groupPlayers = internalPlayers.filter(player => player.squad_status === group.value)
+                const groupPlayers = visiblePlayers.filter(player => player.squad_status === group.value)
                 return (
                   <div key={group.value} className="overflow-hidden rounded-2xl border border-border bg-white">
                     <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -724,6 +690,76 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
                   </div>
                 )
               })}
+
+              {hiddenPlayers.length > 0 && (
+                <details className="overflow-hidden rounded-2xl border border-border bg-white">
+                  <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[13px] font-bold text-foreground">
+                    <span>숨김 선수 관리</span>
+                    <span className="text-[11px] font-semibold text-muted-foreground">{hiddenPlayers.length}명</span>
+                  </summary>
+                  <div className="divide-y divide-border border-t border-border">
+                    {hiddenPlayers.map(player => (
+                      <div key={player.id} className="px-4 py-3">
+                        {editingId === player.id ? (
+                          <form onSubmit={e => handleEditPlayer(e, player)} className="space-y-2.5">
+                            <div className="grid grid-cols-[1fr_80px] gap-2">
+                              <input name="name" defaultValue={player.name} className="input-field" />
+                              <input name="squad_number" type="number" defaultValue={player.squad_number ?? ''} className="input-field text-center" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <select name="position" defaultValue={player.position ?? ''} className="input-field">
+                                <option value="">포지션</option>
+                                <option value="GK">GK</option>
+                                <option value="DEF">DEF</option>
+                                <option value="MID">MID</option>
+                                <option value="FWD">FWD</option>
+                                <option value="MGR">MGR</option>
+                              </select>
+                              <select name="squad_status" defaultValue={player.squad_status ?? 'first_team'} className="input-field">
+                                <option value="first_team">1군</option>
+                                <option value="loan">임대</option>
+                                <option value="u21">U21</option>
+                              </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <input name="nationality" defaultValue={player.nationality ?? ''} className="input-field" placeholder="국적" />
+                              <input name="birth_date" type="date" defaultValue={player.birth_date ?? ''} className="input-field" />
+                            </div>
+                            <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
+                              사진 변경
+                              <input name="photo_file" type="file" accept="image/*" className="mt-2 block w-full text-[12px]" />
+                            </label>
+                            <SeasonStatsTableInputs player={player} />
+                            <div className="flex gap-2">
+                              <button type="submit" disabled={isPending} className="flex-1 rounded-lg bg-primary py-2 text-[12px] font-bold text-white">저장</button>
+                              <button type="button" onClick={() => setEditingId(null)} className="flex-1 rounded-lg bg-secondary py-2 text-[12px] font-semibold text-foreground">취소</button>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-black text-primary">
+                              {player.photo_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={player.photo_url} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                player.squad_number ?? player.name.slice(0, 2)
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[13px] font-bold text-foreground">{player.name}</p>
+                              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                #{player.squad_number ?? '-'} · {player.position ?? '포지션 없음'} · {player.squad_status === 'loan' ? '임대' : '구단 외'}
+                              </p>
+                            </div>
+                            <button type="button" onClick={() => setEditingId(player.id)} className="text-[12px] font-semibold text-muted-foreground">수정</button>
+                            <button type="button" onClick={() => handleDeletePlayer(player.id)} className="text-[12px] font-semibold text-red-500">삭제</button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           </section>
         )}

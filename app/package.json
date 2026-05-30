@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:transfers": "node --no-warnings --experimental-strip-types --test src/lib/transfers/format.test.mjs",
     "test:vote-eligibility": "node --test src/lib/polls/vote-eligibility.test.mjs",
     "types:supabase": "supabase gen types typescript --linked --schema public > src/types/database.generated.ts"
   },

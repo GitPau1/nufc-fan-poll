@@ -4,7 +4,21 @@ export type PollType   = 'evaluation' | 'selection'
 export type PollStatus = 'scheduled' | 'active' | 'closed'
 export type Position   = 'GK' | 'DEF' | 'MID' | 'FWD' | 'MGR'
 export type PlayerStatus = 'first_team' | 'loan' | 'u21'
+export type TransferDirection = 'in' | 'out'
+export type TransferType = 'signing' | 'loan_in' | 'promotion' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
 export type DepartureType = 'signing' | 'loan_in' | 'promotion' | 'loan_return' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
+export type TransferRow = {
+  id: string
+  player_id: string
+  direction: TransferDirection
+  transfer_type: TransferType
+  season: string
+  club_name: string | null
+  note: string | null
+  is_published: boolean
+  created_at: string
+  updated_at: string
+}
 
 export interface Database {
   public: {

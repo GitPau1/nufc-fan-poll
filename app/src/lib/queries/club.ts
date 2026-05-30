@@ -5,6 +5,7 @@ import type { PlayerSeasonStatItem } from '@/lib/queries/farewells'
 // ── Mock data ────────────────────────────────────────────────
 const MOCK_STATUS: ClubStatusWithStats = {
   id: 1,
+  current_season: '2025-26',
   league_rank: 4,
   next_match_opponent: '맨체스터 시티',
   next_match_date: '2026-08-16T15:00:00Z',
@@ -51,7 +52,10 @@ export async function getClubStatus(): Promise<ClubStatusWithStats | null> {
     .single()
 
   if (error || !data) return null
-  return data as unknown as ClubStatusWithStats
+  return {
+    ...(data as ClubStatusWithStats),
+    current_season: (data as { current_season?: string | null }).current_season ?? null,
+  }
 }
 
 // ── getSquad ──────────────────────────────────────────────────

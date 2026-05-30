@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { IS_MOCK } from '@/lib/config'
-import type { DepartureType } from '@/types/database'
+import type { DepartureType, TransferType } from '@/types/database'
 import type { FarewellCommentItem } from '@/lib/queries/farewells'
 import { requireAdminClient, type AnySupabase } from '@/lib/supabase/admin'
 
@@ -202,6 +202,73 @@ export async function restorePlayerFromFarewell(farewellId: string, playerId: st
     revalidatePath('/club')
     revalidatePath('/transfers')
     revalidatePath(`/farewells/${farewellId}`)
+    return {}
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
+
+export async function restoreExternalPlayer(formData: FormData): Promise<{ error?: string }> {
+  try {
+    const playerId = (formData.get('player_id') as string)?.trim()
+    const farewellId = (formData.get('farewell_id') as string)?.trim() || null
+    const restoreOnly = formData.get('restore_only') === 'on'
+    const currentSeason = (formData.get('current_season') as string)?.trim() || null
+    const transferType = ((formData.get('transfer_type') as TransferType | null) ?? 'signing')
+    const clubName = stringOrNull(formData.get('club_name'))
+    const note = stringOrNull(formData.get('note'))
+    const isPublished = formData.get('is_published') === 'on'
+
+    if (!playerId) throw new Error('선수 정보가 없습니다.')
+    if (!restoreOnly && !currentSeason) throw new Error('현재 시즌을 먼저 설정해주세요.')
+
+    const supabase = await requireAdmin()
+
+    const { error: playerError } = await supabase
+      .from('players')
+      .update({
+        is_active: true,
+        squad_status: 'first_team',
+      })
+      .eq('id', playerId)
+    if (playerError) throw new Error(playerError.message)
+
+    if (farewellId) {
+      const { error: farewellError } = await supabase
+        .from('farewells')
+        .update({
+          is_published: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', farewellId)
+      if (farewellError) throw new Error(farewellError.message)
+    }
+
+    if (!restoreOnly && currentSeason) {
+      const { error: transferError } = await supabase
+        .from('transfers')
+        .insert({
+          player_id: playerId,
+          direction: 'in',
+          transfer_type: transferType,
+          season: currentSeason,
+          club_name: clubName,
+          note,
+          is_published: isPublished,
+          updated_at: new Date().toISOString(),
+        })
+
+      if (transferError && isMissingRelationError(transferError)) {
+        throw new Error('transfers table is missing. Apply the Supabase migration before restoring with transfer history.')
+      }
+      if (transferError) throw new Error(transferError.message)
+    }
+
+    revalidatePath('/')
+    revalidatePath('/admin')
+    revalidatePath('/club')
+    revalidatePath('/transfers')
+    if (farewellId) revalidatePath(`/farewells/${farewellId}`)
     return {}
   } catch (e) {
     return { error: (e as Error).message }

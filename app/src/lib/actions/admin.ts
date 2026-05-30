@@ -1,7 +1,7 @@
 ﻿'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { PlayerStatus, PollType, Position } from '@/types/database'
+import type { PlayerStatus, PollType, Position, TransferDirection, TransferType } from '@/types/database'
 import { requireAdminClient, type AnySupabase } from '@/lib/supabase/admin'
 
 function parseIntOrNull(value: FormDataEntryValue | null): number | null {
@@ -35,6 +35,7 @@ export async function updateClubStatus(formData: FormData): Promise<{ error?: st
     const supabase = await requireAdmin()
 
     const payload = {
+      current_season: (formData.get('current_season') as string)?.trim() || null,
       league_rank: parseIntOrNull(formData.get('league_rank')),
       next_match_opponent: (formData.get('next_match_opponent') as string)?.trim() || null,
       next_match_date: (formData.get('next_match_date') as string)?.trim() || null,
@@ -54,6 +55,45 @@ export async function updateClubStatus(formData: FormData): Promise<{ error?: st
 
     revalidatePath('/club')
     revalidatePath('/admin')
+    revalidatePath('/transfers')
+    return {}
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
+
+export async function createTransfer(formData: FormData): Promise<{ error?: string }> {
+  try {
+    const supabase = await requireAdmin()
+
+    const playerId = (formData.get('player_id') as string)?.trim()
+    const direction = (formData.get('direction') as TransferDirection | null) ?? 'in'
+    const transferType = (formData.get('transfer_type') as TransferType | null) ?? 'signing'
+    const season = (formData.get('season') as string)?.trim()
+
+    if (!playerId) throw new Error('선수 정보가 없습니다.')
+    if (!season) throw new Error('현재 시즌을 먼저 설정해주세요.')
+
+    const payload = {
+      player_id: playerId,
+      direction,
+      transfer_type: transferType,
+      season,
+      club_name: (formData.get('club_name') as string)?.trim() || null,
+      note: (formData.get('note') as string)?.trim() || null,
+      is_published: formData.get('is_published') === 'on',
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = await supabase.from('transfers').insert(payload)
+    if (error && isMissingRelationError(error)) {
+      throw new Error('transfers table is missing. Apply the Supabase migration before saving transfer history.')
+    }
+    if (error) throw new Error(error.message)
+
+    revalidatePath('/')
+    revalidatePath('/admin')
+    revalidatePath('/transfers')
     return {}
   } catch (e) {
     return { error: (e as Error).message }

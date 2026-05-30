@@ -2,6 +2,15 @@ import { createClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
 import type { DepartureType, PlayerRow } from '@/types/database'
 
+export type PlayerSeasonStatItem = {
+  id: string
+  player_id: string
+  season: string
+  appearances: number
+  goals: number
+  assists: number
+}
+
 export type FarewellItem = {
   id: string
   player_id: string
@@ -18,6 +27,7 @@ export type FarewellItem = {
   created_at: string
   player: PlayerRow | null
   comment_count: number
+  season_stats?: PlayerSeasonStatItem[]
 }
 
 export type FarewellCommentItem = {
@@ -34,6 +44,11 @@ type AnyRow = any
 function isMissingColumnError(error: AnyRow): boolean {
   const message = String(error?.message ?? '')
   return message.includes('column') && message.includes('does not exist')
+}
+
+function isMissingRelationError(error: AnyRow): boolean {
+  const message = String(error?.message ?? '')
+  return message.includes('schema cache') || message.includes('does not exist')
 }
 
 function normalizePlayer(player: AnyRow): PlayerRow | null {
@@ -177,14 +192,15 @@ export async function getFarewellComments(farewellId: string): Promise<FarewellC
     .from('farewell_comments')
     .select(`
       id, farewell_id, content, created_at,
-      user:users(display_name, avatar_url)
+      user:public_profiles!farewell_comments_public_profiles_user_id_fkey(display_name, avatar_url)
     `)
     .eq('farewell_id', farewellId)
     .eq('is_hidden', false)
     .order('created_at', { ascending: false })
     .limit(50) as { data: AnyRow[] | null; error: AnyRow }
 
-  if (error || !data) return []
+  if ((error && isMissingRelationError(error)) || !data) return []
+  if (error) return []
   return data.map(row => ({
     id: row.id,
     farewell_id: row.farewell_id,
@@ -194,6 +210,33 @@ export async function getFarewellComments(farewellId: string): Promise<FarewellC
       display_name: row.user?.display_name ?? null,
       avatar_url: row.user?.avatar_url ?? null,
     },
+  }))
+}
+
+export async function getPlayerSeasonStats(playerId: string): Promise<PlayerSeasonStatItem[]> {
+  if (IS_MOCK) {
+    return [
+      { id: 'ps-2020', player_id: playerId, season: '2020-21', appearances: 26, goals: 12, assists: 5 },
+      { id: 'ps-2021', player_id: playerId, season: '2021-22', appearances: 18, goals: 8, assists: 0 },
+      { id: 'ps-2022', player_id: playerId, season: '2022-23', appearances: 31, goals: 18, assists: 5 },
+    ]
+  }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('player_season_stats')
+    .select('id, player_id, season, appearances, goals, assists')
+    .eq('player_id', playerId)
+    .order('season', { ascending: false }) as { data: AnyRow[] | null; error: AnyRow }
+
+  if (error || !data) return []
+  return data.map(row => ({
+    id: row.id,
+    player_id: row.player_id,
+    season: row.season,
+    appearances: row.appearances,
+    goals: row.goals,
+    assists: row.assists,
   }))
 }
 

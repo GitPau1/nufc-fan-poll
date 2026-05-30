@@ -67,7 +67,7 @@ export function TypeAPollClient({ poll, isAuthenticated }: TypeAPollClientProps)
       <PollPageHeader />
 
       {/* 스크롤 영역 */}
-      <div className="flex-1 overflow-y-auto hide-scrollbar pb-[148px] animate-enter">
+      <div className="flex-1 overflow-y-auto hide-scrollbar pb-[88px] animate-enter">
 
         {/* 커버 이미지 — 칩 → 제목 순서로 오버레이 */}
         <div className="relative h-[160px] overflow-hidden">
@@ -177,7 +177,7 @@ export function TypeAPollClient({ poll, isAuthenticated }: TypeAPollClientProps)
       </div>
 
       {/* 하단 고정 제출 버튼 */}
-      <div className="fixed bottom-[72px] left-1/2 -translate-x-1/2 w-full max-w-[480px] p-4 bg-white/95 backdrop-blur border-t z-30">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] p-4 bg-white/95 backdrop-blur border-t z-30">
         <Button
           className="w-full h-12 text-sm font-bold rounded-xl"
           disabled={!selectedId || isPending}

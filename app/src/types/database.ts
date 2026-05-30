@@ -4,7 +4,7 @@ export type PollType   = 'evaluation' | 'selection'
 export type PollStatus = 'scheduled' | 'active' | 'closed'
 export type Position   = 'GK' | 'DEF' | 'MID' | 'FWD' | 'MGR'
 export type PlayerStatus = 'first_team' | 'loan' | 'u21'
-export type DepartureType = 'released' | 'transferred' | 'loan_end' | 'retired'
+export type DepartureType = 'signing' | 'loan_in' | 'promotion' | 'loan_return' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
 
 export interface Database {
   public: {
@@ -96,6 +96,16 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['comment_likes']['Row'], 'id' | 'created_at'>
         Update: never
       }
+      public_profiles: {
+        Row: {
+          id: string
+          display_name: string | null
+          avatar_url: string | null
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['public_profiles']['Row'], 'updated_at'>
+        Update: Partial<Database['public']['Tables']['public_profiles']['Insert']>
+      }
       farewells: {
         Row: {
           id: string
@@ -116,6 +126,20 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['farewells']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['farewells']['Insert']>
       }
+      player_season_stats: {
+        Row: {
+          id: string
+          player_id: string
+          season: string
+          appearances: number
+          goals: number
+          assists: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['player_season_stats']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['player_season_stats']['Insert']>
+      }
       farewell_comments: {
         Row: {
           id: string
@@ -127,6 +151,18 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['farewell_comments']['Row'], 'id' | 'is_hidden' | 'created_at'>
         Update: Pick<Database['public']['Tables']['farewell_comments']['Row'], 'is_hidden'>
+      }
+      player_comments: {
+        Row: {
+          id: string
+          player_id: string
+          user_id: string
+          content: string
+          is_hidden: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['player_comments']['Row'], 'id' | 'is_hidden' | 'created_at'>
+        Update: Pick<Database['public']['Tables']['player_comments']['Row'], 'is_hidden'>
       }
     }
     Views: {
@@ -150,8 +186,11 @@ export type PollOptionRow   = Database['public']['Tables']['poll_options']['Row'
 export type VoteRow         = Database['public']['Tables']['votes']['Row']
 export type CommentRow      = Database['public']['Tables']['comments']['Row']
 export type CommentLikeRow  = Database['public']['Tables']['comment_likes']['Row']
+export type PublicProfileRow = Database['public']['Tables']['public_profiles']['Row']
 export type FarewellRow     = Database['public']['Tables']['farewells']['Row']
 export type FarewellCommentRow = Database['public']['Tables']['farewell_comments']['Row']
+export type PlayerSeasonStatsRow = Database['public']['Tables']['player_season_stats']['Row']
+export type PlayerCommentRow = Database['public']['Tables']['player_comments']['Row']
 
 // ── 조합 타입 (UI에서 주로 사용) ──
 export type PollWithOptions = PollRow & {
@@ -162,7 +201,7 @@ export type PollWithOptions = PollRow & {
 }
 
 export type CommentWithMeta = CommentRow & {
-  user: Pick<UserRow, 'display_name' | 'avatar_url'>
+  user: Pick<PublicProfileRow, 'display_name' | 'avatar_url'>
   like_count: number
   is_liked: boolean
 }

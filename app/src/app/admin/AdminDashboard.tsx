@@ -1,18 +1,36 @@
 'use client'
 
-import { useTransition, useState, useRef } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { updateClubStatus, createPlayer, updatePlayer, deletePlayer, createPoll, uploadPhoto } from '@/lib/actions/admin'
-import { createFarewell, toggleFarewellPublished } from '@/lib/actions/farewells'
+import { useRouter } from 'next/navigation'
+import { createPlayer, createPoll, deletePlayer, updateClubStatus, updatePlayer, updatePlayerSeasonStats, uploadPhoto } from '@/lib/actions/admin'
+import { createFarewell } from '@/lib/actions/farewells'
 import type { PollListItem } from '@/lib/queries/polls'
+import type { DepartureType } from '@/types/database'
+import { AdminTransfersPanel, type AdminFarewell } from './AdminTransfersPanel'
 
 type PlayerStatus = 'first_team' | 'loan' | 'u21'
+type AdminSection = 'polls' | 'players' | 'transfers' | 'club'
+type PlayerCreateTransferType = Extract<DepartureType, 'signing' | 'loan_in' | 'promotion'>
 
 const PLAYER_STATUS_LABEL: Record<PlayerStatus, string> = {
   first_team: '1군',
   loan: '임대',
   u21: 'U21',
 }
+
+const PLAYER_GROUPS: Array<{ value: PlayerStatus; label: string }> = [
+  { value: 'first_team', label: '1군' },
+  { value: 'loan', label: '임대' },
+  { value: 'u21', label: 'U21' },
+]
+
+const ADMIN_SECTIONS: Array<{ id: AdminSection; label: string; description: string }> = [
+  { id: 'polls', label: '투표', description: '투표 생성과 현황' },
+  { id: 'players', label: '선수', description: '소속별 선수 관리' },
+  { id: 'transfers', label: '이적', description: '팀을 떠난 선수' },
+  { id: 'club', label: '구단', description: '순위와 다음 경기' },
+]
 
 interface Player {
   id: string
@@ -24,16 +42,7 @@ interface Player {
   nationality: string | null
   birth_date: string | null
   photo_url: string | null
-}
-
-interface AdminFarewell {
-  id: string
-  player_id: string
-  departure_type: string
-  destination_club: string | null
-  is_published: boolean
-  created_at: string
-  player: { id: string; name: string; squad_number: number | null; photo_url: string | null } | null
+  season_stats?: Array<{ season: string; appearances: number; goals: number; assists: number }>
 }
 
 interface Props {
@@ -55,1103 +64,619 @@ interface Props {
   } | null
 }
 
-function FarewellCreateForm({
-  player,
-  isPending,
-  onClose,
-  onSubmit,
-}: {
-  player: Player
-  isPending: boolean
-  onClose: () => void
-  onSubmit: (e: React.FormEvent<HTMLFormElement>, player: Player) => void
-}) {
+function parseSeasonStatsForm(formData: FormData) {
+  const seasons = formData.getAll('stat_season').map(String)
+  const appearances = formData.getAll('stat_appearances').map(String)
+  const goals = formData.getAll('stat_goals').map(String)
+  const assists = formData.getAll('stat_assists').map(String)
+
+  return seasons
+    .map((season, index) => ({
+      season: season.trim(),
+      appearances: appearances[index] ?? '',
+      goals: goals[index] ?? '',
+      assists: assists[index] ?? '',
+    }))
+    .filter(row => row.season)
+}
+
+function removeSeasonStatFields(formData: FormData) {
+  formData.delete('stat_season')
+  formData.delete('stat_appearances')
+  formData.delete('stat_goals')
+  formData.delete('stat_assists')
+}
+
+function setPublished(formData: FormData) {
+  formData.set('is_published', 'on')
+}
+
+type SeasonStatDraft = {
+  key: string
+  season: string
+  appearances: string
+  goals: string
+  assists: string
+}
+
+function createEmptySeasonRow(): SeasonStatDraft {
+  return {
+    key: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    season: '',
+    appearances: '',
+    goals: '',
+    assists: '',
+  }
+}
+
+function SeasonStatsTableInputs({ player }: { player: Player }) {
+  const [rows, setRows] = useState<SeasonStatDraft[]>(() => {
+    const existingRows = player.season_stats ?? []
+    if (existingRows.length === 0) return [createEmptySeasonRow()]
+    return existingRows.map((row, index) => ({
+      key: `existing-${player.id}-${index}`,
+      season: row.season,
+      appearances: String(row.appearances),
+      goals: String(row.goals),
+      assists: String(row.assists),
+    }))
+  })
+
+  function updateRow(index: number, field: keyof Omit<SeasonStatDraft, 'key'>, value: string) {
+    setRows(current => current.map((row, rowIndex) => (
+      rowIndex === index ? { ...row, [field]: value } : row
+    )))
+  }
+
+  function removeRow(index: number) {
+    setRows(current => {
+      const next = current.filter((_, rowIndex) => rowIndex !== index)
+      return next.length > 0 ? next : [createEmptySeasonRow()]
+    })
+  }
+
   return (
-    <div className="bg-white border border-primary/20 rounded-2xl p-4 mb-2">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div>
-          <p className="text-[13px] font-bold text-foreground">작별 등록</p>
-          <p className="text-[12px] text-muted-foreground mt-0.5">
-            {player.squad_number ? `#${player.squad_number} ` : ''}{player.name} 선수를 방출 목록으로 보냅니다.
-          </p>
+    <div className="space-y-2">
+      <div className="overflow-hidden rounded-xl border border-border">
+        <div className="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_36px] bg-secondary/50 text-[11px] font-bold text-muted-foreground">
+          <div className="px-2 py-2">시즌</div>
+          <div className="px-2 py-2 text-right">출전</div>
+          <div className="px-2 py-2 text-right">골</div>
+          <div className="px-2 py-2 text-right">도움</div>
         </div>
-        <button type="button" onClick={onClose} className="text-[12px] font-semibold text-muted-foreground">
-          닫기
-        </button>
+        {rows.map((row, index) => {
+          return (
+            <div key={row.key} className="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_36px] border-t border-border">
+              <input name="stat_season" value={row.season} onChange={e => updateRow(index, 'season', e.target.value)} className="min-w-0 border-0 px-2 py-2 text-[12px] outline-none" placeholder="2025-26" />
+              <input name="stat_appearances" type="number" min={0} value={row.appearances} onChange={e => updateRow(index, 'appearances', e.target.value)} className="min-w-0 border-0 px-2 py-2 text-right text-[12px] outline-none" />
+              <input name="stat_goals" type="number" min={0} value={row.goals} onChange={e => updateRow(index, 'goals', e.target.value)} className="min-w-0 border-0 px-2 py-2 text-right text-[12px] outline-none" />
+              <input name="stat_assists" type="number" min={0} value={row.assists} onChange={e => updateRow(index, 'assists', e.target.value)} className="min-w-0 border-0 px-2 py-2 text-right text-[12px] outline-none" />
+              <button type="button" onClick={() => removeRow(index)} className="text-[13px] font-bold text-red-500" aria-label="Remove season row">
+                ×
+              </button>
+            </div>
+          )
+        })}
       </div>
-
-      <form onSubmit={e => onSubmit(e, player)} className="space-y-2.5">
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">구분</label>
-            <select name="departure_type" defaultValue="released" className="input-field mt-0.5">
-              <option value="released">방출</option>
-              <option value="transferred">이적</option>
-              <option value="loan_end">임대 종료</option>
-              <option value="retired">은퇴</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">이적/행선지</label>
-            <input name="destination_club" className="input-field mt-0.5" placeholder="Free agent" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">입단일</label>
-            <input name="joined_at" type="date" className="input-field mt-0.5" />
-          </div>
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">퇴단일</label>
-            <input name="left_at" type="date" className="input-field mt-0.5" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-2">
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">출전</label>
-            <input name="appearances" type="number" min={0} className="input-field mt-0.5 text-center" />
-          </div>
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">골</label>
-            <input name="goals" type="number" min={0} className="input-field mt-0.5 text-center" />
-          </div>
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">도움</label>
-            <input name="assists" type="number" min={0} className="input-field mt-0.5 text-center" />
-          </div>
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">클린시트</label>
-            <input name="clean_sheets" type="number" min={0} className="input-field mt-0.5 text-center" />
-          </div>
-        </div>
-
-        <div>
-          <label className="text-[11px] font-semibold text-muted-foreground">요약 메모</label>
-          <textarea
-            name="departure_note"
-            rows={3}
-            className="input-field mt-0.5 resize-none"
-            placeholder="팬들에게 보여줄 짧은 설명을 적어주세요."
-          />
-        </div>
-
-        <label className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
-          <input name="is_published" type="checkbox" className="h-4 w-4 rounded border-border" />
-          홈과 상세 페이지에 바로 공개
-        </label>
-
-        <div className="flex gap-2 pt-1">
-          <button type="submit" disabled={isPending} className="flex-1 py-2 bg-primary text-white text-[12px] font-bold rounded-lg disabled:opacity-60">
-            {isPending ? '등록 중...' : '작별 등록'}
-          </button>
-          <button type="button" onClick={onClose} className="flex-1 py-2 bg-secondary text-foreground text-[12px] font-semibold rounded-lg">
-            취소
-          </button>
-        </div>
-      </form>
+      <button type="button" onClick={() => setRows(current => [...current, createEmptySeasonRow()])} className="text-[12px] font-bold text-primary">
+        + 시즌 추가
+      </button>
     </div>
   )
 }
 
-// ── 이미지 업로드 헬퍼 (서버 액션 경유 → service role key로 RLS 우회) ──
-async function uploadPlayerPhoto(
-  file: File,
-  onError: (msg: string) => void,
-  folder = 'players'
-): Promise<string | null> {
-  const fd = new FormData()
-  fd.set('file', file)
-  fd.set('folder', folder)
-  const result = await uploadPhoto(fd)
-  if (result.error) {
-    onError(`사진 업로드 실패: ${result.error}`)
-    return null
-  }
-  return result.url ?? null
-}
-
-// ── 사진 업로드 인풋 ──────────────────────────────────────
-function PhotoUploadInput({
-  currentUrl,
-  onUploaded,
-  onError,
-  folder = 'players',
-}: {
-  currentUrl?: string | null
-  onUploaded: (url: string) => void
-  onError: (msg: string) => void
-  folder?: string
-}) {
-  const [uploading, setUploading] = useState(false)
-  const [preview, setPreview] = useState<string | null>(currentUrl ?? null)
-
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    const url = await uploadPlayerPhoto(file, onError, folder)
-    setUploading(false)
-    if (url) {
-      setPreview(url)
-      onUploaded(url)
-    }
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      {preview && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={preview}
-          alt="preview"
-          className="w-9 h-9 rounded-full object-cover border border-border flex-shrink-0"
-        />
-      )}
-      <label
-        className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-border text-[12px] font-medium cursor-pointer hover:border-primary/50 transition-colors ${uploading ? 'opacity-60 pointer-events-none' : ''}`}
-      >
-        {uploading ? '업로드 중...' : preview ? '📷 사진 변경' : '📷 사진 업로드'}
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFile}
-          disabled={uploading}
-        />
-      </label>
-    </div>
-  )
-}
-
-// ── 투표 만들기 폼 ────────────────────────────────────────
-// 평가형: 선수 1명 선택 + 텍스트 선택지 2~5개
-// 선택형: 선수 여러 명 선택 (각 선수가 선택지가 됨)
 function PollCreateForm({
   players,
-  onClose,
-  onSuccess,
+  onDone,
   onError,
 }: {
   players: Player[]
-  onClose: () => void
-  onSuccess: () => void
-  onError: (msg: string) => void
+  onDone: () => void
+  onError: (message: string) => void
 }) {
-  const [isPending, startTransition] = useTransition()
   const [pollType, setPollType] = useState<'evaluation' | 'selection'>('evaluation')
-  // 평가형: 텍스트 선택지
-  const [textOptions, setTextOptions] = useState<string[]>(['', ''])
-  // 선택형: 선택된 선수 ID 목록
+  const [textOptions, setTextOptions] = useState(['', ''])
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([])
-  const [thumbnailUrl, setThumbnailUrl] = useState('')
-  const [formError, setFormError] = useState<string>()
-
-  const activePlayers = players
-
-  function addTextOption() {
-    if (textOptions.length < 5) setTextOptions(v => [...v, ''])
-  }
-  function removeTextOption(i: number) {
-    if (textOptions.length > 2) setTextOptions(v => v.filter((_, idx) => idx !== i))
-  }
-  function updateTextOption(i: number, val: string) {
-    setTextOptions(v => v.map((opt, idx) => (idx === i ? val : opt)))
-  }
-
-  function togglePlayer(id: string) {
-    setSelectedPlayerIds(v =>
-      v.includes(id)
-        ? v.filter(pid => pid !== id)
-        : v.length < 5
-          ? [...v, id]
-          : v
-    )
-  }
+  const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setFormError(undefined)
     const fd = new FormData(e.currentTarget)
-    if (thumbnailUrl) fd.set('thumbnail_url', thumbnailUrl)
 
     if (pollType === 'evaluation') {
-      const valid = textOptions.map(s => s.trim()).filter(Boolean)
-      if (valid.length < 2) {
-        setFormError('선택지를 최소 2개 입력해주세요.')
+      const options = textOptions.map(option => option.trim()).filter(Boolean)
+      if (options.length < 2) {
+        onError('선택지를 최소 2개 입력해주세요.')
         return
       }
-      fd.set('options', JSON.stringify(valid.map(label => ({ label }))))
+      fd.set('options', JSON.stringify(options.map(label => ({ label }))))
     } else {
       if (selectedPlayerIds.length < 2) {
-        setFormError('선수를 최소 2명 선택해주세요.')
+        onError('선수를 최소 2명 선택해주세요.')
         return
       }
-      const options = selectedPlayerIds.map(id => {
-        const p = activePlayers.find(pl => pl.id === id)!
-        return { label: p.name, player_id: id }
-      })
-      fd.set('options', JSON.stringify(options))
-      fd.delete('player_id') // 선택형은 poll 자체에 선수 없음
+      fd.set('options', JSON.stringify(selectedPlayerIds.map(id => {
+        const player = players.find(item => item.id === id)
+        return { label: player?.name ?? id, player_id: id }
+      })))
+      fd.delete('player_id')
     }
+    fd.set('type', pollType)
 
     startTransition(async () => {
       const result = await createPoll(fd)
-      if (result.error) {
-        onError(result.error)
-        setFormError(result.error)
-      } else {
-        onSuccess()
-        onClose()
-      }
+      if (result.error) onError(result.error)
+      else onDone()
     })
   }
 
   return (
-    <div className="bg-white border border-border rounded-2xl p-4 mb-2">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[13px] font-bold text-foreground">새 투표 만들기</p>
-        <button type="button" onClick={onClose} className="text-muted-foreground text-[12px]">
-          ✕ 닫기
+    <form onSubmit={handleSubmit} className="space-y-2.5 rounded-2xl border border-border bg-white p-4">
+      <p className="text-[13px] font-bold text-foreground">투표 만들기</p>
+      <input name="title" required className="input-field" placeholder="투표 제목" />
+      <input name="description" className="input-field" placeholder="설명(선택)" />
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => setPollType('evaluation')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'evaluation' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
+          평가형
+        </button>
+        <button type="button" onClick={() => setPollType('selection')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'selection' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
+          선택형
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-2.5">
-        {/* 제목 */}
-        <div>
-          <label className="text-[11px] font-semibold text-muted-foreground">제목 *</label>
-          <input
-            name="title"
-            required
-            className="input-field mt-0.5"
-            placeholder="이번 경기 최고의 선수는?"
-          />
-        </div>
-
-        {/* 설명 */}
-        <div>
-          <label className="text-[11px] font-semibold text-muted-foreground">설명 (선택)</label>
-          <input name="description" className="input-field mt-0.5" placeholder="추가 설명..." />
-        </div>
-
-        <div>
-          <label className="text-[11px] font-semibold text-muted-foreground">썸네일 (선택)</label>
-          <div className="mt-0.5">
-            <PhotoUploadInput
-              currentUrl={thumbnailUrl}
-              folder="polls"
-              onUploaded={url => setThumbnailUrl(url)}
-              onError={onError}
-            />
+      {pollType === 'evaluation' ? (
+        <>
+          <select name="player_id" required className="input-field">
+            <option value="">대상 선수 선택</option>
+            {players.map(player => (
+              <option key={player.id} value={player.id}>{player.squad_number ? `#${player.squad_number} ` : ''}{player.name}</option>
+            ))}
+          </select>
+          <div className="space-y-1.5">
+            {textOptions.map((option, index) => (
+              <input
+                key={index}
+                value={option}
+                onChange={e => setTextOptions(prev => prev.map((item, itemIndex) => itemIndex === index ? e.target.value : item))}
+                className="input-field"
+                placeholder={`선택지 ${index + 1}`}
+              />
+            ))}
           </div>
-        </div>
-
-        {/* 투표 유형 */}
-        <div>
-          <label className="text-[11px] font-semibold text-muted-foreground">투표 유형</label>
-          <div className="flex gap-2 mt-0.5">
-            <button
-              type="button"
-              onClick={() => setPollType('evaluation')}
-              className={`flex-1 py-2 rounded-lg text-[12px] font-semibold border transition-colors ${pollType === 'evaluation' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}
-            >
-              평가형
+          {textOptions.length < 5 && (
+            <button type="button" onClick={() => setTextOptions(prev => [...prev, ''])} className="text-[12px] font-bold text-primary">
+              + 선택지 추가
             </button>
-            <button
-              type="button"
-              onClick={() => setPollType('selection')}
-              className={`flex-1 py-2 rounded-lg text-[12px] font-semibold border transition-colors ${pollType === 'selection' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}
-            >
-              선택형
-            </button>
-          </div>
-          <input type="hidden" name="type" value={pollType} />
+          )}
+        </>
+      ) : (
+        <div className="grid grid-cols-2 gap-1.5">
+          {players.map(player => {
+            const selected = selectedPlayerIds.includes(player.id)
+            return (
+              <button
+                key={player.id}
+                type="button"
+                onClick={() => setSelectedPlayerIds(prev => selected ? prev.filter(id => id !== player.id) : [...prev, player.id])}
+                className={`rounded-lg border px-2 py-2 text-left text-[12px] font-semibold ${selected ? 'border-primary bg-primary/5 text-primary' : 'border-border text-foreground'}`}
+              >
+                {player.name}
+              </button>
+            )
+          })}
         </div>
+      )}
 
-        {/* 평가형: 선수 1명 + 텍스트 선택지 */}
-        {pollType === 'evaluation' && (
-          <>
-            <div>
-              <label className="text-[11px] font-semibold text-muted-foreground">대상 선수 *</label>
-              <select name="player_id" required className="input-field mt-0.5">
-                <option value="">선수 선택</option>
-                {activePlayers.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.squad_number ? `#${p.squad_number} ` : ''}{p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-semibold text-muted-foreground">
-                  선택지 ({textOptions.length}/5)
-                </label>
-                {textOptions.length < 5 && (
-                  <button
-                    type="button"
-                    onClick={addTextOption}
-                    className="text-[11px] text-primary font-semibold"
-                  >
-                    + 추가
-                  </button>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                {textOptions.map((opt, i) => (
-                  <div key={i} className="flex gap-1.5">
-                    <input
-                      value={opt}
-                      onChange={e => updateTextOption(i, e.target.value)}
-                      className="input-field flex-1"
-                      placeholder={`선택지 ${i + 1}`}
-                    />
-                    {textOptions.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => removeTextOption(i)}
-                        className="text-red-400 text-[13px] px-1 flex-shrink-0"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* 선택형: 선수 여러 명 선택 */}
-        {pollType === 'selection' && (
-          <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">
-              선수 선택 ({selectedPlayerIds.length}/5, 최소 2명)
-            </label>
-            <div className="mt-1 space-y-1 max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border">
-              {activePlayers.map(p => {
-                const selected = selectedPlayerIds.includes(p.id)
-                const disabled = !selected && selectedPlayerIds.length >= 5
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => !disabled && togglePlayer(p.id)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${selected ? 'bg-primary/5' : disabled ? 'opacity-40' : 'hover:bg-secondary'}`}
-                  >
-                    <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${selected ? 'border-primary bg-primary' : 'border-border'}`}>
-                      {selected && <span className="text-white text-[10px] font-bold">✓</span>}
-                    </div>
-                    <span className="text-[12px] font-medium text-foreground">
-                      {p.squad_number ? `#${p.squad_number} ` : ''}{p.name}
-                    </span>
-                    {p.position && (
-                      <span className="text-[10px] text-muted-foreground ml-auto">{p.position}</span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* 마감일 */}
-        <div>
-          <label className="text-[11px] font-semibold text-muted-foreground">마감 시간 *</label>
-          <input name="closes_at" type="datetime-local" required className="input-field mt-0.5" />
-        </div>
-
-        {formError && <p className="text-[12px] text-red-500 font-medium">{formError}</p>}
-
-        <button type="submit" disabled={isPending} className="btn-primary">
-          {isPending ? '생성 중...' : '투표 만들기'}
-        </button>
-      </form>
-    </div>
+      <div className="grid grid-cols-2 gap-2">
+        <input name="scheduled_at" type="datetime-local" className="input-field" />
+        <input name="closes_at" type="datetime-local" required className="input-field" />
+      </div>
+      <button type="submit" disabled={isPending} className="btn-primary">
+        투표 생성
+      </button>
+    </form>
   )
 }
 
-// ── 메인 컴포넌트 ─────────────────────────────────────────
 export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewells }: Props) {
-  const [isClubPending, startClubTransition] = useTransition()
-  const [isPlayerPending, startPlayerTransition] = useTransition()
-  const [message, setMessage] = useState<{ text: string; type: 'ok' | 'err' } | undefined>()
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
+  const router = useRouter()
+  const [activeSection, setActiveSection] = useState<AdminSection>('polls')
   const [showAddForm, setShowAddForm] = useState(false)
-  const addFormRef = useRef<HTMLFormElement>(null)
-  const [addPhotoUrl, setAddPhotoUrl] = useState<string>('')
-
-  const [editingId, setEditingId] = useState<string | null>(null)
-  // editPhotoUrl: undefined = not changed (keep existing); string = new URL
-  const [editPhotoUrl, setEditPhotoUrl] = useState<string | undefined>(undefined)
-  const [farewellPlayer, setFarewellPlayer] = useState<Player | null>(null)
-
   const [showPollForm, setShowPollForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [transferPlayer, setTransferPlayer] = useState<Player | null>(null)
+  const [message, setMessage] = useState<{ text: string; type: 'ok' | 'err' } | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const addFormRef = useRef<HTMLFormElement>(null)
 
-  const activePlayers = players
-
-  function toast(text: string, type: 'ok' | 'err') {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+  function toast(text: string, type: 'ok' | 'err' = 'ok') {
     setMessage({ text, type })
-    toastTimerRef.current = setTimeout(() => setMessage(undefined), 3500)
-  }
-
-  function handleClubStatusSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    startClubTransition(async () => {
-      const result = await updateClubStatus(new FormData(e.currentTarget))
-      if (result.error) toast(result.error, 'err')
-      else toast('저장됐어요!', 'ok')
-    })
+    window.setTimeout(() => setMessage(null), 3000)
   }
 
   function handleAddPlayer(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
-    if (addPhotoUrl) fd.set('photo_url', addPhotoUrl)
-    startPlayerTransition(async () => {
+    const transferType = (fd.get('transfer_type') as PlayerCreateTransferType) || 'signing'
+    fd.delete('transfer_type')
+    if (transferType === 'loan_in') fd.set('squad_status', 'loan')
+
+    startTransition(async () => {
       const result = await createPlayer(fd)
-      if (result.error) {
-        toast(result.error, 'err')
-      } else {
-        toast('선수를 추가했어요!', 'ok')
-        addFormRef.current?.reset()
-        setAddPhotoUrl('')
-        setShowAddForm(false)
+      if (result.error || !result.playerId) {
+        toast(result.error ?? '선수 추가에 실패했어요.', 'err')
+        return
       }
+
+      const transferForm = new FormData()
+      transferForm.set('departure_type', transferType)
+      transferForm.set('destination_club', String(fd.get('destination_club') ?? ''))
+      transferForm.set('departure_note', String(fd.get('departure_note') ?? ''))
+      setPublished(transferForm)
+      const transferResult = await createFarewell(result.playerId, transferForm)
+      if (transferResult.error) {
+        toast(transferResult.error, 'err')
+        return
+      }
+
+      toast('선수와 이적 소식이 추가됐어요.')
+      addFormRef.current?.reset()
+      setShowAddForm(false)
     })
   }
 
   function handleEditPlayer(e: React.FormEvent<HTMLFormElement>, player: Player) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
-    // editPhotoUrl=undefined means no change → keep existing photo
-    // editPhotoUrl=string means newly uploaded → use new URL
-    const photoToSave = editPhotoUrl !== undefined ? editPhotoUrl : (player.photo_url ?? '')
-    fd.set('photo_url', photoToSave)
-    startPlayerTransition(async () => {
+    const statRows = parseSeasonStatsForm(fd)
+    const photoFile = fd.get('photo_file') as File | null
+    removeSeasonStatFields(fd)
+    fd.delete('photo_file')
+    fd.set('photo_url', player.photo_url ?? '')
+
+    startTransition(async () => {
+      if (photoFile && photoFile.size > 0) {
+        const photoForm = new FormData()
+        photoForm.set('file', photoFile)
+        photoForm.set('folder', 'players')
+        const uploadResult = await uploadPhoto(photoForm)
+        if (uploadResult.error || !uploadResult.url) {
+          toast(uploadResult.error ?? '사진 업로드에 실패했습니다.', 'err')
+          return
+        }
+        fd.set('photo_url', uploadResult.url)
+      }
+
       const result = await updatePlayer(player.id, fd)
       if (result.error) {
         toast(result.error, 'err')
-      } else {
-        toast('수정됐어요!', 'ok')
-        setEditingId(null)
-        setEditPhotoUrl(undefined)
+        return
       }
+
+      const statsForm = new FormData()
+      statsForm.set('season_stats', JSON.stringify(statRows))
+      const statsResult = await updatePlayerSeasonStats(player.id, statsForm)
+      if (statsResult.error) {
+        toast(statsResult.error, 'err')
+        return
+      }
+
+      toast('선수 정보가 수정됐어요.')
+      router.refresh()
+      setEditingId(null)
     })
   }
 
   function handleDeletePlayer(playerId: string) {
     if (!confirm('이 선수를 목록에서 제거할까요?')) return
-    startPlayerTransition(async () => {
+    startTransition(async () => {
       const result = await deletePlayer(playerId)
       if (result.error) toast(result.error, 'err')
-      else toast('선수를 제거했어요', 'ok')
-      if (!result.error && editingId === playerId) setEditingId(null)
+      else toast('선수를 제거했어요.')
     })
   }
 
-  function handleCreateFarewell(e: React.FormEvent<HTMLFormElement>, player: Player) {
+  function handleCreateTransfer(e: React.FormEvent<HTMLFormElement>, player: Player) {
     e.preventDefault()
-    if (!confirm(`${player.name} 선수를 작별 목록으로 보내고 선수 목록에서 제외할까요?`)) return
     const fd = new FormData(e.currentTarget)
-    startPlayerTransition(async () => {
+    const type = String(fd.get('departure_type'))
+    if (type === 'contract_expired') {
+      fd.set('destination_club', 'FA')
+    }
+    if ((type === 'transferred' || type === 'loan_out') && !String(fd.get('destination_club') ?? '').trim()) {
+      toast('이적 또는 임대는 구단 명을 입력해주세요.', 'err')
+      return
+    }
+
+    startTransition(async () => {
       const result = await createFarewell(player.id, fd)
       if (result.error) {
         toast(result.error, 'err')
-      } else {
-        toast('작별을 등록했어요', 'ok')
-        setFarewellPlayer(null)
+        return
       }
+      toast('이적 소식이 등록됐어요.')
+      setTransferPlayer(null)
     })
   }
 
-  function handleToggleFarewellPublished(farewell: AdminFarewell) {
-    startPlayerTransition(async () => {
-      const result = await toggleFarewellPublished(farewell.id, !farewell.is_published)
+  function handleClubStatusSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    startTransition(async () => {
+      const result = await updateClubStatus(new FormData(e.currentTarget))
       if (result.error) toast(result.error, 'err')
-      else toast(!farewell.is_published ? 'Farewell을 공개했어요' : 'Farewell을 비공개로 바꿨어요', 'ok')
+      else toast('구단 현황이 저장됐어요.')
     })
-  }
-
-  function startEditing(player: Player) {
-    setEditingId(player.id)
-    setEditPhotoUrl(undefined) // reset: no change yet
-    setFarewellPlayer(null)
   }
 
   return (
     <div className="pb-24">
-      {/* Toast */}
       {message && (
-        <div
-          className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-[13px] font-semibold shadow-lg max-w-[320px] text-center ${
-            message.type === 'ok' ? 'bg-primary text-white' : 'bg-red-500 text-white'
-          }`}
-        >
+        <div className={`fixed top-4 left-1/2 z-50 max-w-[320px] -translate-x-1/2 rounded-xl px-4 py-2.5 text-center text-[13px] font-semibold text-white shadow-lg ${message.type === 'ok' ? 'bg-primary' : 'bg-red-500'}`}>
           {message.text}
         </div>
       )}
 
       <div className="px-4 pt-5 space-y-4">
-        {/* 헤더 */}
-        <div className="mb-2">
+        <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[18px] font-black text-foreground tracking-tight">관리자 대시보드</span>
-            <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-              ⚙ ADMIN
-            </span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">ADMIN</span>
           </div>
           <p className="text-[13px] text-muted-foreground">{adminEmail}</p>
         </div>
 
-        {/* ── 투표 관리 ── */}
-        <section>
-          <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2">
-            🗳 투표 관리
-          </p>
+        <div className="grid grid-cols-2 gap-2">
+          {ADMIN_SECTIONS.map(section => (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => setActiveSection(section.id)}
+              className={`rounded-xl border px-3 py-3 text-left transition-colors ${
+                activeSection === section.id
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-border bg-white text-foreground hover:border-primary/30'
+              }`}
+            >
+              <span className="block text-[13px] font-black">{section.label}</span>
+              <span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">{section.description}</span>
+            </button>
+          ))}
+        </div>
 
-          {showPollForm && (
-            <PollCreateForm
-              players={players}
-              onClose={() => setShowPollForm(false)}
-              onSuccess={() => toast('투표를 만들었어요!', 'ok')}
-              onError={msg => toast(msg, 'err')}
-            />
-          )}
-
-          <div className="bg-white border border-border rounded-2xl overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-border flex items-center justify-between">
-              <div>
-                <p className="text-[14px] font-bold text-foreground">새 투표 만들기</p>
-                <p className="text-[12px] text-muted-foreground mt-0.5">평가형 / 선택형 투표 생성</p>
-              </div>
-              <button
-                onClick={() => setShowPollForm(v => !v)}
-                className="px-3.5 py-2 bg-primary text-white text-[13px] font-bold rounded-lg"
-              >
-                {showPollForm ? '✕ 닫기' : '+ 만들기'}
+        {activeSection === 'polls' && (
+          <section>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">투표 관리</p>
+              <button type="button" onClick={() => setShowPollForm(prev => !prev)} className="text-[12px] font-bold text-primary">
+                {showPollForm ? '닫기' : '+ 만들기'}
               </button>
             </div>
-            <div className="px-4 py-3.5 flex items-center justify-between">
-              <div>
-                <p className="text-[14px] font-bold text-foreground">투표 목록</p>
-                <p className="text-[12px] text-muted-foreground mt-0.5">기존 투표와 연결된 선수 확인</p>
-              </div>
-              <span className="text-[12px] font-bold text-primary">{polls.length}개</span>
-            </div>
-            {polls.length > 0 ? (
-              <div className="border-t border-border divide-y divide-border">
-                {polls.map(poll => (
-                  <Link
-                    key={poll.id}
-                    href={`/polls/${poll.id}`}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/60 transition-colors"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 overflow-hidden flex-shrink-0">
-                      {poll.thumbnail_url || poll.player?.photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={poll.thumbnail_url ?? poll.player?.photo_url ?? ''}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[11px] font-black text-primary">
-                          {poll.title.slice(0, 2)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-bold text-foreground truncate">{poll.title}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {poll.player ? `${poll.player.name} · ` : ''}
-                        {poll.status === 'active' ? '진행 중' : poll.status === 'scheduled' ? '예정' : '종료'}
-                        {' · '}
-                        {poll.vote_count.toLocaleString()}명 참여
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="border-t border-border px-4 py-4 text-center text-[12px] text-muted-foreground">
-                등록된 투표가 없어요
-              </p>
+            {showPollForm && (
+              <PollCreateForm
+                players={players}
+                onDone={() => {
+                  toast('투표를 만들었어요.')
+                  setShowPollForm(false)
+                }}
+                onError={text => toast(text, 'err')}
+              />
             )}
-          </div>
-        </section>
-
-        {/* ── 선수 관리 ── */}
-        <section>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-bold text-primary uppercase tracking-widest">👥 선수 관리</p>
-            <button
-              onClick={() => setShowAddForm(v => !v)}
-              className="text-[12px] font-bold text-primary"
-            >
-              {showAddForm ? '✕ 닫기' : '+ 추가'}
-            </button>
-          </div>
-
-          {/* 선수 추가 폼 */}
-          {showAddForm && (
-            <div className="bg-white border border-border rounded-2xl p-4 mb-2">
-              <p className="text-[13px] font-bold text-foreground mb-3">선수 추가</p>
-              <form ref={addFormRef} onSubmit={handleAddPlayer} className="space-y-2.5">
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label htmlFor="add-name" className="text-[11px] font-semibold text-muted-foreground">
-                      이름 *
-                    </label>
-                    <input
-                      id="add-name"
-                      name="name"
-                      required
-                      className="input-field mt-0.5"
-                      placeholder="Alexander Isak"
-                    />
-                  </div>
-                  <div className="w-16">
-                    <label htmlFor="add-squad" className="text-[11px] font-semibold text-muted-foreground">
-                      등번호
-                    </label>
-                    <input
-                      id="add-squad"
-                      name="squad_number"
-                      type="number"
-                      className="input-field mt-0.5 text-center"
-                      placeholder="14"
-                    />
-                  </div>
+            <div className="overflow-hidden rounded-2xl border border-border bg-white">
+              <div className="border-b border-border px-4 py-3.5">
+                <p className="text-[14px] font-bold text-foreground">투표 목록</p>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">기존 투표와 연결된 선수 확인</p>
+              </div>
+              {polls.length === 0 ? (
+                <p className="px-4 py-5 text-center text-[13px] text-muted-foreground">등록된 투표가 없어요.</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {polls.map(poll => (
+                    <Link key={poll.id} href={`/polls/${poll.id}`} className="block px-4 py-3 hover:bg-secondary/50">
+                      <p className="truncate text-[13px] font-bold text-foreground">{poll.title}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {poll.status} · {poll.vote_count.toLocaleString()}명 참여
+                      </p>
+                    </Link>
+                  ))}
                 </div>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label htmlFor="add-pos" className="text-[11px] font-semibold text-muted-foreground">
-                      포지션
+              )}
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'players' && (
+          <section>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">선수 관리</p>
+              <button type="button" onClick={() => setShowAddForm(prev => !prev)} className="text-[12px] font-bold text-primary">
+                {showAddForm ? '닫기' : '+ 추가'}
+              </button>
+            </div>
+
+            {showAddForm && (
+              <div className="mb-2 rounded-2xl border border-border bg-white p-4">
+                <p className="mb-3 text-[13px] font-bold text-foreground">선수 추가</p>
+                <form ref={addFormRef} onSubmit={handleAddPlayer} className="space-y-2.5">
+                  <div className="grid grid-cols-[1fr_80px] gap-2">
+                    <label className="block text-[11px] font-semibold text-muted-foreground">
+                      이름 *
+                      <input name="name" required className="input-field mt-0.5" placeholder="Alexander Isak" />
                     </label>
-                    <select id="add-pos" name="position" className="input-field mt-0.5">
-                      <option value="">선택</option>
+                    <label className="block text-[11px] font-semibold text-muted-foreground">
+                      등번호
+                      <input name="squad_number" type="number" className="input-field mt-0.5 text-center" placeholder="14" />
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="block text-[11px] font-semibold text-muted-foreground">
+                      구분
+                      <select name="transfer_type" defaultValue="signing" className="input-field mt-0.5">
+                        <option value="signing">영입</option>
+                        <option value="loan_in">임대</option>
+                        <option value="promotion">승격</option>
+                      </select>
+                    </label>
+                    <label className="block text-[11px] font-semibold text-muted-foreground">
+                      상태
+                      <select name="squad_status" defaultValue="first_team" className="input-field mt-0.5">
+                        <option value="first_team">1군</option>
+                        <option value="loan">임대</option>
+                        <option value="u21">U21</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select name="position" className="input-field">
+                      <option value="">포지션</option>
                       <option value="GK">GK</option>
                       <option value="DEF">DEF</option>
                       <option value="MID">MID</option>
                       <option value="FWD">FWD</option>
                       <option value="MGR">MGR</option>
                     </select>
+                    <input name="nationality" className="input-field" placeholder="국적" />
                   </div>
-                  <div className="flex-1">
-                    <label htmlFor="add-nat" className="text-[11px] font-semibold text-muted-foreground">
-                      국적
-                    </label>
-                    <input
-                      id="add-nat"
-                      name="nationality"
-                      className="input-field mt-0.5"
-                      placeholder="Sweden"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="add-squad-status" className="text-[11px] font-semibold text-muted-foreground">
-                    상태
-                  </label>
-                  <select id="add-squad-status" name="squad_status" defaultValue="first_team" className="input-field mt-0.5">
-                    <option value="first_team">1군</option>
-                    <option value="loan">임대</option>
-                    <option value="u21">U21</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="add-birth" className="text-[11px] font-semibold text-muted-foreground">
-                    생년월일
-                  </label>
-                  <input id="add-birth" name="birth_date" type="date" className="input-field mt-0.5" />
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-muted-foreground">선수 사진</label>
-                  <div className="mt-0.5">
-                    <PhotoUploadInput
-                      onUploaded={url => setAddPhotoUrl(url)}
-                      onError={msg => toast(msg, 'err')}
-                    />
-                  </div>
-                </div>
-                <button type="submit" disabled={isPlayerPending} className="btn-primary mt-1">
-                  + 선수 추가
-                </button>
-              </form>
-            </div>
-          )}
-
-          {farewellPlayer && (
-            <FarewellCreateForm
-              player={farewellPlayer}
-              isPending={isPlayerPending}
-              onClose={() => setFarewellPlayer(null)}
-              onSubmit={handleCreateFarewell}
-            />
-          )}
-
-          {/* 선수 목록 */}
-          <div className="bg-white border border-border rounded-2xl overflow-hidden">
-            {players.length === 0 ? (
-              <p className="px-4 py-5 text-[13px] text-muted-foreground text-center">
-                등록된 선수가 없어요
-              </p>
-            ) : (
-              players.map((player, i) => (
-                <div key={player.id}>
-                  {i > 0 && <div className="h-px bg-border mx-4" />}
-
-                  {editingId === player.id ? (
-                    /* 인라인 수정 폼 */
-                    <div className="px-4 py-3 bg-secondary/40">
-                      <p className="text-[12px] font-bold text-foreground mb-2">선수 수정</p>
-                      <form
-                        onSubmit={e => handleEditPlayer(e, player)}
-                        className="space-y-2"
-                      >
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <label className="text-[11px] font-semibold text-muted-foreground">
-                              이름 *
-                            </label>
-                            <input
-                              name="name"
-                              required
-                              defaultValue={player.name}
-                              className="input-field mt-0.5"
-                            />
-                          </div>
-                          <div className="w-16">
-                            <label className="text-[11px] font-semibold text-muted-foreground">
-                              등번호
-                            </label>
-                            <input
-                              name="squad_number"
-                              type="number"
-                              defaultValue={player.squad_number ?? ''}
-                              className="input-field mt-0.5 text-center"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <label className="text-[11px] font-semibold text-muted-foreground">
-                              포지션
-                            </label>
-                            <select
-                              name="position"
-                              defaultValue={player.position ?? ''}
-                              className="input-field mt-0.5"
-                            >
-                              <option value="">선택</option>
-                              <option value="GK">GK</option>
-                              <option value="DEF">DEF</option>
-                              <option value="MID">MID</option>
-                              <option value="FWD">FWD</option>
-                              <option value="MGR">MGR</option>
-                            </select>
-                          </div>
-                          <div className="flex-1">
-                            <label className="text-[11px] font-semibold text-muted-foreground">
-                              국적
-                            </label>
-                            <input
-                              name="nationality"
-                              defaultValue={player.nationality ?? ''}
-                              className="input-field mt-0.5"
-                              placeholder="Sweden"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-muted-foreground">
-                            상태
-                          </label>
-                          <select
-                            name="squad_status"
-                            defaultValue={player.squad_status ?? 'first_team'}
-                            className="input-field mt-0.5"
-                          >
-                            <option value="first_team">1군</option>
-                            <option value="loan">임대</option>
-                            <option value="u21">U21</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-muted-foreground">
-                            생년월일
-                          </label>
-                          <input
-                            name="birth_date"
-                            type="date"
-                            defaultValue={player.birth_date ?? ''}
-                            className="input-field mt-0.5"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-muted-foreground">
-                            선수 사진
-                          </label>
-                          <div className="mt-0.5">
-                            <PhotoUploadInput
-                              currentUrl={player.photo_url}
-                              onUploaded={url => setEditPhotoUrl(url)}
-                              onError={msg => toast(msg, 'err')}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2 pt-1">
-                          <button
-                            type="submit"
-                            disabled={isPlayerPending}
-                            className="flex-1 py-2 bg-primary text-white text-[12px] font-bold rounded-lg disabled:opacity-60"
-                          >
-                            저장
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingId(null)
-                              setEditPhotoUrl(undefined)
-                            }}
-                            className="flex-1 py-2 bg-secondary text-foreground text-[12px] font-semibold rounded-lg"
-                          >
-                            취소
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  ) : (
-                    /* 선수 행 */
-                    <div className="flex items-center gap-3 px-4 py-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                        {player.photo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={player.photo_url}
-                            alt={player.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-[13px] font-bold text-primary">
-                            {player.squad_number ?? '—'}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-foreground truncate flex items-center gap-1.5">
-                          {player.squad_number && (
-                            <span className="text-[11px] text-muted-foreground font-normal">
-                              #{player.squad_number}
-                            </span>
-                          )}
-                          {player.name}
-                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                            {PLAYER_STATUS_LABEL[player.squad_status ?? 'first_team']}
-                          </span>
-                        </p>
-                        {player.position && (
-                          <p className="text-[11px] text-muted-foreground">
-                            {player.position}
-                            {player.nationality ? ` · ${player.nationality}` : ''}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-1.5 flex-shrink-0">
-                        <button
-                          onClick={() => {
-                            setFarewellPlayer(player)
-                            setEditingId(null)
-                          }}
-                          disabled={isPlayerPending}
-                          className="px-2.5 py-1 border border-primary/30 text-[11px] font-semibold text-primary bg-primary/5 rounded-md hover:bg-primary/10 transition-colors disabled:opacity-60"
-                        >
-                          작별
-                        </button>
-                        <button
-                          onClick={() => startEditing(player)}
-                          className="px-2.5 py-1 border border-border text-[11px] font-semibold text-muted-foreground bg-white rounded-md hover:border-primary/40 hover:text-primary transition-colors"
-                        >
-                          수정
-                        </button>
-                        <button
-                          onClick={() => handleDeletePlayer(player.id)}
-                          disabled={isPlayerPending}
-                          className="px-2.5 py-1 border border-red-200 text-[11px] font-semibold text-red-500 bg-red-50 rounded-md hover:bg-red-100 transition-colors disabled:opacity-60"
-                        >
-                          제거
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* ── 작별 관리 ── */}
-        <section>
-          <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2">
-            작별 관리
-          </p>
-          <div className="bg-white border border-border rounded-2xl overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-border">
-              <p className="text-[14px] font-bold text-foreground">방출/이적 선수 작별</p>
-              <p className="text-[12px] text-muted-foreground mt-0.5">공개 토글로 홈 노출 여부를 관리합니다</p>
-            </div>
-
-            {farewells.length === 0 ? (
-              <p className="px-4 py-5 text-[13px] text-muted-foreground text-center">
-                등록된 Farewell이 없어요
-              </p>
-            ) : (
-              <div className="divide-y divide-border">
-                {farewells.map(farewell => (
-                  <div key={farewell.id} className="flex items-center gap-3 px-4 py-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                      {farewell.player?.photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={farewell.player.photo_url} alt={farewell.player.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-[13px] font-bold text-primary">
-                          {farewell.player?.squad_number ?? 'FW'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-foreground truncate">
-                        {farewell.player?.name ?? '선수 정보 없음'}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {farewell.destination_club || '행선지 미정'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleToggleFarewellPublished(farewell)}
-                      disabled={isPlayerPending}
-                      className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold transition-colors disabled:opacity-60 ${
-                        farewell.is_published
-                          ? 'border-primary/30 bg-primary/5 text-primary'
-                          : 'border-border bg-white text-muted-foreground'
-                      }`}
-                    >
-                      {farewell.is_published ? 'Published' : 'Draft'}
-                    </button>
-                  </div>
-                ))}
+                  <input name="birth_date" type="date" className="input-field" />
+                  <input name="destination_club" className="input-field" placeholder="구단" />
+                  <textarea name="departure_note" rows={3} className="input-field resize-none" placeholder="이적 메모" />
+                  <button type="submit" disabled={isPending} className="btn-primary mt-1">
+                    + 선수 추가
+                  </button>
+                </form>
               </div>
             )}
-          </div>
-        </section>
 
-        {/* ── 구단 현황 관리 ── */}
-        <section>
-          <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2">
-            📊 구단 현황 관리
-          </p>
-          <div className="bg-white border border-border rounded-2xl p-4">
-            <form onSubmit={handleClubStatusSubmit} className="space-y-2.5">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label htmlFor="league_rank" className="text-[11px] font-semibold text-muted-foreground">
-                    리그 순위
-                  </label>
-                  <input
-                    id="league_rank"
-                    name="league_rank"
-                    type="number"
-                    defaultValue={clubStatus?.league_rank ?? ''}
-                    min={1}
-                    max={20}
-                    className="input-field mt-0.5"
-                    placeholder="4"
-                  />
+            {transferPlayer && (
+              <div className="mb-2 rounded-2xl border border-primary/20 bg-white p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[13px] font-bold text-foreground">이적 등록</p>
+                    <p className="mt-0.5 text-[12px] text-muted-foreground">{transferPlayer.name} 선수의 이적 이벤트를 만듭니다.</p>
+                  </div>
+                  <button type="button" onClick={() => setTransferPlayer(null)} className="text-[12px] font-semibold text-muted-foreground">닫기</button>
                 </div>
-                <div className="flex-1">
-                  <label htmlFor="next_match_venue" className="text-[11px] font-semibold text-muted-foreground">
-                    홈/원정
-                  </label>
-                  <select
-                    id="next_match_venue"
-                    name="next_match_venue"
-                    defaultValue={clubStatus?.next_match_venue ?? ''}
-                    className="input-field mt-0.5"
-                  >
-                    <option value="">선택</option>
-                    <option value="home">홈</option>
-                    <option value="away">원정</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label htmlFor="next_match_opponent" className="text-[11px] font-semibold text-muted-foreground">
-                  다음 경기 상대
-                </label>
-                <input
-                  id="next_match_opponent"
-                  name="next_match_opponent"
-                  defaultValue={clubStatus?.next_match_opponent ?? ''}
-                  className="input-field mt-0.5"
-                  placeholder="맨체스터 시티"
-                />
-              </div>
-              <div>
-                <label htmlFor="next_match_date" className="text-[11px] font-semibold text-muted-foreground">
-                  경기 일시
-                </label>
-                <input
-                  id="next_match_date"
-                  name="next_match_date"
-                  defaultValue={clubStatus?.next_match_date ?? ''}
-                  className="input-field mt-0.5"
-                  placeholder="예: 5월 31일 토"
-                />
-              </div>
-
-              <div className="pt-2 border-t border-border">
-                <p className="text-[12px] font-bold text-foreground mb-2">시즌 스탯 대표 선수</p>
-                {([
-                  { label: '최다 출전', idKey: 'top_appearances_player_id', countKey: 'top_appearances_count', placeholder: '횟수', defaultId: clubStatus?.top_appearances_player_id, defaultCount: clubStatus?.top_appearances_count },
-                  { label: '최다 득점', idKey: 'top_goals_player_id',       countKey: 'top_goals_count',       placeholder: '골',   defaultId: clubStatus?.top_goals_player_id,       defaultCount: clubStatus?.top_goals_count },
-                  { label: '최다 어시', idKey: 'top_assists_player_id',     countKey: 'top_assists_count',     placeholder: '어시', defaultId: clubStatus?.top_assists_player_id,     defaultCount: clubStatus?.top_assists_count },
-                ] as const).map(({ label, idKey, countKey, placeholder, defaultId, defaultCount }) => (
-                  <div key={idKey} className="flex items-center gap-2 mb-2">
-                    <span className="text-[11px] text-muted-foreground w-14 flex-shrink-0">{label}</span>
-                    <select
-                      name={idKey}
-                      defaultValue={defaultId ?? ''}
-                      className="input-field flex-1 text-[12px]"
-                    >
-                      <option value="">선수 선택</option>
-                      {activePlayers.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.squad_number ? `#${p.squad_number} ` : ''}{p.name}
-                        </option>
-                      ))}
+                <form onSubmit={e => handleCreateTransfer(e, transferPlayer)} className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <select name="departure_type" defaultValue="transferred" className="input-field">
+                      <option value="transferred">이적</option>
+                      <option value="contract_expired">계약 만료</option>
+                      <option value="loan_out">임대</option>
                     </select>
-                    <input
-                      name={countKey}
-                      type="number"
-                      defaultValue={defaultCount ?? ''}
-                      className="input-field w-14 text-center text-[12px]"
-                      placeholder={placeholder}
-                    />
+                    <input name="destination_club" className="input-field" placeholder="구단 명 또는 FA" />
                   </div>
-                ))}
+                  <textarea name="departure_note" rows={3} className="input-field resize-none" placeholder="이적 메모" />
+                  <label className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
+                    <input name="is_published" type="checkbox" className="h-4 w-4 rounded border-border" />
+                    홈과 이적 페이지에 바로 공개
+                  </label>
+                  <button type="submit" disabled={isPending} className="btn-primary">이적 등록</button>
+                </form>
               </div>
+            )}
 
-              <button type="submit" disabled={isClubPending} className="btn-secondary">
-                저장하기
-              </button>
+            <div className="space-y-3">
+              {PLAYER_GROUPS.map(group => {
+                const groupPlayers = players.filter(player => player.squad_status === group.value)
+                return (
+                  <div key={group.value} className="overflow-hidden rounded-2xl border border-border bg-white">
+                    <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                      <p className="text-[13px] font-bold text-foreground">{group.label}</p>
+                      <span className="text-[11px] font-semibold text-muted-foreground">{groupPlayers.length}명</span>
+                    </div>
+                    {groupPlayers.length === 0 ? (
+                      <p className="px-4 py-5 text-center text-[13px] text-muted-foreground">등록된 선수가 없어요.</p>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {groupPlayers.map(player => (
+                          <div key={player.id} className="px-4 py-3">
+                            {editingId === player.id ? (
+                              <form onSubmit={e => handleEditPlayer(e, player)} className="space-y-2.5">
+                                <div className="grid grid-cols-[1fr_80px] gap-2">
+                                  <input name="name" defaultValue={player.name} className="input-field" />
+                                  <input name="squad_number" type="number" defaultValue={player.squad_number ?? ''} className="input-field text-center" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <select name="position" defaultValue={player.position ?? ''} className="input-field">
+                                    <option value="">포지션</option>
+                                    <option value="GK">GK</option>
+                                    <option value="DEF">DEF</option>
+                                    <option value="MID">MID</option>
+                                    <option value="FWD">FWD</option>
+                                    <option value="MGR">MGR</option>
+                                  </select>
+                                  <select name="squad_status" defaultValue={player.squad_status ?? 'first_team'} className="input-field">
+                                    <option value="first_team">1군</option>
+                                    <option value="loan">임대</option>
+                                    <option value="u21">U21</option>
+                                  </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input name="nationality" defaultValue={player.nationality ?? ''} className="input-field" placeholder="국적" />
+                                  <input name="birth_date" type="date" defaultValue={player.birth_date ?? ''} className="input-field" />
+                                </div>
+                                <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
+                                  사진 변경
+                                  <input name="photo_file" type="file" accept="image/*" className="mt-2 block w-full text-[12px]" />
+                                </label>
+                                <SeasonStatsTableInputs player={player} />
+                                <div className="flex gap-2">
+                                  <button type="submit" disabled={isPending} className="flex-1 rounded-lg bg-primary py-2 text-[12px] font-bold text-white">저장</button>
+                                  <button type="button" onClick={() => setEditingId(null)} className="flex-1 rounded-lg bg-secondary py-2 text-[12px] font-semibold text-foreground">취소</button>
+                                </div>
+                              </form>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-black text-primary">
+                                  {player.photo_url ? (
+                                    <img src={player.photo_url} alt="" className="h-full w-full object-cover" />
+                                  ) : (
+                                    player.squad_number ?? player.name.slice(0, 2)
+                                  )}
+                                </div>
+                                <Link href={`/players/${player.id}`} className="min-w-0 flex-1">
+                                  <p className="truncate text-[13px] font-bold text-foreground">{player.name}</p>
+                                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                    #{player.squad_number ?? '-'} · {player.position ?? '포지션 없음'} · {PLAYER_STATUS_LABEL[player.squad_status ?? 'first_team']}
+                                  </p>
+                                </Link>
+                                <button type="button" onClick={() => setTransferPlayer(player)} className="text-[12px] font-bold text-primary">이적</button>
+                                <button type="button" onClick={() => setEditingId(player.id)} className="text-[12px] font-semibold text-muted-foreground">수정</button>
+                                <button type="button" onClick={() => handleDeletePlayer(player.id)} className="text-[12px] font-semibold text-red-500">삭제</button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'transfers' && (
+          <AdminTransfersPanel farewells={farewells} onToast={toast} />
+        )}
+
+        {activeSection === 'club' && (
+          <section>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-primary">구단 현황 관리</p>
+            <form onSubmit={handleClubStatusSubmit} className="space-y-2.5 rounded-2xl border border-border bg-white p-4">
+              <input name="league_rank" type="number" defaultValue={clubStatus?.league_rank ?? ''} className="input-field" placeholder="리그 순위" />
+              <input name="next_match_opponent" defaultValue={clubStatus?.next_match_opponent ?? ''} className="input-field" placeholder="다음 경기 상대" />
+              <div className="grid grid-cols-2 gap-2">
+                <input name="next_match_date" type="datetime-local" defaultValue={clubStatus?.next_match_date?.slice(0, 16) ?? ''} className="input-field" />
+                <select name="next_match_venue" defaultValue={clubStatus?.next_match_venue ?? ''} className="input-field">
+                  <option value="">장소</option>
+                  <option value="home">Home</option>
+                  <option value="away">Away</option>
+                </select>
+              </div>
+              <button type="submit" disabled={isPending} className="btn-primary">저장</button>
             </form>
-          </div>
-        </section>
+          </section>
+        )}
       </div>
     </div>
   )

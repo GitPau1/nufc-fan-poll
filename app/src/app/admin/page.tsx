@@ -33,6 +33,7 @@ export default async function AdminPage() {
     squad_number: number | null; is_active: boolean
     squad_status: 'first_team' | 'loan' | 'u21'
     nationality: string | null; birth_date: string | null; photo_url: string | null
+    season_stats: Array<{ id: string; season: string; appearances: number; goals: number; assists: number }>
   }> = []
   let clubStatus: {
     league_rank: number | null; next_match_opponent: string | null
@@ -43,7 +44,7 @@ export default async function AdminPage() {
   } | null = null
   let farewells: Array<{
     id: string; player_id: string; departure_type: string
-    destination_club: string | null; is_published: boolean; created_at: string
+    destination_club: string | null; departure_note: string | null; created_at: string
     player: { id: string; name: string; squad_number: number | null; photo_url: string | null } | null
   }> = []
   const polls = await getPollList()
@@ -56,30 +57,61 @@ export default async function AdminPage() {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
-    type PlayerWithoutStatus = Omit<(typeof players)[number], 'squad_status'>
+    type PlayerBase = Omit<(typeof players)[number], 'season_stats'>
     const [{ data: ps, error: playersError }, { data: cs }, { data: fs }] = await Promise.all([
-      supabase.from('players').select('id, name, position, squad_number, is_active, squad_status, nationality, birth_date, photo_url').eq('is_active', true).order('squad_number'),
+      supabase
+        .from('players')
+        .select('id, name, position, squad_number, is_active, squad_status, nationality, birth_date, photo_url')
+        .eq('is_active', true)
+        .order('squad_number'),
       supabase.from('club_status').select('*').eq('id', 1).single(),
       serviceSupabase
         .from('farewells')
-        .select('id, player_id, departure_type, destination_club, is_published, created_at, player:players(id, name, squad_number, photo_url)')
+        .select('id, player_id, departure_type, destination_club, departure_note, created_at, player:players(id, name, squad_number, photo_url)')
         .order('created_at', { ascending: false }),
     ])
-    let playerRows = (ps ?? []) as typeof players
+    let playerBaseRows = ((ps ?? []) as PlayerBase[]).map(player => ({
+      ...player,
+      squad_status: player.squad_status ?? 'first_team',
+    }))
     if (playersError) {
       const fallback = await supabase
         .from('players')
         .select('id, name, position, squad_number, is_active, nationality, birth_date, photo_url')
         .eq('is_active', true)
         .order('squad_number')
-      playerRows = ((fallback.data as PlayerWithoutStatus[] | null) ?? [])
+      playerBaseRows = ((fallback.data as Omit<PlayerBase, 'squad_status'>[] | null) ?? [])
         .map(player => ({ ...player, squad_status: 'first_team' as const }))
     }
-    players = playerRows
+
+    const statsByPlayer = new Map<string, Array<{ id: string; season: string; appearances: number; goals: number; assists: number }>>()
+    const { data: statsData } = await serviceSupabase
+      .from('player_season_stats')
+      .select('id, player_id, season, appearances, goals, assists')
+      .in('player_id', playerBaseRows.map(player => player.id)) as unknown as {
+        data: Array<{ id: string; player_id: string; season: string; appearances: number; goals: number; assists: number }> | null
+      }
+
+    for (const stat of statsData ?? []) {
+      const rows = statsByPlayer.get(stat.player_id) ?? []
+      rows.push({
+        id: stat.id,
+        season: stat.season,
+        appearances: stat.appearances,
+        goals: stat.goals,
+        assists: stat.assists,
+      })
+      statsByPlayer.set(stat.player_id, rows)
+    }
+
+    players = playerBaseRows.map(player => ({
+      ...player,
+      season_stats: [...(statsByPlayer.get(player.id) ?? [])].sort((a, b) => b.season.localeCompare(a.season)),
+    }))
     clubStatus = cs ?? null
     farewells = ((fs ?? []) as Array<{
       id: string; player_id: string; departure_type: string
-      destination_club: string | null; is_published: boolean; created_at: string
+      destination_club: string | null; departure_note: string | null; created_at: string
       player: { id: string; name: string; squad_number: number | null; photo_url: string | null } | { id: string; name: string; squad_number: number | null; photo_url: string | null }[] | null
     }>).map(farewell => ({
       ...farewell,

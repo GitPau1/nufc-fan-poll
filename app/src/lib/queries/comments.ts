@@ -49,7 +49,7 @@ export async function getComments(
     .from('comments')
     .select(`
       id, poll_id, user_id, content, created_at,
-      user:users(display_name, avatar_url),
+      user:public_profiles!comments_public_profiles_user_id_fkey(display_name, avatar_url),
       like_count:comment_likes(count)
     `)
     .eq('poll_id', pollId)

@@ -1,12 +1,8 @@
-'use server'
+﻿'use server'
 
-import { createClient } from '@/lib/supabase/server'
-import { isAdmin } from '@/lib/admin'
 import { revalidatePath } from 'next/cache'
 import type { PlayerStatus, PollType, Position } from '@/types/database'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnySupabase = any
+import { requireAdminClient, type AnySupabase } from '@/lib/supabase/admin'
 
 function parseIntOrNull(value: FormDataEntryValue | null): number | null {
   if (!value) return null
@@ -14,26 +10,25 @@ function parseIntOrNull(value: FormDataEntryValue | null): number | null {
   return isNaN(n) ? null : n
 }
 
+function parseIntOrZero(value: unknown): number {
+  const n = parseInt(String(value ?? ''), 10)
+  return isNaN(n) ? 0 : Math.max(0, n)
+}
+
 function isMissingColumnError(error: unknown): boolean {
   const message = String((error as { message?: string } | null)?.message ?? '')
   return message.includes('column') && message.includes('does not exist')
 }
 
-async function requireAdmin(): Promise<AnySupabase> {
-  // 1단계: 일반 클라이언트로 사용자 인증 확인
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!isAdmin(user?.email)) {
-    throw new Error('권한이 없습니다.')
-  }
-
-  // 2단계: RLS를 우회하는 service role 클라이언트 반환 (쓰기 작업에 필요)
-  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  ) as AnySupabase
+function isMissingRelationError(error: unknown): boolean {
+  const message = String((error as { message?: string } | null)?.message ?? '')
+  return message.includes('schema cache') || message.includes('does not exist')
 }
+
+async function requireAdmin(): Promise<AnySupabase> {
+  return requireAdminClient()
+}
+
 
 export async function updateClubStatus(formData: FormData): Promise<{ error?: string }> {
   try {
@@ -53,7 +48,7 @@ export async function updateClubStatus(formData: FormData): Promise<{ error?: st
       updated_at: new Date().toISOString(),
     }
 
-    // club_status is a singleton table — always a single row with id=1
+    // club_status is a singleton table ??always a single row with id=1
     const { error } = await supabase.from('club_status').update(payload).eq('id', 1)
     if (error) throw new Error(error.message)
 
@@ -65,12 +60,12 @@ export async function updateClubStatus(formData: FormData): Promise<{ error?: st
   }
 }
 
-export async function createPlayer(formData: FormData): Promise<{ error?: string }> {
+export async function createPlayer(formData: FormData): Promise<{ error?: string; playerId?: string }> {
   try {
     const supabase = await requireAdmin()
 
     const name = formData.get('name') as string
-    if (!name) throw new Error('이름은 필수입니다.')
+    if (!name) throw new Error('?대쫫? ?꾩닔?낅땲??')
 
     const payload = {
       name,
@@ -82,7 +77,7 @@ export async function createPlayer(formData: FormData): Promise<{ error?: string
       birth_date: formData.get('birth_date') as string || null,
     }
 
-    let { error } = await supabase.from('players').insert(payload)
+    let { data, error } = await supabase.from('players').insert(payload).select('id').single()
     if (error && isMissingColumnError(error)) {
       const fallbackPayload = {
         name: payload.name,
@@ -92,14 +87,15 @@ export async function createPlayer(formData: FormData): Promise<{ error?: string
         nationality: payload.nationality,
         birth_date: payload.birth_date,
       }
-      const fallback = await supabase.from('players').insert(fallbackPayload)
+      const fallback = await supabase.from('players').insert(fallbackPayload).select('id').single()
+      data = fallback.data
       error = fallback.error
     }
     if (error) throw new Error(error.message)
 
     revalidatePath('/club')
     revalidatePath('/admin')
-    return {}
+    return { playerId: data?.id }
   } catch (e) {
     return { error: (e as Error).message }
   }
@@ -133,6 +129,53 @@ export async function updatePlayer(playerId: string, formData: FormData): Promis
       error = fallback.error
     }
     if (error) throw new Error(error.message)
+
+    revalidatePath('/club')
+    revalidatePath('/admin')
+    return {}
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
+
+export async function updatePlayerSeasonStats(playerId: string, formData: FormData): Promise<{ error?: string }> {
+  try {
+    const supabase = await requireAdmin()
+    const raw = formData.get('season_stats') as string | null
+    const parsed = raw ? JSON.parse(raw) as Array<{
+      season?: string
+      appearances?: unknown
+      goals?: unknown
+      assists?: unknown
+    }> : []
+
+    const rows = parsed
+      .map(row => ({
+        player_id: playerId,
+        season: String(row.season ?? '').trim(),
+        appearances: parseIntOrZero(row.appearances),
+        goals: parseIntOrZero(row.goals),
+        assists: parseIntOrZero(row.assists),
+        updated_at: new Date().toISOString(),
+      }))
+      .filter(row => row.season)
+
+    const { error: deleteError } = await supabase
+      .from('player_season_stats')
+      .delete()
+      .eq('player_id', playerId)
+    if (deleteError && isMissingRelationError(deleteError)) {
+      throw new Error('player_season_stats table is missing. Apply the Supabase migration before saving season stats.')
+    }
+    if (deleteError) throw new Error(deleteError.message)
+
+    if (rows.length > 0) {
+      const { error: insertError } = await supabase.from('player_season_stats').insert(rows)
+      if (insertError && isMissingRelationError(insertError)) {
+        throw new Error('player_season_stats table is missing. Apply the Supabase migration before saving season stats.')
+      }
+      if (insertError) throw new Error(insertError.message)
+    }
 
     revalidatePath('/club')
     revalidatePath('/admin')
@@ -178,8 +221,8 @@ export async function createPoll(formData: FormData): Promise<{ error?: string }
 
     const title = formData.get('title') as string
     const closes_at = formData.get('closes_at') as string
-    if (!title) throw new Error('제목은 필수입니다.')
-    if (!closes_at) throw new Error('종료일은 필수입니다.')
+    if (!title) throw new Error('?쒕ぉ? ?꾩닔?낅땲??')
+    if (!closes_at) throw new Error('醫낅즺?쇱? ?꾩닔?낅땲??')
 
     const type = (formData.get('type') as PollType) ?? 'evaluation'
     const scheduled_at = formData.get('scheduled_at') as string || null
@@ -228,7 +271,7 @@ export async function createPoll(formData: FormData): Promise<{ error?: string }
       try {
         options = JSON.parse(optionsRaw) as Array<{ label: string; player_id?: string }>
       } catch {
-        return { error: '옵션 형식이 올바르지 않습니다.' }
+        return { error: '?듭뀡 ?뺤떇???щ컮瑜댁? ?딆뒿?덈떎.' }
       }
       const optionRows = options.map((opt, index) => ({
         poll_id: poll.id,
@@ -253,7 +296,7 @@ export async function uploadPhoto(formData: FormData): Promise<{ url?: string; e
     const supabase = await requireAdmin()
 
     const file = formData.get('file') as File | null
-    if (!file || file.size === 0) return { error: '파일이 없어요.' }
+    if (!file || file.size === 0) return { error: '?뚯씪???놁뼱??' }
 
     const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
     const folder = (formData.get('folder') as string) || 'players'

@@ -1,5 +1,6 @@
 import { IS_MOCK } from '@/lib/config'
 import type { ClubStatusWithStats, PlayerRow } from '@/types/database'
+import type { PlayerSeasonStatItem } from '@/lib/queries/farewells'
 
 // ── Mock data ────────────────────────────────────────────────
 const MOCK_STATUS: ClubStatusWithStats = {
@@ -84,6 +85,108 @@ export async function getSquad(): Promise<PlayerRow[]> {
   return (data as PlayerRow[]).map(player => ({
     ...player,
     squad_status: player.squad_status ?? 'first_team',
+  }))
+}
+
+export type PlayerCommentItem = {
+  id: string
+  player_id: string
+  content: string
+  created_at: string
+  user: { display_name: string | null; avatar_url: string | null }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRow = any
+
+function isMissingRelationError(error: AnyRow): boolean {
+  const message = String(error?.message ?? '')
+  return message.includes('schema cache') || message.includes('does not exist')
+}
+
+export async function getPlayerById(playerId: string): Promise<PlayerRow | null> {
+  if (IS_MOCK) return MOCK_PLAYERS.find(player => player.id === playerId) ?? null
+
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('players')
+    .select('*')
+    .eq('id', playerId)
+    .single()
+
+  if (error || !data) return null
+  return {
+    ...(data as PlayerRow),
+    squad_status: (data as PlayerRow).squad_status ?? 'first_team',
+  }
+}
+
+export async function getPlayerComments(playerId: string): Promise<PlayerCommentItem[]> {
+  if (IS_MOCK) {
+    return [
+      {
+        id: 'pc1',
+        player_id: playerId,
+        content: '이번 시즌도 기대하고 있어요.',
+        created_at: new Date(Date.now() - 1800_000).toISOString(),
+        user: { display_name: 'ToonArmy88', avatar_url: null },
+      },
+    ]
+  }
+
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('player_comments')
+    .select(`
+      id, player_id, content, created_at,
+      user:public_profiles!player_comments_public_profiles_user_id_fkey(display_name, avatar_url)
+    `)
+    .eq('player_id', playerId)
+    .eq('is_hidden', false)
+    .order('created_at', { ascending: false })
+    .limit(50) as { data: AnyRow[] | null; error: AnyRow }
+
+  if (error || !data) return []
+  return data.map(row => ({
+    id: row.id,
+    player_id: row.player_id,
+    content: row.content,
+    created_at: row.created_at,
+    user: {
+      display_name: row.user?.display_name ?? null,
+      avatar_url: row.user?.avatar_url ?? null,
+    },
+  }))
+}
+
+export async function getPlayerStats(playerId: string): Promise<PlayerSeasonStatItem[]> {
+  if (IS_MOCK) {
+    return [
+      { id: 'pps-2025', player_id: playerId, season: '2025-26', appearances: 34, goals: 18, assists: 6 },
+      { id: 'pps-2024', player_id: playerId, season: '2024-25', appearances: 32, goals: 14, assists: 4 },
+      { id: 'pps-2023', player_id: playerId, season: '2023-24', appearances: 28, goals: 10, assists: 3 },
+    ]
+  }
+
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('player_season_stats')
+    .select('id, player_id, season, appearances, goals, assists')
+    .eq('player_id', playerId)
+    .order('season', { ascending: false }) as { data: AnyRow[] | null; error: AnyRow }
+
+  if (error && isMissingRelationError(error)) return []
+  if (error || !data) return []
+  return data.map(row => ({
+    id: row.id,
+    player_id: row.player_id,
+    season: row.season,
+    appearances: row.appearances,
+    goals: row.goals,
+    assists: row.assists,
   }))
 }
 

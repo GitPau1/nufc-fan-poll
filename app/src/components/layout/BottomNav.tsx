@@ -11,8 +11,7 @@ const ITEMS = [
 export function BottomNav() {
   const pathname = usePathname()
 
-  // Hide on login and onboarding pages
-  if (pathname === '/login' || pathname === '/onboarding') return null
+  if (pathname !== '/' && pathname !== '/club') return null
 
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-border z-40">

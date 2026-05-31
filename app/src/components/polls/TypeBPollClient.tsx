@@ -140,7 +140,8 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
                 ? poll.option_players[option.player_id] ?? null
                 : null
 
-            const thumbUrl = player?.photo_url
+            const thumbUrl = option.image_url
+              ?? player?.photo_url
               ?? `https://placehold.co/${CARD_W}x260/0c2340/41b6e6?text=${encodeURIComponent(option.label.slice(0, 2))}`
 
             // ±2 카드는 투명하게 대기 (위치는 유지해 transition smooth)

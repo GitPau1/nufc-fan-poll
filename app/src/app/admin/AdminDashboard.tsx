@@ -7,7 +7,7 @@ import { createPlayer, createPoll, createTransfer, deletePlayer, setCurrentSeaso
 import { createFarewell } from '@/lib/actions/farewells'
 import type { PollListItem } from '@/lib/queries/polls'
 import type { SeasonOption } from '@/lib/queries/seasons'
-import type { DepartureType } from '@/types/database'
+import type { DepartureType, PollType } from '@/types/database'
 import { AdminTransfersPanel, type AdminTransferItem } from './AdminTransfersPanel'
 
 type PlayerStatus = 'first_team' | 'loan' | 'u21'
@@ -193,36 +193,80 @@ function PollCreateForm({
   onDone: () => void
   onError: (message: string) => void
 }) {
-  const [pollType, setPollType] = useState<'evaluation' | 'selection'>('evaluation')
+  const [pollType, setPollType] = useState<PollType>('subject_options')
   const [textOptions, setTextOptions] = useState(['', ''])
+  const [freeOptions, setFreeOptions] = useState([{ label: '', imageUrl: '' }, { label: '', imageUrl: '' }])
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([])
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
+    let freeChoiceOptions: Array<{ label: string; image_url: string | null; imageField: string }> | null = null
 
-    if (pollType === 'evaluation') {
+    if (pollType === 'subject_options') {
       const options = textOptions.map(option => option.trim()).filter(Boolean)
       if (options.length < 2) {
         onError('선택지를 최소 2개 입력해주세요.')
         return
       }
       fd.set('options', JSON.stringify(options.map(label => ({ label }))))
-    } else {
-      if (selectedPlayerIds.length < 2) {
+    } else if (pollType === 'question_targets' || pollType === 'overall_rating') {
+      const targetPlayerIds = pollType === 'overall_rating'
+        ? selectedPlayerIds.filter(id => {
+          const player = players.find(item => item.id === id)
+          return ['GK', 'DEF', 'MID', 'FWD'].includes(player?.position ?? '')
+        })
+        : selectedPlayerIds
+
+      if (targetPlayerIds.length < 2) {
         onError('선수를 최소 2명 선택해주세요.')
         return
       }
-      fd.set('options', JSON.stringify(selectedPlayerIds.map(id => {
+      fd.set('options', JSON.stringify(targetPlayerIds.map(id => {
         const player = players.find(item => item.id === id)
         return { label: player?.name ?? id, player_id: id }
       })))
+      fd.delete('player_id')
+    } else if (pollType === 'free_choice') {
+      freeChoiceOptions = freeOptions
+        .map((option, index) => ({ label: option.label.trim(), image_url: option.imageUrl.trim() || null, imageField: `free_option_image_${index}` }))
+        .filter(option => option.label)
+      if (freeChoiceOptions.length < 2) {
+        onError('선택지를 최소 2개 입력해주세요.')
+        return
+      }
+      fd.set('options', JSON.stringify(freeChoiceOptions.map(option => ({
+        label: option.label,
+        image_url: option.image_url,
+      }))))
       fd.delete('player_id')
     }
     fd.set('type', pollType)
 
     startTransition(async () => {
+      if (freeChoiceOptions) {
+        const uploadedOptions = []
+        for (const option of freeChoiceOptions) {
+          const imageFile = fd.get(option.imageField) as File | null
+          fd.delete(option.imageField)
+          if (!option.image_url && imageFile && imageFile.size > 0) {
+            const uploadForm = new FormData()
+            uploadForm.set('file', imageFile)
+            uploadForm.set('folder', 'poll-options')
+            const uploadResult = await uploadPhoto(uploadForm)
+            if (uploadResult.error || !uploadResult.url) {
+              onError(uploadResult.error ?? '선택지 이미지 업로드에 실패했습니다.')
+              return
+            }
+            uploadedOptions.push({ label: option.label, image_url: uploadResult.url })
+          } else {
+            uploadedOptions.push({ label: option.label, image_url: option.image_url })
+          }
+        }
+        fd.set('options', JSON.stringify(uploadedOptions))
+      }
+
       const result = await createPoll(fd)
       if (result.error) onError(result.error)
       else onDone()
@@ -234,16 +278,23 @@ function PollCreateForm({
       <p className="text-[13px] font-bold text-foreground">투표 만들기</p>
       <input name="title" required className="input-field" placeholder="투표 제목" />
       <input name="description" className="input-field" placeholder="설명(선택)" />
+      <input name="thumbnail_url" className="input-field" placeholder="대표 이미지 URL(선택)" />
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => setPollType('evaluation')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'evaluation' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
-          평가형
+        <button type="button" onClick={() => setPollType('subject_options')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'subject_options' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
+          대상+선택지
         </button>
-        <button type="button" onClick={() => setPollType('selection')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'selection' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
-          선택형
+        <button type="button" onClick={() => setPollType('question_targets')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'question_targets' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
+          질문+선수
+        </button>
+        <button type="button" onClick={() => setPollType('free_choice')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'free_choice' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
+          자유 선택
+        </button>
+        <button type="button" onClick={() => setPollType('overall_rating')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'overall_rating' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
+          전체 평가
         </button>
       </div>
 
-      {pollType === 'evaluation' ? (
+      {pollType === 'subject_options' ? (
         <>
           <select name="player_id" required className="input-field">
             <option value="">대상 선수 선택</option>
@@ -268,9 +319,41 @@ function PollCreateForm({
             </button>
           )}
         </>
+      ) : pollType === 'free_choice' ? (
+        <>
+          <div className="space-y-1.5">
+            {freeOptions.map((option, index) => (
+              <div key={index} className="grid grid-cols-2 gap-1.5">
+                <input
+                  value={option.label}
+                  onChange={e => setFreeOptions(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, label: e.target.value } : item))}
+                  className="input-field"
+                  placeholder={`선택지 ${index + 1}`}
+                />
+                <input
+                  value={option.imageUrl}
+                  onChange={e => setFreeOptions(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, imageUrl: e.target.value } : item))}
+                  className="input-field"
+                  placeholder="이미지 URL(선택)"
+                />
+                <label className="col-span-2 block rounded-lg border border-dashed border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
+                  선택지 이미지 첨부
+                  <input name={`free_option_image_${index}`} type="file" accept="image/*" className="mt-1 block w-full text-[11px]" />
+                </label>
+              </div>
+            ))}
+          </div>
+          {freeOptions.length < 8 && (
+            <button type="button" onClick={() => setFreeOptions(prev => [...prev, { label: '', imageUrl: '' }])} className="text-[12px] font-bold text-primary">
+              + 선택지 추가
+            </button>
+          )}
+        </>
       ) : (
         <div className="grid grid-cols-2 gap-1.5">
-          {players.map(player => {
+          {players
+            .filter(player => pollType !== 'overall_rating' || ['GK', 'DEF', 'MID', 'FWD'].includes(player.position ?? ''))
+            .map(player => {
             const selected = selectedPlayerIds.includes(player.id)
             return (
               <button
@@ -279,7 +362,7 @@ function PollCreateForm({
                 onClick={() => setSelectedPlayerIds(prev => selected ? prev.filter(id => id !== player.id) : [...prev, player.id])}
                 className={`rounded-lg border px-2 py-2 text-left text-[12px] font-semibold ${selected ? 'border-primary bg-primary/5 text-primary' : 'border-border text-foreground'}`}
               >
-                {player.name}
+                {player.position} · {player.name}
               </button>
             )
           })}

@@ -13,7 +13,16 @@ interface PollCardProps {
 function getThumbnailUrl(poll: PollListItem): string {
   if (poll.thumbnail_url) return poll.thumbnail_url
   if (poll.player?.photo_url) return poll.player.photo_url
+  const optionImage = poll.poll_options.find(option => option.image_url)?.image_url
+  if (optionImage) return optionImage
   return `https://placehold.co/96x96/0c2340/41b6e6?text=${encodeURIComponent(poll.title.slice(0, 2))}`
+}
+
+function getPollTypeLabel(type: PollListItem['type']): string {
+  if (type === 'overall_rating') return '전체 평가'
+  if (type === 'free_choice') return '자유 선택'
+  if (type === 'subject_options' || type === 'evaluation') return '평가'
+  return '선택'
 }
 
 // ── 활성 / 마감 카드 ──────────────────────────────────────────
@@ -39,7 +48,7 @@ function ActiveCard({ poll }: { poll: PollListItem }) {
               {/* 배지 */}
               <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                 <Badge variant="secondary" className="text-[10px] font-semibold pointer-events-none">
-                  {poll.type === 'evaluation' ? '평가' : '선택'}
+                  {getPollTypeLabel(poll.type)}
                 </Badge>
                 {isActive && (
                   <Badge className="text-[10px] font-semibold bg-primary/10 text-primary border-0 hover:bg-primary/10 pointer-events-none">

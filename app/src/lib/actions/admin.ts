@@ -17,7 +17,10 @@ function parseIntOrZero(value: unknown): number {
 
 function isMissingColumnError(error: unknown): boolean {
   const message = String((error as { message?: string } | null)?.message ?? '')
-  return message.includes('column') && message.includes('does not exist')
+  return (
+    (message.includes('column') && message.includes('does not exist')) ||
+    (message.includes('schema cache') && message.includes('image_url'))
+  )
 }
 
 function isMissingRelationError(error: unknown): boolean {
@@ -553,7 +556,7 @@ export async function createPoll(formData: FormData): Promise<{ error?: string }
     // Save options for both types (evaluation = text options for one player; selection = player choices)
     const optionsRaw = formData.get('options') as string
     if (optionsRaw) {
-      let options: Array<{ label: string; player_id?: string }> = []
+      let options: Array<{ label: string; player_id?: string; image_url?: string | null }> = []
       try {
         options = JSON.parse(optionsRaw) as Array<{ label: string; player_id?: string }>
       } catch {
@@ -563,9 +566,20 @@ export async function createPoll(formData: FormData): Promise<{ error?: string }
         poll_id: poll.id,
         label: opt.label,
         player_id: opt.player_id ?? null,
+        image_url: opt.image_url ?? null,
         display_order: index,
       }))
-      const { error: optError } = await supabase.from('poll_options').insert(optionRows)
+      let { error: optError } = await supabase.from('poll_options').insert(optionRows)
+      if (optError && isMissingColumnError(optError)) {
+        const fallbackRows = optionRows.map(row => ({
+          poll_id: row.poll_id,
+          label: row.label,
+          player_id: row.player_id,
+          display_order: row.display_order,
+        }))
+        const fallback = await supabase.from('poll_options').insert(fallbackRows)
+        optError = fallback.error
+      }
       if (optError) throw new Error(optError.message)
     }
 

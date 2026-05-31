@@ -12,6 +12,7 @@
     "lint": "next lint",
     "test:transfer-groups": "node --no-warnings --experimental-strip-types --test src/lib/transfers/group.test.mjs",
     "test:transfers": "node --no-warnings --experimental-strip-types --test src/lib/transfers/format.test.mjs",
+    "test:rating": "node --test src/lib/polls/rating.test.mjs",
     "test:vote-eligibility": "node --test src/lib/polls/vote-eligibility.test.mjs",
     "types:supabase": "supabase gen types typescript --linked --schema public > src/types/database.generated.ts"
   },

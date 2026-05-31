@@ -35,10 +35,11 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
     return () => cancelAnimationFrame(id)
   }, [])
 
-  const coverUrl = poll.player?.photo_url
+  const coverUrl = poll.thumbnail_url
+    ?? poll.player?.photo_url
     ?? `https://placehold.co/480x160/0c2340/41b6e6?text=${encodeURIComponent(poll.title.slice(0, 4))}`
 
-  const isSelection = poll.type === 'selection'
+  const usesPlayerOptions = poll.type === 'selection' || poll.type === 'question_targets'
 
   // 현재 유저의 투표 항목 레이블
   const myVotedOptionLabel = myOptionId
@@ -47,11 +48,12 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
 
   // 최다득표 선수 사진 (selection 타입)
   const winnerOption      = options[winnerIdx]
-  const winnerPlayer      = isSelection && winnerOption?.player_id && poll.option_players
+  const winnerPlayer      = usesPlayerOptions && winnerOption?.player_id && poll.option_players
     ? poll.option_players[winnerOption.player_id] ?? null
     : null
   const winnerPlayerPhoto = winnerPlayer?.photo_url
-    ?? (isSelection && winnerOption
+    ?? winnerOption?.image_url
+    ?? (winnerOption
       ? `https://placehold.co/56x56/ffffff/0c2340?text=${encodeURIComponent(winnerOption.label.slice(0, 1))}`
       : null)
 
@@ -73,7 +75,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
             {/* 칩 (제목 위) */}
             <div className="flex items-center gap-1.5 mb-2">
               <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm text-[11px] font-semibold pointer-events-none">
-                {isSelection ? '선택' : '평가'}
+                {usesPlayerOptions ? '선택' : poll.type === 'free_choice' ? '자유 선택' : '평가'}
               </Badge>
               <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm text-[11px] font-semibold pointer-events-none">
                 투표 종료
@@ -111,7 +113,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
               <div className="flex items-end justify-between gap-3">
                 {/* 선수 사진 + 이름 (selection 타입) — 하단 정렬 */}
                 <div className="flex items-end gap-3 min-w-0 flex-1">
-                  {isSelection && winnerPlayerPhoto && (
+                  {winnerPlayerPhoto && (
                     <img
                       src={winnerPlayerPhoto}
                       alt={winnerOption?.label ?? ''}
@@ -142,10 +144,10 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                 const isMine = option.id === myOptionId
 
                 // 선택 투표: 선수 사진 조회
-                const playerPhoto = isSelection && option.player_id && poll.option_players
+                const playerPhoto = usesPlayerOptions && option.player_id && poll.option_players
                   ? (poll.option_players[option.player_id]?.photo_url ?? null)
                   : null
-                const playerNum = isSelection && option.player_id && poll.option_players
+                const playerNum = usesPlayerOptions && option.player_id && poll.option_players
                   ? (poll.option_players[option.player_id]?.squad_number ?? null)
                   : null
 
@@ -157,9 +159,10 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                         isMine ? 'text-primary' : 'text-foreground'
                       )}>
                         {/* 선택 투표 선수 사진 (정사각형) */}
-                        {isSelection && (
+                        {(usesPlayerOptions || option.image_url) && (
                           <img
-                            src={playerPhoto
+                            src={option.image_url
+                              ?? playerPhoto
                               ?? `https://placehold.co/36x36/0c2340/41b6e6?text=${encodeURIComponent(String(playerNum ?? option.label.slice(0, 1)))}`}
                             alt={option.label}
                             className="w-9 h-9 object-cover rounded-md flex-shrink-0"

@@ -24,7 +24,7 @@ export default async function HomePage() {
   return (
     <>
       <AppHeader />
-      <main>
+      <main className="pb-24">
         {farewells.length > 0 && <FarewellBanner items={farewells} />}
 
         {transferCards.length > 0 && (

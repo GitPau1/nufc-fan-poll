@@ -24,6 +24,38 @@ function isMissingRelationError(error: unknown): boolean {
   return message.includes('schema cache') || message.includes('does not exist')
 }
 
+function isInboundStory(type: TransferType): boolean {
+  return type === 'signing' || type === 'loan_in' || type === 'promotion' || type === 'loan_return'
+}
+
+async function createInboundStory(
+  supabase: AnySupabase,
+  playerId: string,
+  transferType: TransferType,
+  clubName: string | null,
+  note: string | null,
+  bannerImageUrl: string | null,
+) {
+  if (!isInboundStory(transferType)) return
+
+  const { error } = await supabase.from('farewells').insert({
+    player_id: playerId,
+    departure_type: transferType,
+    destination_club: clubName,
+    departure_note: note,
+    banner_image_url: bannerImageUrl,
+    appearances: null,
+    goals: null,
+    assists: null,
+    clean_sheets: null,
+    joined_at: null,
+    left_at: null,
+    is_published: true,
+  })
+  if (error && isMissingRelationError(error)) return
+  if (error) throw new Error(error.message)
+}
+
 function seasonStartYear(season: string): number | null {
   const match = season.match(/\d{4}/)
   return match ? parseInt(match[0], 10) : null
@@ -84,13 +116,14 @@ export async function createFarewell(playerId: string, formData: FormData): Prom
       departure_type: departureType,
       destination_club: departureType === 'contract_expired' ? 'FA' : stringOrNull(formData.get('destination_club')),
       departure_note: stringOrNull(formData.get('departure_note')),
+      banner_image_url: stringOrNull(formData.get('banner_image_url')),
       appearances: careerSummary.appearances,
       goals: careerSummary.goals,
       assists: careerSummary.assists,
       clean_sheets: parseIntOrNull(formData.get('clean_sheets')),
       joined_at: careerSummary.joined_at,
       left_at: careerSummary.left_at,
-      is_published: formData.get('is_published') === 'on',
+      is_published: true,
       updated_at: new Date().toISOString(),
     }
 
@@ -158,6 +191,7 @@ export async function updateFarewell(farewellId: string, formData: FormData): Pr
         departure_type: departureType,
         destination_club: destinationClub,
         departure_note: stringOrNull(formData.get('departure_note')),
+        banner_image_url: stringOrNull(formData.get('banner_image_url')),
         updated_at: new Date().toISOString(),
       })
       .eq('id', farewellId)
@@ -214,13 +248,14 @@ export async function restoreExternalPlayer(formData: FormData): Promise<{ error
     const farewellId = (formData.get('farewell_id') as string)?.trim() || null
     const restoreOnly = formData.get('restore_only') === 'on'
     const currentSeason = (formData.get('current_season') as string)?.trim() || null
+    const currentSeasonId = (formData.get('current_season_id') as string)?.trim() || null
     const transferType = ((formData.get('transfer_type') as TransferType | null) ?? 'signing')
     const clubName = stringOrNull(formData.get('club_name'))
     const note = stringOrNull(formData.get('note'))
-    const isPublished = formData.get('is_published') === 'on'
+    const bannerImageUrl = stringOrNull(formData.get('banner_image_url'))
 
     if (!playerId) throw new Error('선수 정보가 없습니다.')
-    if (!restoreOnly && !currentSeason) throw new Error('현재 시즌을 먼저 설정해주세요.')
+    if (!restoreOnly && !currentSeasonId && !currentSeason) throw new Error('현재 시즌을 먼저 설정해주세요.')
 
     const supabase = await requireAdmin()
 
@@ -252,9 +287,10 @@ export async function restoreExternalPlayer(formData: FormData): Promise<{ error
           direction: 'in',
           transfer_type: transferType,
           season: currentSeason,
+          season_id: currentSeasonId,
           club_name: clubName,
           note,
-          is_published: isPublished,
+          is_published: true,
           updated_at: new Date().toISOString(),
         })
 
@@ -262,6 +298,7 @@ export async function restoreExternalPlayer(formData: FormData): Promise<{ error
         throw new Error('transfers table is missing. Apply the Supabase migration before restoring with transfer history.')
       }
       if (transferError) throw new Error(transferError.message)
+      await createInboundStory(supabase, playerId, transferType, clubName, note, bannerImageUrl)
     }
 
     revalidatePath('/')

@@ -5,7 +5,7 @@ export type PollStatus = 'scheduled' | 'active' | 'closed'
 export type Position   = 'GK' | 'DEF' | 'MID' | 'FWD' | 'MGR'
 export type PlayerStatus = 'first_team' | 'loan' | 'u21'
 export type TransferDirection = 'in' | 'out'
-export type TransferType = 'signing' | 'loan_in' | 'promotion' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
+export type TransferType = 'signing' | 'loan_in' | 'promotion' | 'loan_return' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
 export type DepartureType = 'signing' | 'loan_in' | 'promotion' | 'loan_return' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
 export type TransferRow = {
   id: string
@@ -13,9 +13,20 @@ export type TransferRow = {
   direction: TransferDirection
   transfer_type: TransferType
   season: string
+  season_id: string | null
   club_name: string | null
   note: string | null
   is_published: boolean
+  created_at: string
+  updated_at: string
+}
+export type SeasonRow = {
+  id: string
+  name: string
+  starts_at: string | null
+  ends_at: string | null
+  is_current: boolean
+  display_order: number
   created_at: string
   updated_at: string
 }
@@ -127,6 +138,7 @@ export interface Database {
           departure_type: DepartureType
           destination_club: string | null
           departure_note: string | null
+          banner_image_url: string | null
           appearances: number | null
           goals: number | null
           assists: number | null
@@ -145,11 +157,17 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['transfers']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['transfers']['Insert']>
       }
+      seasons: {
+        Row: SeasonRow
+        Insert: Omit<Database['public']['Tables']['seasons']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['seasons']['Insert']>
+      }
       player_season_stats: {
         Row: {
           id: string
           player_id: string
           season: string
+          season_id: string | null
           appearances: number
           goals: number
           assists: number
@@ -208,6 +226,7 @@ export type CommentLikeRow  = Database['public']['Tables']['comment_likes']['Row
 export type PublicProfileRow = Database['public']['Tables']['public_profiles']['Row']
 export type FarewellRow     = Database['public']['Tables']['farewells']['Row']
 export type TransferTableRow = Database['public']['Tables']['transfers']['Row']
+export type SeasonTableRow  = Database['public']['Tables']['seasons']['Row']
 export type FarewellCommentRow = Database['public']['Tables']['farewell_comments']['Row']
 export type PlayerSeasonStatsRow = Database['public']['Tables']['player_season_stats']['Row']
 export type PlayerCommentRow = Database['public']['Tables']['player_comments']['Row']
@@ -230,6 +249,7 @@ export type CommentWithMeta = CommentRow & {
 export type ClubStatusRow = {
   id: number
   current_season: string | null
+  current_season_id: string | null
   league_rank: number | null
   next_match_opponent: string | null
   next_match_date: string | null
@@ -245,6 +265,7 @@ export type ClubStatusRow = {
 
 // 구단 정보 페이지용 조합 타입
 export type ClubStatusWithStats = ClubStatusRow & {
+  current_season_record?: Pick<SeasonRow, 'id' | 'name'> | null
   top_appearances_player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
   top_goals_player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
   top_assists_player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null

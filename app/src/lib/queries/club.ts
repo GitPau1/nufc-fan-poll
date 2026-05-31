@@ -6,6 +6,8 @@ import type { PlayerSeasonStatItem } from '@/lib/queries/farewells'
 const MOCK_STATUS: ClubStatusWithStats = {
   id: 1,
   current_season: '2025-26',
+  current_season_id: 'season-2025',
+  current_season_record: { id: 'season-2025', name: '2025-26' },
   league_rank: 4,
   next_match_opponent: '맨체스터 시티',
   next_match_date: '2026-08-16T15:00:00Z',
@@ -44,6 +46,7 @@ export async function getClubStatus(): Promise<ClubStatusWithStats | null> {
     .from('club_status')
     .select(`
       *,
+      current_season_record:seasons!current_season_id(id, name),
       top_appearances_player:players!top_appearances_player_id(id, name, photo_url),
       top_goals_player:players!top_goals_player_id(id, name, photo_url),
       top_assists_player:players!top_assists_player_id(id, name, photo_url)
@@ -52,9 +55,14 @@ export async function getClubStatus(): Promise<ClubStatusWithStats | null> {
     .single()
 
   if (error || !data) return null
+  const currentSeasonId = (data as { current_season_id?: string | null }).current_season_id ?? null
+  const leaders = await getCurrentSeasonLeaders(supabase, currentSeasonId)
+
   return {
     ...(data as ClubStatusWithStats),
     current_season: (data as { current_season?: string | null }).current_season ?? null,
+    current_season_id: currentSeasonId,
+    ...leaders,
   }
 }
 
@@ -106,6 +114,42 @@ type AnyRow = any
 function isMissingRelationError(error: AnyRow): boolean {
   const message = String(error?.message ?? '')
   return message.includes('schema cache') || message.includes('does not exist')
+}
+
+async function getCurrentSeasonLeaders(supabase: AnyRow, seasonId: string | null) {
+  if (!seasonId) return {}
+
+  const { data, error } = await supabase
+    .from('player_season_stats')
+    .select(`
+      appearances, goals, assists,
+      player:players(id, name, photo_url)
+    `)
+    .eq('season_id', seasonId) as { data: AnyRow[] | null; error: AnyRow }
+
+  if (error && isMissingRelationError(error)) return {}
+  if (error || !data) return {}
+  const rows = data
+
+  function pickLeader(field: 'appearances' | 'goals' | 'assists') {
+    return rows
+      .slice()
+      .sort((a, b) => Number(b[field] ?? 0) - Number(a[field] ?? 0))
+      .find(row => Number(row[field] ?? 0) > 0) ?? null
+  }
+
+  const appearances = pickLeader('appearances')
+  const goals = pickLeader('goals')
+  const assists = pickLeader('assists')
+
+  return {
+    top_appearances_player: appearances?.player ?? null,
+    top_appearances_count: appearances ? Number(appearances.appearances ?? 0) : null,
+    top_goals_player: goals?.player ?? null,
+    top_goals_count: goals ? Number(goals.goals ?? 0) : null,
+    top_assists_player: assists?.player ?? null,
+    top_assists_count: assists ? Number(assists.assists ?? 0) : null,
+  }
 }
 
 export async function getPlayerById(playerId: string): Promise<PlayerRow | null> {
@@ -178,7 +222,7 @@ export async function getPlayerStats(playerId: string): Promise<PlayerSeasonStat
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('player_season_stats')
-    .select('id, player_id, season, appearances, goals, assists')
+    .select('id, player_id, season, season_id, appearances, goals, assists')
     .eq('player_id', playerId)
     .order('season', { ascending: false }) as { data: AnyRow[] | null; error: AnyRow }
 
@@ -188,6 +232,7 @@ export async function getPlayerStats(playerId: string): Promise<PlayerSeasonStat
     id: row.id,
     player_id: row.player_id,
     season: row.season,
+    season_id: row.season_id,
     appearances: row.appearances,
     goals: row.goals,
     assists: row.assists,

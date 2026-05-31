@@ -6,6 +6,7 @@ export type PlayerSeasonStatItem = {
   id: string
   player_id: string
   season: string
+  season_id?: string | null
   appearances: number
   goals: number
   assists: number
@@ -17,6 +18,7 @@ export type FarewellItem = {
   departure_type: DepartureType
   destination_club: string | null
   departure_note: string | null
+  banner_image_url: string | null
   appearances: number | null
   goals: number | null
   assists: number | null
@@ -40,6 +42,16 @@ export type FarewellCommentItem = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRow = any
+
+const PUBLIC_STORY_TYPES: DepartureType[] = [
+  'signing',
+  'loan_in',
+  'promotion',
+  'loan_return',
+  'transferred',
+  'contract_expired',
+  'released',
+]
 
 function isMissingColumnError(error: AnyRow): boolean {
   const message = String(error?.message ?? '')
@@ -77,6 +89,7 @@ const MOCK_FAREWELL: FarewellItem = {
   departure_type: 'released',
   destination_club: null,
   departure_note: 'Thanks for every important goal in black and white.',
+  banner_image_url: null,
   appearances: 130,
   goals: 49,
   assists: 11,
@@ -96,13 +109,14 @@ export async function getLatestFarewells(limit = 3): Promise<FarewellItem[]> {
   let { data, error } = await supabase
     .from('farewells')
     .select(`
-      id, player_id, departure_type, destination_club, departure_note,
+      id, player_id, departure_type, destination_club, departure_note, banner_image_url,
       appearances, goals, assists, clean_sheets, joined_at, left_at,
       is_published, created_at,
       player:players(id, name, position, squad_number, photo_url, is_active, squad_status, nationality, birth_date),
       comment_count:farewell_comments(count)
     `)
     .eq('is_published', true)
+    .in('departure_type', PUBLIC_STORY_TYPES)
     .order('created_at', { ascending: false })
     .limit(limit) as { data: AnyRow[] | null; error: AnyRow }
 
@@ -117,6 +131,7 @@ export async function getLatestFarewells(limit = 3): Promise<FarewellItem[]> {
         comment_count:farewell_comments(count)
       `)
       .eq('is_published', true)
+      .in('departure_type', PUBLIC_STORY_TYPES)
       .order('created_at', { ascending: false })
       .limit(limit) as { data: AnyRow[] | null; error: AnyRow }
 
@@ -135,7 +150,7 @@ export async function getFarewellById(id: string): Promise<FarewellItem | null> 
   let { data, error } = await supabase
     .from('farewells')
     .select(`
-      id, player_id, departure_type, destination_club, departure_note,
+      id, player_id, departure_type, destination_club, departure_note, banner_image_url,
       appearances, goals, assists, clean_sheets, joined_at, left_at,
       is_published, created_at,
       player:players(id, name, position, squad_number, photo_url, is_active, squad_status, nationality, birth_date),
@@ -247,6 +262,7 @@ function mapFarewellRow(row: AnyRow): FarewellItem {
     departure_type: row.departure_type,
     destination_club: row.destination_club,
     departure_note: row.departure_note,
+    banner_image_url: row.banner_image_url ?? null,
     appearances: row.appearances,
     goals: row.goals,
     assists: row.assists,

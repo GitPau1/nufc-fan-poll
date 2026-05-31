@@ -7,6 +7,8 @@ type AnyRow = Record<string, unknown>
 
 export type TransferItem = TransferTableRow & {
   movement_group: TransferMovementGroup
+  season_id: string | null
+  season_record: { id: string; name: string } | null
   player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
 }
 
@@ -17,6 +19,8 @@ const MOCK_TRANSFER_ROWS: Array<Omit<TransferItem, 'movement_group'>> = [
     direction: 'in',
     transfer_type: 'signing',
     season: '2025-26',
+    season_id: 'season-2025',
+    season_record: { id: 'season-2025', name: '2025-26' },
     club_name: 'Real Sociedad',
     note: null,
     is_published: true,
@@ -34,6 +38,8 @@ const MOCK_TRANSFER_ROWS: Array<Omit<TransferItem, 'movement_group'>> = [
     direction: 'out',
     transfer_type: 'released',
     season: '2025-26',
+    season_id: 'season-2025',
+    season_record: { id: 'season-2025', name: '2025-26' },
     club_name: null,
     note: null,
     is_published: true,
@@ -72,6 +78,7 @@ function normalizeType(value: unknown): TransferType {
     transferType === 'signing' ||
     transferType === 'loan_in' ||
     transferType === 'promotion' ||
+    transferType === 'loan_return' ||
     transferType === 'transferred' ||
     transferType === 'contract_expired' ||
     transferType === 'loan_out' ||
@@ -83,6 +90,8 @@ function mapTransferRow(row: AnyRow): TransferItem {
   const player = row.player as PlayerRow | PlayerRow[] | null | undefined
   const normalizedPlayer = Array.isArray(player) ? (player[0] ?? null) : (player ?? null)
   const transferType = normalizeType(row.transfer_type)
+  const season = row.season_record ?? row.season
+  const normalizedSeason = Array.isArray(season) ? (season[0] ?? null) : (season ?? null)
 
   return {
     id: String(row.id),
@@ -90,7 +99,11 @@ function mapTransferRow(row: AnyRow): TransferItem {
     direction: normalizeDirection(row.direction),
     transfer_type: transferType,
     movement_group: getTransferMovementGroup(transferType),
-    season: String(row.season),
+    season: String(row.season ?? (typeof normalizedSeason === 'object' && normalizedSeason !== null ? (normalizedSeason as AnyRow).name : '')),
+    season_id: typeof row.season_id === 'string' ? row.season_id : null,
+    season_record: normalizedSeason && typeof normalizedSeason === 'object'
+      ? { id: String((normalizedSeason as AnyRow).id), name: String((normalizedSeason as AnyRow).name) }
+      : null,
     club_name: typeof row.club_name === 'string' ? row.club_name : null,
     note: typeof row.note === 'string' ? row.note : null,
     is_published: Boolean(row.is_published),
@@ -113,6 +126,7 @@ export async function getTransfersBySeason(season: string): Promise<TransferItem
     .from('transfers')
     .select(`
       id, player_id, direction, transfer_type, season, club_name, note, is_published, created_at, updated_at,
+      season_record:seasons(id, name),
       player:players(id, name, photo_url)
     `)
     .eq('season', season)
@@ -122,4 +136,30 @@ export async function getTransfersBySeason(season: string): Promise<TransferItem
   if (error && (isMissingRelationError(error) || isMissingColumnError(error))) return []
   if (error || !data) return []
   return data.map(mapTransferRow)
+}
+
+export async function getTransfersBySeasonId(seasonId: string): Promise<TransferItem[]> {
+  if (!seasonId.trim()) return []
+  if (IS_MOCK) return MOCK_TRANSFERS.filter(transfer => transfer.season_id === seasonId || transfer.season_record?.id === seasonId)
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('transfers')
+    .select(`
+      id, player_id, direction, transfer_type, season, season_id, club_name, note, is_published, created_at, updated_at,
+      season_record:seasons(id, name),
+      player:players(id, name, photo_url)
+    `)
+    .eq('season_id', seasonId)
+    .eq('is_published', true)
+    .order('created_at', { ascending: false }) as { data: AnyRow[] | null; error: AnyRow | null }
+
+  if (error && (isMissingRelationError(error) || isMissingColumnError(error))) return []
+  if (error || !data) return []
+  return data.map(mapTransferRow)
+}
+
+export async function getLatestTransfersBySeasonId(seasonId: string, limit = 5): Promise<TransferItem[]> {
+  const transfers = await getTransfersBySeasonId(seasonId)
+  return transfers.slice(0, limit)
 }

@@ -3,11 +3,12 @@
 import { useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createPlayer, createPoll, createTransfer, deletePlayer, updateClubStatus, updatePlayer, updatePlayerSeasonStats, uploadPhoto } from '@/lib/actions/admin'
+import { createPlayer, createPoll, createTransfer, deletePlayer, setCurrentSeason, updateClubStatus, updatePlayer, updatePlayerSeasonStats, uploadPhoto } from '@/lib/actions/admin'
 import { createFarewell } from '@/lib/actions/farewells'
 import type { PollListItem } from '@/lib/queries/polls'
+import type { SeasonOption } from '@/lib/queries/seasons'
 import type { DepartureType } from '@/types/database'
-import { AdminTransfersPanel, type AdminFarewell } from './AdminTransfersPanel'
+import { AdminTransfersPanel, type AdminTransferItem } from './AdminTransfersPanel'
 
 type PlayerStatus = 'first_team' | 'loan' | 'u21'
 type AdminSection = 'polls' | 'players' | 'transfers' | 'club'
@@ -41,16 +42,19 @@ interface Player {
   nationality: string | null
   birth_date: string | null
   photo_url: string | null
-  season_stats?: Array<{ season: string; appearances: number; goals: number; assists: number }>
+  season_stats?: Array<{ season: string; season_id?: string | null; appearances: number; goals: number; assists: number }>
 }
 
 interface Props {
   adminEmail: string
   players: Player[]
   polls: PollListItem[]
-  farewells: AdminFarewell[]
+  transfers: AdminTransferItem[]
+  seasons: SeasonOption[]
   clubStatus: {
     current_season: string | null
+    current_season_id: string | null
+    current_season_record?: { id: string; name: string } | null
     league_rank: number | null
     next_match_opponent: string | null
     next_match_date: string | null
@@ -65,30 +69,26 @@ interface Props {
 }
 
 function parseSeasonStatsForm(formData: FormData) {
-  const seasons = formData.getAll('stat_season').map(String)
+  const seasonIds = formData.getAll('stat_season_id').map(String)
   const appearances = formData.getAll('stat_appearances').map(String)
   const goals = formData.getAll('stat_goals').map(String)
   const assists = formData.getAll('stat_assists').map(String)
 
-  return seasons
-    .map((season, index) => ({
-      season: season.trim(),
+  return seasonIds
+    .map((seasonId, index) => ({
+      season_id: seasonId.trim(),
       appearances: appearances[index] ?? '',
       goals: goals[index] ?? '',
       assists: assists[index] ?? '',
     }))
-    .filter(row => row.season)
+    .filter(row => row.season_id)
 }
 
 function removeSeasonStatFields(formData: FormData) {
-  formData.delete('stat_season')
+  formData.delete('stat_season_id')
   formData.delete('stat_appearances')
   formData.delete('stat_goals')
   formData.delete('stat_assists')
-}
-
-function setPublished(formData: FormData) {
-  formData.set('is_published', 'on')
 }
 
 function mapInboundTransferType(type: PlayerCreateTransferType): PlayerCreateTransferType {
@@ -99,9 +99,13 @@ function mapOutboundTransferType(type: string): Extract<DepartureType, 'transfer
   return type === 'contract_expired' || type === 'loan_out' || type === 'released' ? type : 'transferred'
 }
 
+function shouldCreateFarewell(type: string): boolean {
+  return type === 'transferred' || type === 'contract_expired' || type === 'released'
+}
+
 type SeasonStatDraft = {
   key: string
-  season: string
+  seasonId: string
   appearances: string
   goals: string
   assists: string
@@ -110,20 +114,20 @@ type SeasonStatDraft = {
 function createEmptySeasonRow(): SeasonStatDraft {
   return {
     key: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    season: '',
+    seasonId: '',
     appearances: '',
     goals: '',
     assists: '',
   }
 }
 
-function SeasonStatsTableInputs({ player }: { player: Player }) {
+function SeasonStatsTableInputs({ player, seasons }: { player: Player; seasons: SeasonOption[] }) {
   const [rows, setRows] = useState<SeasonStatDraft[]>(() => {
     const existingRows = player.season_stats ?? []
     if (existingRows.length === 0) return [createEmptySeasonRow()]
     return existingRows.map((row, index) => ({
       key: `existing-${player.id}-${index}`,
-      season: row.season,
+      seasonId: row.season_id ?? seasons.find(season => season.name === row.season)?.id ?? '',
       appearances: String(row.appearances),
       goals: String(row.goals),
       assists: String(row.assists),
@@ -155,7 +159,14 @@ function SeasonStatsTableInputs({ player }: { player: Player }) {
         {rows.map((row, index) => {
           return (
             <div key={row.key} className="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_36px] border-t border-border">
-              <input name="stat_season" value={row.season} onChange={e => updateRow(index, 'season', e.target.value)} className="min-w-0 border-0 px-2 py-2 text-[12px] outline-none" placeholder="2025-26" />
+              <select name="stat_season_id" value={row.seasonId} onChange={e => updateRow(index, 'seasonId', e.target.value)} className="min-w-0 border-0 px-2 py-2 text-[12px] outline-none">
+                <option value="">시즌 선택</option>
+                {seasons.map(season => (
+                  <option key={season.id} value={season.id}>
+                    {season.name}
+                  </option>
+                ))}
+              </select>
               <input name="stat_appearances" type="number" min={0} value={row.appearances} onChange={e => updateRow(index, 'appearances', e.target.value)} className="min-w-0 border-0 px-2 py-2 text-right text-[12px] outline-none" />
               <input name="stat_goals" type="number" min={0} value={row.goals} onChange={e => updateRow(index, 'goals', e.target.value)} className="min-w-0 border-0 px-2 py-2 text-right text-[12px] outline-none" />
               <input name="stat_assists" type="number" min={0} value={row.assists} onChange={e => updateRow(index, 'assists', e.target.value)} className="min-w-0 border-0 px-2 py-2 text-right text-[12px] outline-none" />
@@ -286,7 +297,7 @@ function PollCreateForm({
   )
 }
 
-export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewells }: Props) {
+export function AdminDashboard({ adminEmail, players, polls, clubStatus, transfers, seasons }: Props) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<AdminSection>('polls')
   const [showAddForm, setShowAddForm] = useState(false)
@@ -296,9 +307,23 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
   const [message, setMessage] = useState<{ text: string; type: 'ok' | 'err' } | null>(null)
   const [isPending, startTransition] = useTransition()
   const addFormRef = useRef<HTMLFormElement>(null)
-  const currentSeason = clubStatus?.current_season?.trim() ?? ''
+  const currentSeasonId = clubStatus?.current_season_id?.trim() ?? ''
+  const currentSeason = clubStatus?.current_season_record?.name?.trim() || clubStatus?.current_season?.trim() || ''
   const visiblePlayers = players.filter(player => player.is_active && player.squad_status !== 'loan')
-  const hiddenPlayers = players.filter(player => !player.is_active || player.squad_status === 'loan')
+  const outgoingTransfers = transfers.filter(transfer => transfer.direction === 'out')
+  const getLatestOutgoingTransferTime = (playerId: string) => {
+    const latestTransfer = outgoingTransfers.find(transfer => transfer.player_id === playerId)
+    return latestTransfer ? new Date(latestTransfer.created_at).getTime() : 0
+  }
+  const loanPlayers = players
+    .filter(player => player.is_active && player.squad_status === 'loan')
+    .sort((a, b) => getLatestOutgoingTransferTime(b.id) - getLatestOutgoingTransferTime(a.id))
+  const departedPlayers = players
+    .filter(player => !player.is_active)
+    .sort((a, b) => getLatestOutgoingTransferTime(b.id) - getLatestOutgoingTransferTime(a.id))
+  const externalPlayerCount = loanPlayers.length + departedPlayers.length
+  const externalPlayerIds = new Set([...loanPlayers, ...departedPlayers].map(player => player.id))
+  const externalOutgoingTransfers = outgoingTransfers.filter(transfer => externalPlayerIds.has(transfer.player_id))
 
   function toast(text: string, type: 'ok' | 'err' = 'ok') {
     setMessage({ text, type })
@@ -310,11 +335,30 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
     const fd = new FormData(e.currentTarget)
     const transferType = (fd.get('transfer_type') as PlayerCreateTransferType) || 'signing'
     const createInTransfer = fd.get('create_in_transfer') === 'on'
+    const bannerFile = fd.get('banner_image_file') as File | null
+    fd.delete('banner_image_file')
+    if (createInTransfer && !currentSeason) {
+      toast('현재 시즌을 먼저 설정해주세요.', 'err')
+      return
+    }
     fd.delete('transfer_type')
     fd.delete('create_in_transfer')
     if (transferType === 'loan_in') fd.set('squad_status', 'loan')
 
     startTransition(async () => {
+      let bannerImageUrl = ''
+      if (createInTransfer && bannerFile && bannerFile.size > 0) {
+        const bannerForm = new FormData()
+        bannerForm.set('file', bannerFile)
+        bannerForm.set('folder', 'transfer-banners')
+        const uploadResult = await uploadPhoto(bannerForm)
+        if (uploadResult.error || !uploadResult.url) {
+          toast(uploadResult.error ?? '배너 이미지 업로드에 실패했습니다.', 'err')
+          return
+        }
+        bannerImageUrl = uploadResult.url
+      }
+
       const result = await createPlayer(fd)
       if (result.error || !result.playerId) {
         toast(result.error ?? '선수 추가에 실패했어요.', 'err')
@@ -326,10 +370,11 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
         transferForm.set('player_id', result.playerId)
         transferForm.set('direction', 'in')
         transferForm.set('transfer_type', mapInboundTransferType(transferType))
+        transferForm.set('season_id', currentSeasonId)
         transferForm.set('season', currentSeason)
         transferForm.set('club_name', String(fd.get('destination_club') ?? ''))
         transferForm.set('note', String(fd.get('departure_note') ?? ''))
-        setPublished(transferForm)
+        transferForm.set('banner_image_url', bannerImageUrl)
         const transferResult = await createTransfer(transferForm)
         if (transferResult.error) {
           toast(transferResult.error, 'err')
@@ -398,6 +443,14 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
     const type = String(fd.get('departure_type'))
+    const bannerFile = fd.get('banner_image_file') as File | null
+    fd.delete('banner_image_file')
+    const selectedSeasonId = String(fd.get('current_season_id') ?? '').trim()
+    const typedSeason = String(fd.get('current_season') ?? '').trim()
+    if (!selectedSeasonId && !typedSeason && !currentSeasonId && !currentSeason) {
+      toast('시즌을 선택하거나 새 시즌을 입력해주세요.', 'err')
+      return
+    }
     if (type === 'contract_expired') {
       fd.set('destination_club', 'FA')
     }
@@ -407,20 +460,44 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
     }
 
     startTransition(async () => {
-      const farewellResult = await createFarewell(player.id, fd)
-      if (farewellResult.error) {
-        toast(farewellResult.error, 'err')
+      if (bannerFile && bannerFile.size > 0) {
+        const bannerForm = new FormData()
+        bannerForm.set('file', bannerFile)
+        bannerForm.set('folder', 'transfer-banners')
+        const uploadResult = await uploadPhoto(bannerForm)
+        if (uploadResult.error || !uploadResult.url) {
+          toast(uploadResult.error ?? '배너 이미지 업로드에 실패했습니다.', 'err')
+          return
+        }
+        fd.set('banner_image_url', uploadResult.url)
+      }
+
+      const seasonForm = new FormData()
+      seasonForm.set('current_season_id', selectedSeasonId || currentSeasonId)
+      seasonForm.set('current_season', typedSeason)
+      const seasonResult = await setCurrentSeason(seasonForm)
+      if (seasonResult.error || !seasonResult.seasonName) {
+        toast(seasonResult.error ?? '현재 시즌 설정에 실패했어요.', 'err')
         return
+      }
+
+      if (shouldCreateFarewell(type)) {
+        const farewellResult = await createFarewell(player.id, fd)
+        if (farewellResult.error) {
+          toast(farewellResult.error, 'err')
+          return
+        }
       }
 
       const transferForm = new FormData()
       transferForm.set('player_id', player.id)
       transferForm.set('direction', 'out')
       transferForm.set('transfer_type', mapOutboundTransferType(type))
-      transferForm.set('season', currentSeason)
+      transferForm.set('season_id', seasonResult.seasonId ?? '')
+      transferForm.set('season', seasonResult.seasonName)
       transferForm.set('club_name', String(fd.get('destination_club') ?? ''))
       transferForm.set('note', String(fd.get('departure_note') ?? ''))
-      if (fd.get('is_published') === 'on') setPublished(transferForm)
+      transferForm.set('banner_image_url', String(fd.get('banner_image_url') ?? ''))
 
       const transferResult = await createTransfer(transferForm)
       if (transferResult.error) {
@@ -430,6 +507,7 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
 
       toast('이적 소식이 등록됐어요.')
       setTransferPlayer(null)
+      router.refresh()
     })
   }
 
@@ -573,6 +651,10 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
                   <input name="birth_date" type="date" className="input-field" />
                   <input name="destination_club" className="input-field" placeholder="원소속 구단 또는 Free Agent" />
                   <textarea name="departure_note" rows={3} className="input-field resize-none" placeholder="이적 메모" />
+                  <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
+                    배너 이미지
+                    <input name="banner_image_file" type="file" accept="image/*" className="mt-2 block w-full text-[12px]" />
+                  </label>
                   <label className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
                     <input name="create_in_transfer" type="checkbox" className="h-4 w-4 rounded border-border" />
                     이번 시즌 In 이력 생성
@@ -594,6 +676,21 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
                   <button type="button" onClick={() => setTransferPlayer(null)} className="text-[12px] font-semibold text-muted-foreground">닫기</button>
                 </div>
                 <form onSubmit={e => handleCreateTransfer(e, transferPlayer)} className="space-y-2.5">
+                  <div className="rounded-xl border border-border bg-secondary/40 px-3 py-2">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Current Season</p>
+                    <p className="mt-0.5 text-[13px] font-black text-foreground">{currentSeason || '설정 안 됨'}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select name="current_season_id" defaultValue={currentSeasonId} className="input-field">
+                      <option value="">기존 시즌 선택</option>
+                      {seasons.map(season => (
+                        <option key={season.id} value={season.id}>
+                          {season.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input name="current_season" className="input-field" placeholder="새 시즌 (예: 2026-27)" />
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <select name="departure_type" defaultValue="transferred" className="input-field">
                       <option value="transferred">이적</option>
@@ -603,9 +700,9 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
                     <input name="destination_club" className="input-field" placeholder="구단 명 또는 FA" />
                   </div>
                   <textarea name="departure_note" rows={3} className="input-field resize-none" placeholder="이적 메모" />
-                  <label className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
-                    <input name="is_published" type="checkbox" className="h-4 w-4 rounded border-border" />
-                    홈과 이적 페이지에 바로 공개
+                  <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
+                    배너 이미지
+                    <input name="banner_image_file" type="file" accept="image/*" className="mt-2 block w-full text-[12px]" />
                   </label>
                   <button type="submit" disabled={isPending} className="btn-primary">이적 등록</button>
                 </form>
@@ -656,7 +753,7 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
                                   사진 변경
                                   <input name="photo_file" type="file" accept="image/*" className="mt-2 block w-full text-[12px]" />
                                 </label>
-                                <SeasonStatsTableInputs player={player} />
+                                <SeasonStatsTableInputs player={player} seasons={seasons} />
                                 <div className="flex gap-2">
                                   <button type="submit" disabled={isPending} className="flex-1 rounded-lg bg-primary py-2 text-[12px] font-bold text-white">저장</button>
                                   <button type="button" onClick={() => setEditingId(null)} className="flex-1 rounded-lg bg-secondary py-2 text-[12px] font-semibold text-foreground">취소</button>
@@ -690,89 +787,113 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, farewel
                   </div>
                 )
               })}
-
-              {hiddenPlayers.length > 0 && (
-                <details className="overflow-hidden rounded-2xl border border-border bg-white">
-                  <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[13px] font-bold text-foreground">
-                    <span>숨김 선수 관리</span>
-                    <span className="text-[11px] font-semibold text-muted-foreground">{hiddenPlayers.length}명</span>
-                  </summary>
-                  <div className="divide-y divide-border border-t border-border">
-                    {hiddenPlayers.map(player => (
-                      <div key={player.id} className="px-4 py-3">
-                        {editingId === player.id ? (
-                          <form onSubmit={e => handleEditPlayer(e, player)} className="space-y-2.5">
-                            <div className="grid grid-cols-[1fr_80px] gap-2">
-                              <input name="name" defaultValue={player.name} className="input-field" />
-                              <input name="squad_number" type="number" defaultValue={player.squad_number ?? ''} className="input-field text-center" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <select name="position" defaultValue={player.position ?? ''} className="input-field">
-                                <option value="">포지션</option>
-                                <option value="GK">GK</option>
-                                <option value="DEF">DEF</option>
-                                <option value="MID">MID</option>
-                                <option value="FWD">FWD</option>
-                                <option value="MGR">MGR</option>
-                              </select>
-                              <select name="squad_status" defaultValue={player.squad_status ?? 'first_team'} className="input-field">
-                                <option value="first_team">1군</option>
-                                <option value="loan">임대</option>
-                                <option value="u21">U21</option>
-                              </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <input name="nationality" defaultValue={player.nationality ?? ''} className="input-field" placeholder="국적" />
-                              <input name="birth_date" type="date" defaultValue={player.birth_date ?? ''} className="input-field" />
-                            </div>
-                            <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
-                              사진 변경
-                              <input name="photo_file" type="file" accept="image/*" className="mt-2 block w-full text-[12px]" />
-                            </label>
-                            <SeasonStatsTableInputs player={player} />
-                            <div className="flex gap-2">
-                              <button type="submit" disabled={isPending} className="flex-1 rounded-lg bg-primary py-2 text-[12px] font-bold text-white">저장</button>
-                              <button type="button" onClick={() => setEditingId(null)} className="flex-1 rounded-lg bg-secondary py-2 text-[12px] font-semibold text-foreground">취소</button>
-                            </div>
-                          </form>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-black text-primary">
-                              {player.photo_url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={player.photo_url} alt="" className="h-full w-full object-cover" />
-                              ) : (
-                                player.squad_number ?? player.name.slice(0, 2)
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-[13px] font-bold text-foreground">{player.name}</p>
-                              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                #{player.squad_number ?? '-'} · {player.position ?? '포지션 없음'} · {player.squad_status === 'loan' ? '임대' : '구단 외'}
-                              </p>
-                            </div>
-                            <button type="button" onClick={() => setEditingId(player.id)} className="text-[12px] font-semibold text-muted-foreground">수정</button>
-                            <button type="button" onClick={() => handleDeletePlayer(player.id)} className="text-[12px] font-semibold text-red-500">삭제</button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              )}
             </div>
           </section>
         )}
 
         {activeSection === 'transfers' && (
-          <AdminTransfersPanel farewells={farewells} currentSeason={currentSeason} onToast={toast} />
+          <section className="space-y-3">
+            <AdminTransfersPanel transfers={externalOutgoingTransfers} currentSeason={currentSeason} currentSeasonId={currentSeasonId} onToast={toast} />
+            {externalPlayerCount > 0 && (
+              <div className="space-y-3">
+                {[
+                  { key: 'loan', title: '임대', items: loanPlayers },
+                  { key: 'permanent', title: '완전 이적', items: departedPlayers },
+                ].map(section => (
+                  <details key={section.key} className="overflow-hidden rounded-2xl border border-border bg-white">
+                    <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-[13px] font-bold text-foreground">
+                      <span>숨김 선수 관리 · {section.title}</span>
+                      <span className="text-[11px] font-semibold text-muted-foreground">{section.items.length}명</span>
+                    </summary>
+                    {section.items.length === 0 ? (
+                      <p className="border-t border-border px-4 py-5 text-center text-[13px] text-muted-foreground">관리할 선수가 없어요.</p>
+                    ) : (
+                      <div className="divide-y divide-border border-t border-border">
+                        {section.items.map(player => (
+                          <div key={player.id} className="px-4 py-3">
+                            {editingId === player.id ? (
+                              <form onSubmit={e => handleEditPlayer(e, player)} className="space-y-2.5">
+                                <div className="grid grid-cols-[1fr_80px] gap-2">
+                                  <input name="name" defaultValue={player.name} className="input-field" />
+                                  <input name="squad_number" type="number" defaultValue={player.squad_number ?? ''} className="input-field text-center" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <select name="position" defaultValue={player.position ?? ''} className="input-field">
+                                    <option value="">포지션</option>
+                                    <option value="GK">GK</option>
+                                    <option value="DEF">DEF</option>
+                                    <option value="MID">MID</option>
+                                    <option value="FWD">FWD</option>
+                                    <option value="MGR">MGR</option>
+                                  </select>
+                                  <select name="squad_status" defaultValue={player.squad_status ?? 'first_team'} className="input-field">
+                                    <option value="first_team">1군</option>
+                                    <option value="loan">임대</option>
+                                    <option value="u21">U21</option>
+                                  </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input name="nationality" defaultValue={player.nationality ?? ''} className="input-field" placeholder="국적" />
+                                  <input name="birth_date" type="date" defaultValue={player.birth_date ?? ''} className="input-field" />
+                                </div>
+                                <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
+                                  사진 변경
+                                  <input name="photo_file" type="file" accept="image/*" className="mt-2 block w-full text-[12px]" />
+                                </label>
+                                <SeasonStatsTableInputs player={player} seasons={seasons} />
+                                <div className="flex gap-2">
+                                  <button type="submit" disabled={isPending} className="flex-1 rounded-lg bg-primary py-2 text-[12px] font-bold text-white">저장</button>
+                                  <button type="button" onClick={() => setEditingId(null)} className="flex-1 rounded-lg bg-secondary py-2 text-[12px] font-semibold text-foreground">취소</button>
+                                </div>
+                              </form>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-black text-primary">
+                                  {player.photo_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={player.photo_url} alt="" className="h-full w-full object-cover" />
+                                  ) : (
+                                    player.squad_number ?? player.name.slice(0, 2)
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-[13px] font-bold text-foreground">{player.name}</p>
+                                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                    #{player.squad_number ?? '-'} · {player.position ?? '포지션 없음'} · {player.squad_status === 'loan' ? '임대' : '구단 외'}
+                                  </p>
+                                </div>
+                                <button type="button" onClick={() => setEditingId(player.id)} className="text-[12px] font-semibold text-muted-foreground">수정</button>
+                                <button type="button" onClick={() => handleDeletePlayer(player.id)} className="text-[12px] font-semibold text-red-500">삭제</button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </details>
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
         {activeSection === 'club' && (
           <section>
             <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-primary">구단 현황 관리</p>
             <form onSubmit={handleClubStatusSubmit} className="space-y-2.5 rounded-2xl border border-border bg-white p-4">
-              <input name="current_season" defaultValue={clubStatus?.current_season ?? ''} className="input-field" placeholder="현재 시즌 (예: 2025-26)" />
+              <div className="rounded-xl border border-border bg-secondary/40 px-3 py-2">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Current Season</p>
+                <p className="mt-0.5 text-[13px] font-black text-foreground">{currentSeason || '설정 안 됨'}</p>
+              </div>
+              <select name="current_season_id" defaultValue={currentSeasonId} className="input-field">
+                <option value="">기존 시즌 선택</option>
+                {seasons.map(season => (
+                  <option key={season.id} value={season.id}>
+                    {season.name}
+                  </option>
+                ))}
+              </select>
+              <input name="current_season" className="input-field" placeholder="새 시즌 추가 및 현재 시즌 설정 (예: 2026-27)" />
               <input name="league_rank" type="number" defaultValue={clubStatus?.league_rank ?? ''} className="input-field" placeholder="리그 순위" />
               <input name="next_match_opponent" defaultValue={clubStatus?.next_match_opponent ?? ''} className="input-field" placeholder="다음 경기 상대" />
               <div className="grid grid-cols-2 gap-2">

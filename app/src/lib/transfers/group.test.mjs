@@ -5,9 +5,10 @@ import {
   splitTransfersByMovementGroup,
 } from './group.ts'
 
-test('loan_in and loan_out are grouped as loan', () => {
+test('loan transfer variants are grouped as loan', () => {
   assert.equal(getTransferMovementGroup('loan_in'), 'loan')
   assert.equal(getTransferMovementGroup('loan_out'), 'loan')
+  assert.equal(getTransferMovementGroup('loan_return'), 'loan')
 })
 
 test('non-loan transfer types are grouped as permanent', () => {

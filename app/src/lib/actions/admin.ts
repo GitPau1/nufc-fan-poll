@@ -29,13 +29,143 @@ async function requireAdmin(): Promise<AnySupabase> {
   return requireAdminClient()
 }
 
+function isPermanentDeparture(type: TransferType): boolean {
+  return type === 'transferred' || type === 'contract_expired' || type === 'released'
+}
+
+function isInboundStory(type: TransferType): boolean {
+  return type === 'signing' || type === 'loan_in' || type === 'promotion' || type === 'loan_return'
+}
+
+async function syncPlayerTransferState(
+  supabase: AnySupabase,
+  playerId: string,
+  direction: TransferDirection,
+  transferType: TransferType,
+) {
+  if (direction === 'in') {
+    const { error } = await supabase
+      .from('players')
+      .update({ is_active: true, squad_status: 'first_team' })
+      .eq('id', playerId)
+    if (error) throw new Error(error.message)
+    return
+  }
+
+  if (transferType === 'loan_out') {
+    const { error } = await supabase
+      .from('players')
+      .update({ is_active: true, squad_status: 'loan' })
+      .eq('id', playerId)
+    if (error) throw new Error(error.message)
+    return
+  }
+
+  if (isPermanentDeparture(transferType)) {
+    const { error } = await supabase
+      .from('players')
+      .update({ is_active: false })
+      .eq('id', playerId)
+    if (error) throw new Error(error.message)
+  }
+}
+
+async function createInboundStory(
+  supabase: AnySupabase,
+  playerId: string,
+  transferType: TransferType,
+  clubName: string | null,
+  note: string | null,
+  bannerImageUrl: string | null,
+) {
+  if (!isInboundStory(transferType)) return
+
+  const { error } = await supabase.from('farewells').insert({
+    player_id: playerId,
+    departure_type: transferType,
+    destination_club: clubName,
+    departure_note: note,
+    banner_image_url: bannerImageUrl,
+    appearances: null,
+    goals: null,
+    assists: null,
+    clean_sheets: null,
+    joined_at: null,
+    left_at: null,
+    is_published: true,
+  })
+  if (error && isMissingRelationError(error)) return
+  if (error) throw new Error(error.message)
+}
+
+async function resolveCurrentSeason(
+  supabase: AnySupabase,
+  seasonIdInput: string | null,
+  seasonNameInput: string | null,
+): Promise<{ id: string | null; name: string | null }> {
+  let currentSeasonId = seasonIdInput
+  let currentSeason = seasonNameInput
+
+  if (currentSeason) {
+    const { data, error } = await supabase
+      .from('seasons')
+      .upsert({ name: currentSeason, updated_at: new Date().toISOString() }, { onConflict: 'name' })
+      .select('id, name')
+      .single()
+
+    if (error && isMissingRelationError(error)) {
+      throw new Error('seasons table is missing. Apply the Supabase migration before setting the current season.')
+    }
+    if (error) throw new Error(error.message)
+    currentSeasonId = (data as { id?: string } | null)?.id ?? currentSeasonId
+    currentSeason = (data as { name?: string } | null)?.name ?? currentSeason
+  } else if (currentSeasonId) {
+    const { data, error } = await supabase
+      .from('seasons')
+      .select('id, name')
+      .eq('id', currentSeasonId)
+      .single()
+
+    if (error && isMissingRelationError(error)) {
+      throw new Error('seasons table is missing. Apply the Supabase migration before setting the current season.')
+    }
+    if (error) throw new Error(error.message)
+    currentSeason = (data as { name?: string } | null)?.name ?? null
+  }
+
+  if (currentSeasonId) {
+    const { error: clearError } = await supabase
+      .from('seasons')
+      .update({ is_current: false, updated_at: new Date().toISOString() })
+      .neq('id', currentSeasonId)
+    if (clearError && isMissingRelationError(clearError)) {
+      throw new Error('seasons table is missing. Apply the Supabase migration before setting the current season.')
+    }
+    if (clearError) throw new Error(clearError.message)
+
+    const { error: currentError } = await supabase
+      .from('seasons')
+      .update({ is_current: true, updated_at: new Date().toISOString() })
+      .eq('id', currentSeasonId)
+    if (currentError) throw new Error(currentError.message)
+  }
+
+  return { id: currentSeasonId, name: currentSeason }
+}
+
 
 export async function updateClubStatus(formData: FormData): Promise<{ error?: string }> {
   try {
     const supabase = await requireAdmin()
+    const resolvedSeason = await resolveCurrentSeason(
+      supabase,
+      (formData.get('current_season_id') as string)?.trim() || null,
+      (formData.get('current_season') as string)?.trim() || null,
+    )
 
     const payload = {
-      current_season: (formData.get('current_season') as string)?.trim() || null,
+      current_season: resolvedSeason.name,
+      current_season_id: resolvedSeason.id,
       league_rank: parseIntOrNull(formData.get('league_rank')),
       next_match_opponent: (formData.get('next_match_opponent') as string)?.trim() || null,
       next_match_date: (formData.get('next_match_date') as string)?.trim() || null,
@@ -62,6 +192,39 @@ export async function updateClubStatus(formData: FormData): Promise<{ error?: st
   }
 }
 
+export async function setCurrentSeason(formData: FormData): Promise<{ error?: string; seasonId?: string; seasonName?: string }> {
+  try {
+    const supabase = await requireAdmin()
+    const resolvedSeason = await resolveCurrentSeason(
+      supabase,
+      (formData.get('current_season_id') as string)?.trim() || null,
+      (formData.get('current_season') as string)?.trim() || null,
+    )
+
+    if (!resolvedSeason.id || !resolvedSeason.name) {
+      throw new Error('현재 시즌을 선택하거나 새 시즌을 입력해주세요.')
+    }
+
+    const { error } = await supabase
+      .from('club_status')
+      .update({
+        current_season: resolvedSeason.name,
+        current_season_id: resolvedSeason.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', 1)
+
+    if (error) throw new Error(error.message)
+
+    revalidatePath('/')
+    revalidatePath('/admin')
+    revalidatePath('/transfers')
+    return { seasonId: resolvedSeason.id, seasonName: resolvedSeason.name }
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
+
 export async function createTransfer(formData: FormData): Promise<{ error?: string }> {
   try {
     const supabase = await requireAdmin()
@@ -69,9 +232,19 @@ export async function createTransfer(formData: FormData): Promise<{ error?: stri
     const playerId = (formData.get('player_id') as string)?.trim()
     const direction = (formData.get('direction') as TransferDirection | null) ?? 'in'
     const transferType = (formData.get('transfer_type') as TransferType | null) ?? 'signing'
-    const season = (formData.get('season') as string)?.trim()
+    const seasonId = (formData.get('season_id') as string)?.trim() || null
+    let season = (formData.get('season') as string)?.trim()
 
     if (!playerId) throw new Error('선수 정보가 없습니다.')
+    if (!seasonId && !season) throw new Error('현재 시즌을 먼저 설정해주세요.')
+    if (seasonId && !season) {
+      const { data } = await supabase
+        .from('seasons')
+        .select('name')
+        .eq('id', seasonId)
+        .single()
+      season = (data as { name?: string } | null)?.name?.trim() ?? ''
+    }
     if (!season) throw new Error('현재 시즌을 먼저 설정해주세요.')
 
     const payload = {
@@ -79,9 +252,11 @@ export async function createTransfer(formData: FormData): Promise<{ error?: stri
       direction,
       transfer_type: transferType,
       season,
+      season_id: seasonId,
       club_name: (formData.get('club_name') as string)?.trim() || null,
       note: (formData.get('note') as string)?.trim() || null,
-      is_published: formData.get('is_published') === 'on',
+      banner_image_url: (formData.get('banner_image_url') as string)?.trim() || null,
+      is_published: true,
       updated_at: new Date().toISOString(),
     }
 
@@ -90,6 +265,57 @@ export async function createTransfer(formData: FormData): Promise<{ error?: stri
       throw new Error('transfers table is missing. Apply the Supabase migration before saving transfer history.')
     }
     if (error) throw new Error(error.message)
+    await syncPlayerTransferState(supabase, playerId, direction, transferType)
+    if (direction === 'in') {
+      await createInboundStory(supabase, playerId, transferType, payload.club_name, payload.note, payload.banner_image_url)
+    }
+
+    revalidatePath('/')
+    revalidatePath('/admin')
+    revalidatePath('/transfers')
+    return {}
+  } catch (e) {
+    return { error: (e as Error).message }
+  }
+}
+
+export async function updateTransfer(transferId: string, formData: FormData): Promise<{ error?: string }> {
+  try {
+    const supabase = await requireAdmin()
+    const transferType = (formData.get('transfer_type') as TransferType | null) ?? 'signing'
+    const { data: existingTransfer, error: readError } = await supabase
+      .from('transfers')
+      .select('player_id, direction')
+      .eq('id', transferId)
+      .single()
+
+    if (readError && isMissingRelationError(readError)) {
+      throw new Error('transfers table is missing. Apply the Supabase migration before updating transfer history.')
+    }
+    if (readError) throw new Error(readError.message)
+
+    const { error } = await supabase
+      .from('transfers')
+      .update({
+        transfer_type: transferType,
+        club_name: (formData.get('club_name') as string)?.trim() || null,
+        note: (formData.get('note') as string)?.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', transferId)
+
+    if (error && isMissingRelationError(error)) {
+      throw new Error('transfers table is missing. Apply the Supabase migration before updating transfer history.')
+    }
+    if (error) throw new Error(error.message)
+    if (existingTransfer?.player_id && existingTransfer?.direction) {
+      await syncPlayerTransferState(
+        supabase,
+        String(existingTransfer.player_id),
+        existingTransfer.direction as TransferDirection,
+        transferType,
+      )
+    }
 
     revalidatePath('/')
     revalidatePath('/admin')
@@ -183,22 +409,42 @@ export async function updatePlayerSeasonStats(playerId: string, formData: FormDa
     const supabase = await requireAdmin()
     const raw = formData.get('season_stats') as string | null
     const parsed = raw ? JSON.parse(raw) as Array<{
-      season?: string
+      season_id?: string
       appearances?: unknown
       goals?: unknown
       assists?: unknown
     }> : []
 
+    const seasonIds = Array.from(new Set(parsed.map(row => String(row.season_id ?? '').trim()).filter(Boolean)))
+    const seasonsById = new Map<string, string>()
+    if (seasonIds.length > 0) {
+      const { data: seasonData, error: seasonError } = await supabase
+        .from('seasons')
+        .select('id, name')
+        .in('id', seasonIds)
+      if (seasonError && isMissingRelationError(seasonError)) {
+        throw new Error('seasons table is missing. Apply the Supabase migration before saving season stats.')
+      }
+      if (seasonError) throw new Error(seasonError.message)
+      for (const season of (seasonData ?? []) as Array<{ id: string; name: string }>) {
+        seasonsById.set(season.id, season.name)
+      }
+    }
+
     const rows = parsed
-      .map(row => ({
+      .map(row => {
+        const seasonId = String(row.season_id ?? '').trim()
+        return {
         player_id: playerId,
-        season: String(row.season ?? '').trim(),
+        season_id: seasonId,
+        season: seasonsById.get(seasonId) ?? '',
         appearances: parseIntOrZero(row.appearances),
         goals: parseIntOrZero(row.goals),
         assists: parseIntOrZero(row.assists),
         updated_at: new Date().toISOString(),
-      }))
-      .filter(row => row.season)
+        }
+      })
+      .filter(row => row.season_id && row.season)
 
     const { error: deleteError } = await supabase
       .from('player_season_stats')

@@ -255,10 +255,10 @@ export async function createTransfer(formData: FormData): Promise<{ error?: stri
       season_id: seasonId,
       club_name: (formData.get('club_name') as string)?.trim() || null,
       note: (formData.get('note') as string)?.trim() || null,
-      banner_image_url: (formData.get('banner_image_url') as string)?.trim() || null,
       is_published: true,
       updated_at: new Date().toISOString(),
     }
+    const bannerImageUrl = (formData.get('banner_image_url') as string)?.trim() || null
 
     const { error } = await supabase.from('transfers').insert(payload)
     if (error && isMissingRelationError(error)) {
@@ -267,7 +267,7 @@ export async function createTransfer(formData: FormData): Promise<{ error?: stri
     if (error) throw new Error(error.message)
     await syncPlayerTransferState(supabase, playerId, direction, transferType)
     if (direction === 'in') {
-      await createInboundStory(supabase, playerId, transferType, payload.club_name, payload.note, payload.banner_image_url)
+      await createInboundStory(supabase, playerId, transferType, payload.club_name, payload.note, bannerImageUrl)
     }
 
     revalidatePath('/')

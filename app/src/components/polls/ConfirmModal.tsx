@@ -28,7 +28,8 @@ export function ConfirmModal({
     <Sheet open={open} onOpenChange={open => { if (!open) onCancel() }}>
       <SheetContent
         side="bottom"
-        className="rounded-t-2xl border-t-0 pb-10 [&>button]:hidden"
+        style={{ left: 'max(0px, calc(50% - 240px))' }}
+        className="right-auto w-full max-w-[480px] rounded-t-2xl border-t-0 pb-10 [&>button]:hidden"
       >
         {/* 드래그 핸들 */}
         <div className="mx-auto w-10 h-1.5 rounded-full bg-muted mb-6" />

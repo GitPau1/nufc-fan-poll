@@ -33,6 +33,8 @@ const pope: PlayerRow = {
   nationality: null, birth_date: null,
 }
 
+export const MOCK_PLAYERS = [isak, bruno, trippier, gordon, wilson, pope]
+
 // ── 공통 평가 옵션 생성 헬퍼 ────────────────────────────────
 function evalOptions(pollId: string): PollOptionRow[] {
   return [
@@ -271,7 +273,7 @@ export type ParticipatedPoll = {
   pollTitle: string
   optionLabel: string
   votedAt: string
-  pollStatus: 'active' | 'closed'
+  pollStatus: 'scheduled' | 'active' | 'closed'
 }
 
 export const MOCK_PARTICIPATED: ParticipatedPoll[] = [

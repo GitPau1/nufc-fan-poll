@@ -369,10 +369,7 @@ function PollCreateForm({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
-        <input name="scheduled_at" type="datetime-local" className="input-field" />
-        <input name="closes_at" type="datetime-local" required className="input-field" />
-      </div>
+      <input name="closes_at" type="datetime-local" required className="input-field" aria-label="투표 종료일" />
       <button type="submit" disabled={isPending} className="btn-primary">
         투표 생성
       </button>

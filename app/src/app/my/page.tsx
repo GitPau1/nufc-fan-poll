@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { IS_MOCK } from '@/lib/config'
-import { MOCK_PARTICIPATED } from '@/lib/mock/data'
+import { MOCK_PARTICIPATED, MOCK_POLL_LIST } from '@/lib/mock/data'
 import { MyPageClient } from '@/components/my/MyPageClient'
+
+type PollStatusForMy = 'scheduled' | 'active' | 'closed'
 
 export default async function MyPage() {
   // ── 목 모드: 데모 프로필 ─────────────────────────────────────
@@ -12,6 +14,13 @@ export default async function MyPage() {
         email="fan@nufcvote.com"
         avatarUrl={null}
         participatedPolls={MOCK_PARTICIPATED}
+        createdPolls={MOCK_POLL_LIST.slice(0, 2).map(poll => ({
+          pollId: poll.id,
+          pollTitle: poll.title,
+          createdAt: poll.created_at,
+          pollStatus: poll.status,
+          voteCount: poll.vote_count,
+        }))}
         isMockMode={true}
       />
     )
@@ -49,23 +58,98 @@ export default async function MyPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
+  type JoinedOne<T> = T | T[] | null
   type ParticipatedVoteRow = {
     created_at: string
-    option: { label: string } | null
-    poll: { id: string; title: string; status: 'active' | 'closed' } | null
+    option: JoinedOne<{ label: string }>
+    poll: JoinedOne<{ id: string; title: string; status: PollStatusForMy }>
   }
 
-  const participatedPolls = ((voteRows ?? []) as ParticipatedVoteRow[])
+  function one<T>(value: JoinedOne<T>): T | null {
+    return Array.isArray(value) ? value[0] ?? null : value
+  }
+
+  const votedPolls = ((voteRows ?? []) as ParticipatedVoteRow[])
     .flatMap(row => {
-      if (!row.poll) return []
+      const poll = one(row.poll)
+      const option = one(row.option)
+      if (!poll) return []
       return [{
-        pollId: row.poll.id,
-        pollTitle: row.poll.title,
-        optionLabel: row.option?.label ?? '',
+        pollId: poll.id,
+        pollTitle: poll.title,
+        optionLabel: option?.label ?? '',
         votedAt: row.created_at,
-        pollStatus: row.poll.status,
+        pollStatus: poll.status,
       }]
     })
+
+  const { data: ratingVoteRows } = await supabase
+    .from('rating_votes')
+    .select(`
+      created_at,
+      poll:polls(id, title, status)
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  type ParticipatedRatingVoteRow = {
+    created_at: string
+    poll: JoinedOne<{ id: string; title: string; status: PollStatusForMy }>
+  }
+
+  const participationByPoll = new Map<string, (typeof votedPolls)[number]>()
+  for (const item of votedPolls) {
+    participationByPoll.set(item.pollId, item)
+  }
+  for (const row of ((ratingVoteRows ?? []) as ParticipatedRatingVoteRow[])) {
+    const poll = one(row.poll)
+    if (!poll || participationByPoll.has(poll.id)) continue
+    participationByPoll.set(poll.id, {
+      pollId: poll.id,
+      pollTitle: poll.title,
+      optionLabel: '전체 평가 제출',
+      votedAt: row.created_at,
+      pollStatus: poll.status,
+    })
+  }
+  const participatedPolls = Array.from(participationByPoll.values())
+    .sort((a, b) => new Date(b.votedAt).getTime() - new Date(a.votedAt).getTime())
+
+  let createdPolls: Array<{
+    pollId: string
+    pollTitle: string
+    createdAt: string
+    pollStatus: PollStatusForMy
+    voteCount: number
+  }> = []
+
+  const createdPollResult = await supabase
+    .from('polls')
+    .select(`
+      id, title, status, created_at,
+      vote_count:votes(count)
+    `)
+    .eq('created_by', user.id)
+    .order('created_at', { ascending: false }) as {
+      data: Array<{
+        id: string
+        title: string
+        status: PollStatusForMy
+        created_at: string
+        vote_count: Array<{ count: number }> | null
+      }> | null
+      error: { message?: string } | null
+    }
+
+  if (!createdPollResult.error) {
+    createdPolls = (createdPollResult.data ?? []).map(poll => ({
+      pollId: poll.id,
+      pollTitle: poll.title,
+      createdAt: poll.created_at,
+      pollStatus: poll.status,
+      voteCount: poll.vote_count?.[0]?.count ?? 0,
+    }))
+  }
 
   return (
     <MyPageClient
@@ -73,6 +157,7 @@ export default async function MyPage() {
       email={email}
       avatarUrl={avatarUrl}
       participatedPolls={participatedPolls}
+      createdPolls={createdPolls}
       isMockMode={false}
     />
   )

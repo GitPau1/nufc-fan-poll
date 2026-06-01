@@ -514,17 +514,14 @@ export async function createPoll(formData: FormData): Promise<{ error?: string }
     if (!closes_at) throw new Error('醫낅즺?쇱? ?꾩닔?낅땲??')
 
     const type = (formData.get('type') as PollType) ?? 'evaluation'
-    const scheduled_at = formData.get('scheduled_at') as string || null
-    const status = scheduled_at ? 'scheduled' : 'active'
-
     const pollPayload = {
       title,
       type,
       description: formData.get('description') as string || null,
       player_id: formData.get('player_id') as string || null,
       thumbnail_url: formData.get('thumbnail_url') as string || null,
-      status,
-      scheduled_at,
+      status: 'active',
+      scheduled_at: null,
       closes_at,
     }
 
@@ -584,6 +581,7 @@ export async function createPoll(formData: FormData): Promise<{ error?: string }
     }
 
     revalidatePath('/')
+    revalidatePath('/polls')
     revalidatePath('/admin')
     return {}
   } catch (e) {
@@ -624,6 +622,7 @@ export async function updatePollStatus(pollId: string, status: 'active' | 'close
     if (error) throw new Error(error.message)
 
     revalidatePath('/')
+    revalidatePath('/polls')
     revalidatePath('/admin')
     return {}
   } catch (e) {

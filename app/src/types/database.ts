@@ -68,6 +68,7 @@ export interface Database {
           title: string
           description: string | null
           player_id: string | null     // Type A only
+          created_by: string | null
           status: PollStatus
           thumbnail_url: string | null
           scheduled_at: string | null

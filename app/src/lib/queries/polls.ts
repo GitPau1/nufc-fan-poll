@@ -74,6 +74,8 @@ export type RatingResultItem = {
   top_comments: RatingCommentItem[]
 }
 
+export type PollFormPlayer = Pick<PlayerRow, 'id' | 'name' | 'position' | 'squad_number' | 'photo_url' | 'is_active' | 'squad_status'>
+
 // 쿼리 결과의 raw 타입 (supabase-js join 추론 한계로 명시적 cast 사용)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRow = any
@@ -92,6 +94,43 @@ function normalizePlayer(player: PlayerRow | null): PlayerRow | null {
     ...player,
     squad_status: player.squad_status ?? 'first_team',
   }
+}
+
+export async function getPollFormPlayers(): Promise<PollFormPlayer[]> {
+  if (IS_MOCK) {
+    const { MOCK_PLAYERS } = await import('@/lib/mock/data')
+    return MOCK_PLAYERS
+  }
+
+  const supabase = await createClient()
+  let { data, error } = await supabase
+    .from('players')
+    .select('id, name, position, squad_number, photo_url, is_active, squad_status')
+    .order('squad_number', { ascending: true }) as { data: AnyRow[] | null; error: AnyRow }
+
+  if (error && isMissingColumnError(error)) {
+    const fallback = await supabase
+      .from('players')
+      .select('id, name, position, squad_number, photo_url, is_active')
+      .order('squad_number', { ascending: true }) as { data: AnyRow[] | null; error: AnyRow }
+    data = fallback.data
+    error = fallback.error
+  }
+
+  if (error) {
+    console.error('getPollFormPlayers error:', error)
+    return []
+  }
+
+  return (data ?? []).map((player: AnyRow) => ({
+    id: player.id as string,
+    name: player.name as string,
+    position: player.position as PlayerRow['position'],
+    squad_number: player.squad_number as number | null,
+    photo_url: player.photo_url as string | null,
+    is_active: player.is_active as boolean,
+    squad_status: (player.squad_status ?? 'first_team') as PlayerRow['squad_status'],
+  }))
 }
 
 // ── 투표 목록 조회 ────────────────────────────────────────────

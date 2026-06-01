@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogOut, Trash2, ChevronRight, Pencil, Check, X } from 'lucide-react'
@@ -17,7 +17,16 @@ interface MyPageClientProps {
   email: string
   avatarUrl: string | null
   participatedPolls: ParticipatedPoll[]
+  createdPolls: CreatedPoll[]
   isMockMode: boolean
+}
+
+type CreatedPoll = {
+  pollId: string
+  pollTitle: string
+  createdAt: string
+  pollStatus: 'scheduled' | 'active' | 'closed'
+  voteCount: number
 }
 
 function formatDate(dateStr: string): string {
@@ -31,6 +40,7 @@ export function MyPageClient({
   email,
   avatarUrl,
   participatedPolls,
+  createdPolls,
   isMockMode,
 }: MyPageClientProps) {
   const router = useRouter()
@@ -38,6 +48,8 @@ export function MyPageClient({
   const [nameValue, setNameValue]         = useState(displayName)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editInput, setEditInput]         = useState(displayName)
+  const [myCreatedPolls, setMyCreatedPolls] = useState(createdPolls)
+  const [isDeletingPoll, startDeletePollTransition] = useTransition()
 
   const initial = nameValue[0]?.toUpperCase() ?? 'U'
 
@@ -89,6 +101,31 @@ export function MyPageClient({
     if (confirm('정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
       // submitDeleteAccount()
     }
+  }
+
+  function getStatusLabel(status: CreatedPoll['pollStatus']) {
+    if (status === 'closed') return '종료'
+    if (status === 'scheduled') return '예정'
+    return '진행 중'
+  }
+
+  function handleDeletePoll(pollId: string) {
+    if (isMockMode) {
+      alert('데모 모드에서는 지원하지 않습니다.')
+      return
+    }
+    if (!confirm('이 투표를 삭제할까요? 투표와 댓글 데이터도 함께 삭제됩니다.')) return
+
+    startDeletePollTransition(async () => {
+      const { deleteUserPoll } = await import('@/lib/actions/polls')
+      const result = await deleteUserPoll(pollId)
+      if (result.error) {
+        alert(result.error)
+        return
+      }
+      setMyCreatedPolls(prev => prev.filter(item => item.pollId !== pollId))
+      router.refresh()
+    })
   }
 
   return (
@@ -151,6 +188,65 @@ export function MyPageClient({
               <Badge variant="secondary" className="text-[10px] mt-1">데모 프로필</Badge>
             )}
           </div>
+        </div>
+
+        <Separator />
+
+        {/* 내가 만든 투표 */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            내가 만든 투표 · {myCreatedPolls.length}개
+          </p>
+
+          {myCreatedPolls.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              아직 만든 투표가 없습니다
+            </p>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                {myCreatedPolls.map((item, i) => (
+                  <div key={item.pollId}>
+                    {i > 0 && <Separator />}
+                    <div className="relative">
+                      <Link href={`/polls/${item.pollId}`} className="block active:bg-secondary/70 transition-colors">
+                        <div className="flex items-center gap-3 px-4 py-3.5 pr-12 hover:bg-secondary/50 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground leading-snug line-clamp-1">
+                              {item.pollTitle}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs font-medium text-primary">
+                                {item.voteCount.toLocaleString()}명 참여
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                · {formatDate(item.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                          <Badge
+                            variant={item.pollStatus === 'closed' ? 'outline' : 'secondary'}
+                            className="text-[10px] pointer-events-none"
+                          >
+                            {getStatusLabel(item.pollStatus)}
+                          </Badge>
+                        </div>
+                      </Link>
+                      <button
+                        type="button"
+                        disabled={isDeletingPoll}
+                        onClick={() => handleDeletePoll(item.pollId)}
+                        className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                        aria-label="투표 삭제"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <Separator />

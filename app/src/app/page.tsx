@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { FarewellBanner } from '@/components/home/FarewellBanner'
-import { PollListClient } from '@/components/polls/PollListClient'
+import { PollCard } from '@/components/polls/PollCard'
 import { TransferListItem } from '@/components/transfers/TransferListItem'
 import { getClubStatus } from '@/lib/queries/club'
 import { getLatestFarewells } from '@/lib/queries/farewells'
@@ -15,11 +15,12 @@ export default async function HomePage() {
     getSeasons(),
   ])
   const currentSeason = resolveSelectedSeason(seasons, null, clubStatus?.current_season_id)
-  const [initialPolls, transferCards, farewells] = await Promise.all([
-    getPollList(0),
+  const [transferCards, farewells, recentPolls] = await Promise.all([
     currentSeason ? getLatestTransfersBySeasonId(currentSeason.id, 5) : Promise.resolve([]),
     getLatestFarewells(3),
+    getPollList(0),
   ])
+  const homePolls = recentPolls.slice(0, 3)
 
   return (
     <>
@@ -39,14 +40,31 @@ export default async function HomePage() {
             </div>
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide">
               {transferCards.map(transfer => (
-                <div key={transfer.id} className="w-[calc((100%-0.5rem)/2)] flex-none">
-                  <TransferListItem transfer={transfer} />
+                <div key={transfer.id} className="w-[138px] flex-none">
+                  <TransferListItem transfer={transfer} compact />
                 </div>
               ))}
             </div>
           </section>
         )}
-        <PollListClient initialPolls={initialPolls} />
+
+        {homePolls.length > 0 && (
+          <section className="px-4 pt-5 animate-enter">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="px-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                최근 투표
+              </p>
+              <Link href="/polls" className="text-[12px] font-bold text-primary">
+                전체보기
+              </Link>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-border bg-white">
+              {homePolls.map(poll => (
+                <PollCard key={poll.id} poll={poll} />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </>
   )

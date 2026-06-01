@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Separator } from '@/components/ui/separator'
 import { PollCard } from './PollCard'
 import { loadMorePolls } from '@/lib/actions/polls'
 import type { PollListItem } from '@/lib/queries/polls'
@@ -9,25 +8,10 @@ import { PAGE_SIZE } from '@/lib/constants'
 
 interface PollListClientProps {
   initialPolls: PollListItem[]
+  headerRight?: React.ReactNode
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-0.5">
-      {children}
-    </p>
-  )
-}
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-3 my-1">
-      <Separator className="flex-1" />
-      <span className="text-xs font-medium text-muted-foreground shrink-0">{label}</span>
-      <Separator className="flex-1" />
-    </div>
-  )
-}
+type PollTab = 'ongoing' | 'closed'
 
 function Spinner() {
   return (
@@ -37,11 +21,12 @@ function Spinner() {
   )
 }
 
-export function PollListClient({ initialPolls }: PollListClientProps) {
+export function PollListClient({ initialPolls, headerRight }: PollListClientProps) {
   const [polls, setPolls]     = useState<PollListItem[]>(initialPolls)
   const [page, setPage]       = useState(1)
   const [hasMore, setHasMore] = useState(initialPolls.length === PAGE_SIZE)
   const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<PollTab>('ongoing')
   const sentinelRef           = useRef<HTMLDivElement>(null)
 
   const loadMore = useCallback(async () => {
@@ -68,44 +53,81 @@ export function PollListClient({ initialPolls }: PollListClientProps) {
     return () => observer.disconnect()
   }, [loadMore])
 
-  const active    = polls.filter(p => p.status === 'active')
-  const scheduled = polls.filter(p => p.status === 'scheduled')
-  const closed    = polls.filter(p => p.status === 'closed')
+  const ongoing = polls.filter(p => p.status !== 'closed')
+  const closed  = polls.filter(p => p.status === 'closed')
+  const visiblePolls = activeTab === 'ongoing' ? ongoing : closed
 
   if (polls.length === 0 && !loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-2">
-        <p className="text-sm font-semibold text-foreground">투표가 없습니다</p>
-        <p className="text-xs text-muted-foreground">곧 새로운 투표가 공개될 예정입니다</p>
+      <div className="px-4 pt-4 animate-enter">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <PollTabs activeTab={activeTab} ongoingCount={0} closedCount={0} onChange={setActiveTab} />
+          {headerRight}
+        </div>
+        <div className="flex flex-col items-center justify-center py-24 gap-2">
+          <p className="text-sm font-semibold text-foreground">투표가 없습니다</p>
+          <p className="text-xs text-muted-foreground">곧 새로운 투표가 공개될 예정입니다</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="px-4 pt-4 pb-10 flex flex-col gap-3 animate-enter">
-      {active.length > 0 && (
-        <>
-          <SectionLabel>{`진행 중 · ${active.length}개`}</SectionLabel>
-          {active.map(p => <PollCard key={p.id} poll={p} />)}
-        </>
-      )}
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <PollTabs activeTab={activeTab} ongoingCount={ongoing.length} closedCount={closed.length} onChange={setActiveTab} />
+        {headerRight}
+      </div>
 
-      {scheduled.length > 0 && (
-        <>
-          <SectionDivider label="공개 예정" />
-          {scheduled.map(p => <PollCard key={p.id} poll={p} />)}
-        </>
-      )}
-
-      {closed.length > 0 && (
-        <>
-          <SectionDivider label="종료됨" />
-          {closed.map(p => <PollCard key={p.id} poll={p} />)}
-        </>
+      {visiblePolls.length > 0 ? (
+        <div className="overflow-hidden rounded-2xl border border-border bg-white">
+          {visiblePolls.map(p => <PollCard key={p.id} poll={p} />)}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 gap-2">
+          <p className="text-sm font-semibold text-foreground">
+            {activeTab === 'ongoing' ? '진행 중인 투표가 없습니다' : '종료된 투표가 없습니다'}
+          </p>
+        </div>
       )}
 
       <div ref={sentinelRef} />
       {loading && <Spinner />}
+    </div>
+  )
+}
+
+function PollTabs({
+  activeTab,
+  ongoingCount,
+  closedCount,
+  onChange,
+}: {
+  activeTab: PollTab
+  ongoingCount: number
+  closedCount: number
+  onChange: (tab: PollTab) => void
+}) {
+  const tabs = [
+    { id: 'ongoing' as const, label: '진행중인 투표', count: ongoingCount },
+    { id: 'closed' as const, label: '종료된 투표', count: closedCount },
+  ]
+
+  return (
+    <div className="inline-flex rounded-lg border border-border bg-white p-1">
+      {tabs.map(tab => {
+        const selected = tab.id === activeTab
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onChange(tab.id)}
+            className={`h-8 rounded-md px-2.5 text-[12px] font-bold transition-colors ${selected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            {tab.label} {tab.count}
+          </button>
+        )
+      })}
     </div>
   )
 }

@@ -14,6 +14,10 @@ type HeaderUser = {
   }
 }
 
+type HeaderProfile = {
+  display_name: string | null
+}
+
 export function HeaderAuthStatus() {
   const [user, setUser] = useState<HeaderUser | null>(null)
   const [displayName, setDisplayName] = useState<string | undefined>()
@@ -34,7 +38,7 @@ export function HeaderAuthStatus() {
         .from('users')
         .select('display_name')
         .eq('id', data.user.id)
-        .single()
+        .single<HeaderProfile>()
 
       if (cancelled) return
       setDisplayName(profile?.display_name ?? data.user.user_metadata?.name ?? undefined)

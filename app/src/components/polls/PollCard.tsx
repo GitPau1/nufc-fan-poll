@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ChevronRight, Lock, Users } from 'lucide-react'
 import type { PollListItem } from '@/lib/queries/polls'
+import { getEffectivePollStatus } from '@/lib/polls/status'
 import { formatScheduled } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { CountdownTimer } from './CountdownTimer'
@@ -58,9 +59,12 @@ function PollListRow({ poll }: { poll: PollListItem }) {
           {poll.description && (
             <p className="mt-1 line-clamp-1 text-[12px] leading-snug text-muted-foreground">{poll.description}</p>
           )}
-          <div className="mt-2 flex items-center gap-1.5 text-[11px] leading-none text-muted-foreground">
-            <Users className="h-3.5 w-3.5" />
-            <span>{isActive ? `${poll.vote_count.toLocaleString()}명 참여` : '결과 열람 가능'}</span>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-none text-muted-foreground">
+            {poll.creator_name && <span>{poll.creator_name}</span>}
+            <span className="inline-flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5" />
+              {isActive ? `${poll.vote_count.toLocaleString()}명 참여` : '결과 열람 가능'}
+            </span>
           </div>
         </div>
 
@@ -91,8 +95,9 @@ function ScheduledRow({ poll }: { poll: PollListItem }) {
             </Badge>
           </div>
           <p className="line-clamp-1 text-[15px] font-black text-foreground">{poll.title}</p>
-          <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
-            <Lock className="h-3.5 w-3.5" /> 공개 전
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-muted-foreground">
+            {poll.creator_name && <span>{poll.creator_name}</span>}
+            <span className="inline-flex items-center gap-1"><Lock className="h-3.5 w-3.5" /> 공개 전</span>
           </p>
         </div>
       </div>
@@ -102,6 +107,10 @@ function ScheduledRow({ poll }: { poll: PollListItem }) {
 
 // ── export ────────────────────────────────────────────────────
 export function PollCard({ poll }: PollCardProps) {
-  if (poll.status === 'scheduled') return <ScheduledRow poll={poll} />
-  return <PollListRow poll={poll} />
+  const effectivePoll = {
+    ...poll,
+    status: getEffectivePollStatus(poll),
+  }
+  if (effectivePoll.status === 'scheduled') return <ScheduledRow poll={effectivePoll} />
+  return <PollListRow poll={effectivePoll} />
 }

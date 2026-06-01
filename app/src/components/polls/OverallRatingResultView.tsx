@@ -51,7 +51,12 @@ export function OverallRatingResultView({ poll, results, hasVoted }: OverallRati
                 <Badge className="border-0 bg-primary text-[11px] font-semibold text-white hover:bg-primary pointer-events-none">평가 완료</Badge>
               )}
             </div>
-            <h1 className="text-[18px] font-black leading-tight text-white">{poll.title}</h1>
+            <div className="flex items-end justify-between gap-3">
+              <h1 className="min-w-0 flex-1 text-[18px] font-black leading-tight text-white">{poll.title}</h1>
+              {poll.creator_name && (
+                <span className="max-w-[38%] truncate text-right text-[12px] font-bold text-white/80">{poll.creator_name}</span>
+              )}
+            </div>
           </div>
         </div>
 

@@ -10,6 +10,7 @@ export type CommentItem = {
   user: { display_name: string | null; avatar_url: string | null }
   like_count: number
   is_liked: boolean
+  is_mine: boolean
   voted_option_label: string | null
 }
 
@@ -110,6 +111,7 @@ export async function getComments(
     },
     like_count: row.like_count?.[0]?.count ?? 0,
     is_liked: likedSet.has(row.id),
+    is_mine: userId === row.user_id,
     voted_option_label: voteMap.get(row.user_id) ?? null,
   }))
 }

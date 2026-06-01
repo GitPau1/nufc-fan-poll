@@ -83,6 +83,7 @@ export interface Database {
           id: string
           poll_id: string
           label: string
+          description?: string | null
           player_id: string | null     // Type B only
           image_url?: string | null
           display_order: number

@@ -2,7 +2,9 @@ import { createClient, createPublicClient } from '@/lib/supabase/server'
 import type { PollType, PollStatus, PlayerRow, PollOptionRow } from '@/types/database'
 import { PAGE_SIZE } from '@/lib/constants'
 import { IS_MOCK } from '@/lib/config'
+import { isAdmin } from '@/lib/admin'
 import { getRatingGrade, sortPlayersForRating } from '@/lib/polls/rating'
+import { getEffectivePollStatus } from '@/lib/polls/status'
 import {
   mockGetPollList,
   mockGetPollById,
@@ -24,6 +26,8 @@ export type PollListItem = {
   scheduled_at: string | null
   created_at: string
   player_id: string | null
+  created_by?: string | null
+  creator_name?: string | null
   player: PlayerRow | null
   poll_options: PollOptionRow[]
   vote_count: number
@@ -37,8 +41,11 @@ export type PollDetail = {
   description: string | null
   status: PollStatus
   thumbnail_url?: string | null
+  scheduled_at?: string | null
   closes_at: string
   player_id: string | null
+  created_by?: string | null
+  creator_name?: string | null
   player: PlayerRow | null
   poll_options: PollOptionRow[]
   /** Type B 전용: option.player_id → PlayerRow 맵 */
@@ -84,7 +91,7 @@ function isMissingColumnError(error: AnyRow): boolean {
   const message = String(error?.message ?? '')
   return (
     (message.includes('column') && message.includes('does not exist')) ||
-    (message.includes('schema cache') && message.includes('image_url'))
+    (message.includes('schema cache') && (message.includes('image_url') || message.includes('description')))
   )
 }
 
@@ -94,6 +101,30 @@ function normalizePlayer(player: PlayerRow | null): PlayerRow | null {
     ...player,
     squad_status: player.squad_status ?? 'first_team',
   }
+}
+
+async function getCreatorNamesById(ids: string[]): Promise<Map<string, string>> {
+  const uniqueIds = Array.from(new Set(ids.filter(Boolean)))
+  if (uniqueIds.length === 0) return new Map()
+
+  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+  const supabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, email, display_name')
+    .in('id', uniqueIds) as { data: Array<{ id: string; email: string; display_name: string | null }> | null; error: AnyRow }
+
+  if (error || !data) return new Map()
+
+  return new Map(
+    data
+      .filter(user => !isAdmin(user.email))
+      .map(user => [user.id, user.display_name ?? '이름 없는 사용자'])
+  )
 }
 
 export async function getPollFormPlayers(): Promise<PollFormPlayer[]> {
@@ -143,9 +174,9 @@ export async function getPollList(page = 0): Promise<PollListItem[]> {
   let { data, error } = await supabase
     .from('polls')
     .select(`
-      id, type, title, description, status, thumbnail_url, closes_at, scheduled_at, created_at, player_id,
+      id, type, title, description, status, thumbnail_url, closes_at, scheduled_at, created_at, player_id, created_by,
       player:players(id, name, position, squad_number, photo_url, is_active, squad_status),
-      poll_options(id, label, player_id, image_url, display_order),
+      poll_options(id, label, description, player_id, image_url, display_order),
       vote_count:votes(count)
     `)
     .order('created_at', { ascending: false })
@@ -155,7 +186,7 @@ export async function getPollList(page = 0): Promise<PollListItem[]> {
     const fallback = await supabase
       .from('polls')
       .select(`
-        id, type, title, description, status, closes_at, scheduled_at, created_at, player_id,
+        id, type, title, description, status, closes_at, scheduled_at, created_at, player_id, created_by,
         player:players(id, name, position, squad_number, photo_url, is_active),
         poll_options(id, label, player_id, display_order),
         vote_count:votes(count)
@@ -172,17 +203,25 @@ export async function getPollList(page = 0): Promise<PollListItem[]> {
     return []
   }
 
+  const now = new Date()
+  const creatorNames = await getCreatorNamesById((data ?? []).map((row: AnyRow) => row.created_by as string))
   return (data ?? []).map((row: AnyRow) => ({
     id:           row.id          as string,
     type:         row.type        as PollType,
     title:        row.title       as string,
     description:  row.description as string | null,
-    status:       row.status      as PollStatus,
+    status:       getEffectivePollStatus({
+      status: row.status as PollStatus,
+      scheduled_at: row.scheduled_at as string | null,
+      closes_at: row.closes_at as string,
+    }, now),
     thumbnail_url: row.thumbnail_url as string | null,
     closes_at:    row.closes_at   as string,
     scheduled_at: row.scheduled_at as string | null,
     created_at:   row.created_at  as string,
     player_id:    row.player_id   as string | null,
+    created_by:   row.created_by  as string | null,
+    creator_name: creatorNames.get(row.created_by as string) ?? null,
     player:       normalizePlayer(row.player as PlayerRow | null),
     poll_options: (row.poll_options as PollOptionRow[]) ?? [],
     // supabase 집계: [{count: N}] 형태로 반환
@@ -198,9 +237,9 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
   let { data, error } = await supabase
     .from('polls')
     .select(`
-      id, type, title, description, status, thumbnail_url, closes_at, player_id,
+      id, type, title, description, status, thumbnail_url, scheduled_at, closes_at, player_id, created_by,
       player:players(id, name, position, squad_number, photo_url, is_active, squad_status),
-      poll_options(id, label, player_id, image_url, display_order,
+      poll_options(id, label, description, player_id, image_url, display_order,
         option_player:players(id, name, position, squad_number, photo_url, is_active, squad_status))
     `)
     .eq('id', id)
@@ -210,7 +249,7 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
     const fallback = await supabase
       .from('polls')
       .select(`
-        id, type, title, description, status, closes_at, player_id,
+        id, type, title, description, status, scheduled_at, closes_at, player_id, created_by,
         player:players(id, name, position, squad_number, photo_url, is_active),
         poll_options(id, label, player_id, display_order,
           option_player:players(id, name, position, squad_number, photo_url, is_active))
@@ -240,16 +279,24 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
     data.type as PollType,
     options
   )
+  const creatorNames = await getCreatorNamesById(data.created_by ? [data.created_by as string] : [])
 
   return {
     id:           data.id          as string,
     type:         data.type        as PollType,
     title:        data.title       as string,
     description:  data.description as string | null,
-    status:       data.status      as PollStatus,
+    status:       getEffectivePollStatus({
+      status: data.status as PollStatus,
+      scheduled_at: data.scheduled_at as string | null,
+      closes_at: data.closes_at as string,
+    }),
     thumbnail_url: data.thumbnail_url as string | null,
+    scheduled_at: data.scheduled_at as string | null,
     closes_at:    data.closes_at   as string,
     player_id:    data.player_id   as string | null,
+    created_by:   data.created_by  as string | null,
+    creator_name: creatorNames.get(data.created_by as string) ?? null,
     player:       normalizePlayer(data.player as PlayerRow | null),
     poll_options: options,
     ...(Object.keys(option_players).length > 0 && { option_players }),

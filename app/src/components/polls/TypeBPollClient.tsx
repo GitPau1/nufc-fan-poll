@@ -96,7 +96,12 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
                 </Badge>
               )}
             </div>
-            <h1 className="text-[18px] font-black text-white leading-tight">{poll.title}</h1>
+            <div className="flex items-end justify-between gap-3">
+              <h1 className="min-w-0 flex-1 text-[18px] font-black text-white leading-tight">{poll.title}</h1>
+              {poll.creator_name && (
+                <span className="max-w-[38%] truncate text-right text-[12px] font-bold text-white/80">{poll.creator_name}</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -180,6 +185,11 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
                   <p className="text-white font-black text-base leading-tight">
                     {option.label}
                   </p>
+                  {option.description && (
+                    <p className="mt-1 line-clamp-2 text-left text-xs leading-snug text-white/75">
+                      {option.description}
+                    </p>
+                  )}
                   {player && (
                     <p className="text-white/70 text-xs mt-0.5">
                       {player.position} · #{player.squad_number}
@@ -243,6 +253,9 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
         <div className="mx-4 mt-4 rounded-xl bg-secondary px-4 py-3">
           <p className="text-xs text-muted-foreground mb-0.5">현재 선택</p>
           <p className="text-sm font-bold text-foreground">{selectedOption?.label}</p>
+          {selectedOption?.description && (
+            <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{selectedOption.description}</p>
+          )}
         </div>
       </div>
 

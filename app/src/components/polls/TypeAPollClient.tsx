@@ -93,7 +93,12 @@ export function TypeAPollClient({ poll, isAuthenticated }: TypeAPollClientProps)
               )}
             </div>
             {/* 제목 */}
-            <p className="text-[18px] font-black text-white leading-tight">{poll.title}</p>
+            <div className="flex items-end justify-between gap-3">
+              <p className="min-w-0 flex-1 text-[18px] font-black text-white leading-tight">{poll.title}</p>
+              {poll.creator_name && (
+                <span className="max-w-[38%] truncate text-right text-[12px] font-bold text-white/80">{poll.creator_name}</span>
+              )}
+            </div>
           </div>
         </div>
 

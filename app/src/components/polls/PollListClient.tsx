@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { PollCard } from './PollCard'
 import { loadMorePolls } from '@/lib/actions/polls'
+import { getEffectivePollStatus } from '@/lib/polls/status'
 import type { PollListItem } from '@/lib/queries/polls'
 import { PAGE_SIZE } from '@/lib/constants'
 
@@ -27,6 +28,7 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
   const [hasMore, setHasMore] = useState(initialPolls.length === PAGE_SIZE)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<PollTab>('ongoing')
+  const [now, setNow] = useState(() => Date.now())
   const sentinelRef           = useRef<HTMLDivElement>(null)
 
   const loadMore = useCallback(async () => {
@@ -53,8 +55,17 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
     return () => observer.disconnect()
   }, [loadMore])
 
-  const ongoing = polls.filter(p => p.status !== 'closed')
-  const closed  = polls.filter(p => p.status === 'closed')
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const effectivePolls = polls.map(poll => ({
+    ...poll,
+    status: getEffectivePollStatus(poll, new Date(now)),
+  }))
+  const ongoing = effectivePolls.filter(p => p.status !== 'closed')
+  const closed  = effectivePolls.filter(p => p.status === 'closed')
   const visiblePolls = activeTab === 'ongoing' ? ongoing : closed
 
   if (polls.length === 0 && !loading) {

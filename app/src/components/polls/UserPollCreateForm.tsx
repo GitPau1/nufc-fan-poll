@@ -14,7 +14,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 
-type FreeOption = { label: string; imageUrl: string }
+type FreeOption = { label: string; description: string; imageUrl: string }
 type CreatePollType = Extract<PollType, 'subject_options' | 'question_targets' | 'free_choice' | 'overall_rating'>
 type PlayerPickMode = 'single' | 'multiple'
 type PlayerFilter = 'all' | 'first_team' | 'loan' | 'u21' | 'outside'
@@ -59,7 +59,10 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
   const availableTypes = POLL_TYPES.filter(type => !type.adminOnly || canCreateOverall)
   const [pollType, setPollType] = useState<CreatePollType>(availableTypes[0]?.type ?? 'subject_options')
   const [textOptions, setTextOptions] = useState(['', ''])
-  const [freeOptions, setFreeOptions] = useState<FreeOption[]>([{ label: '', imageUrl: '' }, { label: '', imageUrl: '' }])
+  const [freeOptions, setFreeOptions] = useState<FreeOption[]>([
+    { label: '', description: '', imageUrl: '' },
+    { label: '', description: '', imageUrl: '' },
+  ])
   const [selectedSubjectPlayerId, setSelectedSubjectPlayerId] = useState<string | null>(null)
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([])
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -108,7 +111,11 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
       fd.set('options', JSON.stringify(options.map(label => ({ label }))))
     } else if (pollType === 'free_choice') {
       const options = freeOptions
-        .map(option => ({ label: option.label.trim(), image_url: option.imageUrl.trim() || null }))
+        .map(option => ({
+          label: option.label.trim(),
+          description: option.description.trim() || null,
+          image_url: option.imageUrl.trim() || null,
+        }))
         .filter(option => option.label)
       if (options.length < 2) {
         setMessage('선택지를 최소 2개 입력해주세요.')
@@ -210,19 +217,27 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
             <p className="text-[13px] font-bold text-foreground">선택지</p>
             <div className="space-y-1.5">
               {freeOptions.map((option, index) => (
-                <div key={index} className="grid grid-cols-[1fr_1fr_32px] gap-1.5">
-                  <input
-                    value={option.label}
-                    onChange={event => setFreeOptions(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item))}
-                    className="input-field"
-                    placeholder={`선택지 ${index + 1}`}
-                  />
-                  <input
-                    value={option.imageUrl}
-                    onChange={event => setFreeOptions(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, imageUrl: event.target.value } : item))}
-                    className="input-field"
-                    placeholder="이미지 URL"
-                  />
+                <div key={index} className="grid grid-cols-[1fr_32px] gap-1.5 rounded-xl border border-border p-2">
+                  <div className="space-y-1.5">
+                    <input
+                      value={option.label}
+                      onChange={event => setFreeOptions(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item))}
+                      className="input-field"
+                      placeholder={`선택지 ${index + 1}`}
+                    />
+                    <textarea
+                      value={option.description}
+                      onChange={event => setFreeOptions(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item))}
+                      className="input-field min-h-[72px] resize-none py-2"
+                      placeholder="세부 설명(선택)"
+                    />
+                    <input
+                      value={option.imageUrl}
+                      onChange={event => setFreeOptions(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, imageUrl: event.target.value } : item))}
+                      className="input-field"
+                      placeholder="이미지 URL"
+                    />
+                  </div>
                   <button type="button" onClick={() => setFreeOptions(prev => prev.filter((_, itemIndex) => itemIndex !== index))} className="rounded-lg border border-border text-muted-foreground" aria-label="선택지 삭제">
                     <X className="mx-auto h-3.5 w-3.5" />
                   </button>
@@ -230,7 +245,7 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
               ))}
             </div>
             {freeOptions.length < 8 && (
-              <button type="button" onClick={() => setFreeOptions(prev => [...prev, { label: '', imageUrl: '' }])} className="inline-flex items-center gap-1 text-[12px] font-bold text-primary">
+              <button type="button" onClick={() => setFreeOptions(prev => [...prev, { label: '', description: '', imageUrl: '' }])} className="inline-flex items-center gap-1 text-[12px] font-bold text-primary">
                 <Plus className="h-3.5 w-3.5" /> 선택지 추가
               </button>
             )}

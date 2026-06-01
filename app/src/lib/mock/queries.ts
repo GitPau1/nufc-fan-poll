@@ -3,6 +3,7 @@
  * IS_MOCK === true 일 때 queries/polls.ts / queries/comments.ts에서 이 함수들을 사용한다.
  */
 import { PAGE_SIZE } from '@/lib/constants'
+import { getEffectivePollStatus } from '@/lib/polls/status'
 import type { PollDetail, PollListItem, VoteCountMap } from '@/lib/queries/polls'
 import type { CommentItem } from '@/lib/queries/comments'
 import {
@@ -14,11 +15,20 @@ import {
 
 export async function mockGetPollList(page: number): Promise<PollListItem[]> {
   const from = page * PAGE_SIZE
-  return MOCK_POLL_LIST.slice(from, from + PAGE_SIZE)
+  const now = new Date()
+  return MOCK_POLL_LIST.slice(from, from + PAGE_SIZE).map(poll => ({
+    ...poll,
+    status: getEffectivePollStatus(poll, now),
+  }))
 }
 
 export async function mockGetPollById(id: string): Promise<PollDetail | null> {
-  return MOCK_POLL_DETAIL[id] ?? null
+  const poll = MOCK_POLL_DETAIL[id]
+  if (!poll) return null
+  return {
+    ...poll,
+    status: getEffectivePollStatus(poll),
+  }
 }
 
 export async function mockGetVoteCounts(pollId: string): Promise<VoteCountMap> {

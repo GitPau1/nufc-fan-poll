@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import type { PlayerStatus, PollType, Position, TransferDirection, TransferType } from '@/types/database'
 import { requireAdminClient, type AnySupabase } from '@/lib/supabase/admin'
+import { datetimeLocalToKoreaIso } from '@/lib/datetime'
 
 function parseIntOrNull(value: FormDataEntryValue | null): number | null {
   if (!value) return null
@@ -509,9 +510,10 @@ export async function createPoll(formData: FormData): Promise<{ error?: string }
     const supabase = await requireAdmin()
 
     const title = formData.get('title') as string
-    const closes_at = formData.get('closes_at') as string
+    const closesAtInput = String(formData.get('closes_at') ?? '')
+    const closes_at = datetimeLocalToKoreaIso(closesAtInput)
     if (!title) throw new Error('?쒕ぉ? ?꾩닔?낅땲??')
-    if (!closes_at) throw new Error('醫낅즺?쇱? ?꾩닔?낅땲??')
+    if (!closesAtInput) throw new Error('醫낅즺?쇱? ?꾩닔?낅땲??')
 
     const type = (formData.get('type') as PollType) ?? 'evaluation'
     const pollPayload = {
@@ -553,15 +555,16 @@ export async function createPoll(formData: FormData): Promise<{ error?: string }
     // Save options for both types (evaluation = text options for one player; selection = player choices)
     const optionsRaw = formData.get('options') as string
     if (optionsRaw) {
-      let options: Array<{ label: string; player_id?: string; image_url?: string | null }> = []
+      let options: Array<{ label: string; description?: string | null; player_id?: string; image_url?: string | null }> = []
       try {
-        options = JSON.parse(optionsRaw) as Array<{ label: string; player_id?: string }>
+        options = JSON.parse(optionsRaw) as Array<{ label: string; description?: string | null; player_id?: string; image_url?: string | null }>
       } catch {
         return { error: '?듭뀡 ?뺤떇???щ컮瑜댁? ?딆뒿?덈떎.' }
       }
       const optionRows = options.map((opt, index) => ({
         poll_id: poll.id,
         label: opt.label,
+        description: opt.description ? String(opt.description).trim() : null,
         player_id: opt.player_id ?? null,
         image_url: opt.image_url ?? null,
         display_order: index,

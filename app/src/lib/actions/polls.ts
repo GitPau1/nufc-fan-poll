@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
 import { getPollList } from '@/lib/queries/polls'
 import { isAdmin } from '@/lib/admin'
+import { datetimeLocalToKoreaIso } from '@/lib/datetime'
 import type { PollType } from '@/types/database'
 
 export async function loadMorePolls(page: number) {
@@ -29,17 +30,18 @@ export async function createUserPoll(formData: FormData): Promise<{ pollId?: str
   }
 
   const title = String(formData.get('title') ?? '').trim()
-  const closesAt = String(formData.get('closes_at') ?? '').trim()
+  const closesAtInput = String(formData.get('closes_at') ?? '').trim()
+  const closesAt = datetimeLocalToKoreaIso(closesAtInput)
   if (!title) return { error: '투표 제목을 입력해주세요.' }
-  if (!closesAt) return { error: '투표 종료일을 지정해주세요.' }
+  if (!closesAtInput) return { error: '투표 종료일을 지정해주세요.' }
   if (new Date(closesAt).getTime() <= Date.now()) return { error: '종료일은 현재 이후로 지정해주세요.' }
 
   const playerId = String(formData.get('player_id') ?? '').trim() || null
   const optionsRaw = String(formData.get('options') ?? '')
 
-  let options: Array<{ label: string; player_id?: string | null; image_url?: string | null }>
+  let options: Array<{ label: string; description?: string | null; player_id?: string | null; image_url?: string | null }>
   try {
-    options = JSON.parse(optionsRaw) as Array<{ label: string; player_id?: string | null; image_url?: string | null }>
+    options = JSON.parse(optionsRaw) as Array<{ label: string; description?: string | null; player_id?: string | null; image_url?: string | null }>
   } catch {
     return { error: '선택지 형식이 올바르지 않습니다.' }
   }
@@ -47,6 +49,7 @@ export async function createUserPoll(formData: FormData): Promise<{ pollId?: str
   options = options
     .map(option => ({
       label: String(option.label ?? '').trim(),
+      description: type === 'free_choice' && option.description ? String(option.description).trim() : null,
       player_id: option.player_id ?? null,
       image_url: option.image_url ? String(option.image_url).trim() : null,
     }))
@@ -82,6 +85,7 @@ export async function createUserPoll(formData: FormData): Promise<{ pollId?: str
   const optionRows = options.map((option, index) => ({
     poll_id: poll.id,
     label: option.label,
+    description: option.description || null,
     player_id: option.player_id ?? null,
     image_url: option.image_url ?? null,
     display_order: index,

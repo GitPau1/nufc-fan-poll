@@ -1,47 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { getHeaderAuth, type HeaderAuth } from '@/lib/actions/auth'
 import { LoginButton } from './LoginButton'
 import { UserMenu } from './UserMenu'
 
-type HeaderUser = {
-  id: string
-  email?: string
-  user_metadata?: {
-    name?: string
-    avatar_url?: string | null
-  }
-}
-
-type HeaderProfile = {
-  display_name: string | null
-}
-
 export function HeaderAuthStatus() {
-  const [user, setUser] = useState<HeaderUser | null>(null)
-  const [displayName, setDisplayName] = useState<string | undefined>()
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>()
+  const [auth, setAuth] = useState<HeaderAuth | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
     async function loadUser() {
-      const supabase = createClient()
-      const { data } = await supabase.auth.getUser()
-      if (cancelled || !data.user) return
-
-      setUser(data.user)
-      setAvatarUrl(data.user.user_metadata?.avatar_url ?? undefined)
-
-      const { data: profile } = await supabase
-        .from('users')
-        .select('display_name')
-        .eq('id', data.user.id)
-        .single<HeaderProfile>()
-
-      if (cancelled) return
-      setDisplayName(profile?.display_name ?? data.user.user_metadata?.name ?? undefined)
+      const nextAuth = await getHeaderAuth()
+      if (!cancelled) setAuth(nextAuth)
     }
 
     loadUser()
@@ -51,7 +23,7 @@ export function HeaderAuthStatus() {
     }
   }, [])
 
-  if (!user) return <LoginButton />
+  if (!auth) return <LoginButton />
 
-  return <UserMenu avatarUrl={avatarUrl} displayName={displayName} isAdmin={false} />
+  return <UserMenu avatarUrl={auth.avatarUrl} displayName={auth.displayName} isAdmin={auth.isAdmin} />
 }

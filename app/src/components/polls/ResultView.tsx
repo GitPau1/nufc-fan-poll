@@ -88,7 +88,12 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
               )}
             </div>
             {/* 제목 */}
-            <p className="text-[18px] font-black text-white leading-tight">{poll.title}</p>
+            <div className="flex items-end justify-between gap-3">
+              <p className="min-w-0 flex-1 text-[18px] font-black text-white leading-tight">{poll.title}</p>
+              {poll.creator_name && (
+                <span className="max-w-[38%] truncate text-right text-[12px] font-bold text-white/80">{poll.creator_name}</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -174,7 +179,14 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                             내 선택
                           </Badge>
                         )}
-                        <span className="truncate">{option.label}</span>
+                        <span className="min-w-0">
+                          <span className="block truncate">{option.label}</span>
+                          {option.description && (
+                            <span className="mt-0.5 block line-clamp-2 text-[12px] font-medium leading-snug text-muted-foreground">
+                              {option.description}
+                            </span>
+                          )}
+                        </span>
                       </span>
                       <span className={cn(
                         'text-sm font-bold tabular-nums flex-shrink-0',

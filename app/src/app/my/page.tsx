@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { IS_MOCK } from '@/lib/config'
 import { MOCK_PARTICIPATED, MOCK_POLL_LIST } from '@/lib/mock/data'
+import { getEffectivePollStatus } from '@/lib/polls/status'
 import { MyPageClient } from '@/components/my/MyPageClient'
 
 type PollStatusForMy = 'scheduled' | 'active' | 'closed'
@@ -53,7 +54,7 @@ export default async function MyPage() {
     .select(`
       created_at,
       option:poll_options(label),
-      poll:polls(id, title, status)
+      poll:polls(id, title, status, scheduled_at, closes_at)
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
@@ -62,7 +63,7 @@ export default async function MyPage() {
   type ParticipatedVoteRow = {
     created_at: string
     option: JoinedOne<{ label: string }>
-    poll: JoinedOne<{ id: string; title: string; status: PollStatusForMy }>
+    poll: JoinedOne<{ id: string; title: string; status: PollStatusForMy; scheduled_at: string | null; closes_at: string }>
   }
 
   function one<T>(value: JoinedOne<T>): T | null {
@@ -79,7 +80,7 @@ export default async function MyPage() {
         pollTitle: poll.title,
         optionLabel: option?.label ?? '',
         votedAt: row.created_at,
-        pollStatus: poll.status,
+        pollStatus: getEffectivePollStatus(poll),
       }]
     })
 
@@ -87,14 +88,14 @@ export default async function MyPage() {
     .from('rating_votes')
     .select(`
       created_at,
-      poll:polls(id, title, status)
+      poll:polls(id, title, status, scheduled_at, closes_at)
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
   type ParticipatedRatingVoteRow = {
     created_at: string
-    poll: JoinedOne<{ id: string; title: string; status: PollStatusForMy }>
+    poll: JoinedOne<{ id: string; title: string; status: PollStatusForMy; scheduled_at: string | null; closes_at: string }>
   }
 
   const participationByPoll = new Map<string, (typeof votedPolls)[number]>()
@@ -109,7 +110,7 @@ export default async function MyPage() {
       pollTitle: poll.title,
       optionLabel: '전체 평가 제출',
       votedAt: row.created_at,
-      pollStatus: poll.status,
+      pollStatus: getEffectivePollStatus(poll),
     })
   }
   const participatedPolls = Array.from(participationByPoll.values())
@@ -126,7 +127,7 @@ export default async function MyPage() {
   const createdPollResult = await supabase
     .from('polls')
     .select(`
-      id, title, status, created_at,
+      id, title, status, scheduled_at, closes_at, created_at,
       vote_count:votes(count)
     `)
     .eq('created_by', user.id)
@@ -135,6 +136,8 @@ export default async function MyPage() {
         id: string
         title: string
         status: PollStatusForMy
+        scheduled_at: string | null
+        closes_at: string
         created_at: string
         vote_count: Array<{ count: number }> | null
       }> | null
@@ -146,7 +149,7 @@ export default async function MyPage() {
       pollId: poll.id,
       pollTitle: poll.title,
       createdAt: poll.created_at,
-      pollStatus: poll.status,
+      pollStatus: getEffectivePollStatus(poll),
       voteCount: poll.vote_count?.[0]?.count ?? 0,
     }))
   }

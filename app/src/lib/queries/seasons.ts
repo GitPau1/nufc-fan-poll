@@ -1,4 +1,5 @@
 import { IS_MOCK } from '@/lib/config'
+import { createPublicClient } from '@/lib/supabase/server'
 import type { SeasonRow } from '@/types/database'
 
 export type SeasonOption = Pick<SeasonRow, 'id' | 'name' | 'is_current' | 'display_order'>
@@ -11,8 +12,7 @@ const MOCK_SEASONS: SeasonOption[] = [
 export async function getSeasons(): Promise<SeasonOption[]> {
   if (IS_MOCK) return MOCK_SEASONS
 
-  const { createClient } = await import('@/lib/supabase/server')
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const { data, error } = await supabase
     .from('seasons')
     .select('id, name, is_current, display_order')

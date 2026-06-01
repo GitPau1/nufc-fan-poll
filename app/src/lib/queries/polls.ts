@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createPublicClient } from '@/lib/supabase/server'
 import type { PollType, PollStatus, PlayerRow, PollOptionRow } from '@/types/database'
 import { PAGE_SIZE } from '@/lib/constants'
 import { IS_MOCK } from '@/lib/config'
@@ -136,7 +136,7 @@ export async function getPollFormPlayers(): Promise<PollFormPlayer[]> {
 // ── 투표 목록 조회 ────────────────────────────────────────────
 export async function getPollList(page = 0): Promise<PollListItem[]> {
   if (IS_MOCK) return mockGetPollList(page)
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const from = page * PAGE_SIZE
   const to   = from + PAGE_SIZE - 1
 

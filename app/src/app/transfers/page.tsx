@@ -6,6 +6,8 @@ import { getSeasons, resolveSelectedSeason } from '@/lib/queries/seasons'
 import { getTransfersBySeasonId } from '@/lib/queries/transfers'
 import { splitTransfersByMovementGroup } from '@/lib/transfers/group'
 
+export const revalidate = 60
+
 const TRANSFER_SECTIONS: Array<{ key: 'permanent' | 'loan'; title: string }> = [
   { key: 'permanent', title: '영구 이적' },
   { key: 'loan', title: '임대' },

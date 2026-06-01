@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
 import { getTransferMovementGroup, type TransferMovementGroup } from '@/lib/transfers/group'
 import type { PlayerRow, TransferDirection, TransferTableRow, TransferType } from '@/types/database'
@@ -121,7 +121,7 @@ export async function getTransfersBySeason(season: string): Promise<TransferItem
   if (!season.trim()) return []
   if (IS_MOCK) return MOCK_TRANSFERS.filter(transfer => transfer.season === season)
 
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const { data, error } = await supabase
     .from('transfers')
     .select(`
@@ -142,7 +142,7 @@ export async function getTransfersBySeasonId(seasonId: string): Promise<Transfer
   if (!seasonId.trim()) return []
   if (IS_MOCK) return MOCK_TRANSFERS.filter(transfer => transfer.season_id === seasonId || transfer.season_record?.id === seasonId)
 
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const { data, error } = await supabase
     .from('transfers')
     .select(`

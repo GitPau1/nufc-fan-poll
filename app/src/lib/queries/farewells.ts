@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createPublicClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
 import type { DepartureType, PlayerRow } from '@/types/database'
 
@@ -105,7 +105,7 @@ const MOCK_FAREWELL: FarewellItem = {
 export async function getLatestFarewells(limit = 3): Promise<FarewellItem[]> {
   if (IS_MOCK) return [MOCK_FAREWELL].slice(0, limit)
 
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   let { data, error } = await supabase
     .from('farewells')
     .select(`
@@ -146,7 +146,7 @@ export async function getLatestFarewells(limit = 3): Promise<FarewellItem[]> {
 export async function getFarewellById(id: string): Promise<FarewellItem | null> {
   if (IS_MOCK) return id === MOCK_FAREWELL.id ? MOCK_FAREWELL : null
 
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   let { data, error } = await supabase
     .from('farewells')
     .select(`

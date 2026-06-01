@@ -1,4 +1,5 @@
 import { IS_MOCK } from '@/lib/config'
+import { createPublicClient } from '@/lib/supabase/server'
 import type { ClubStatusWithStats, PlayerRow } from '@/types/database'
 import type { PlayerSeasonStatItem } from '@/lib/queries/farewells'
 
@@ -39,8 +40,7 @@ const MOCK_PLAYERS: PlayerRow[] = [
 export async function getClubStatus(): Promise<ClubStatusWithStats | null> {
   if (IS_MOCK) return MOCK_STATUS
 
-  const { createClient } = await import('@/lib/supabase/server')
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   const { data, error } = await supabase
     .from('club_status')
@@ -70,8 +70,7 @@ export async function getClubStatus(): Promise<ClubStatusWithStats | null> {
 export async function getSquad(): Promise<PlayerRow[]> {
   if (IS_MOCK) return MOCK_PLAYERS
 
-  const { createClient } = await import('@/lib/supabase/server')
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   const { data, error } = await supabase
     .from('players')

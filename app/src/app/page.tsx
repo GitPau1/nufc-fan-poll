@@ -9,6 +9,8 @@ import { getPollList } from '@/lib/queries/polls'
 import { getSeasons, resolveSelectedSeason } from '@/lib/queries/seasons'
 import { getLatestTransfersBySeasonId } from '@/lib/queries/transfers'
 
+export const revalidate = 60
+
 export default async function HomePage() {
   const [clubStatus, seasons] = await Promise.all([
     getClubStatus(),

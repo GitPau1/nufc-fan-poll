@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PollDetail } from '@/lib/queries/polls'
 import { submitVote } from '@/lib/actions/vote'
+import { trackEvent } from '@/lib/analytics/mixpanel'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -40,6 +41,15 @@ export function TypeAPollClient({ poll, isAuthenticated }: TypeAPollClientProps)
     startTransition(async () => {
       const result = await submitVote(poll.id, selectedId)
       if ('success' in result) {
+        trackEvent('vote_submitted', {
+          source_page: 'poll_detail',
+          poll_id: poll.id,
+          poll_type: poll.type,
+          poll_status: poll.status,
+          creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
+          option_id: selectedId,
+          is_first_vote: true,
+        })
         setShowConfirm(false)
         router.refresh()
       } else {

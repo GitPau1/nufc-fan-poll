@@ -3,7 +3,9 @@
 import { useState, useTransition } from 'react'
 import { Check, Heart, Send, X } from 'lucide-react'
 import type { CommentItem } from '@/lib/queries/comments'
+import type { PollStatus, PollType } from '@/types/database'
 import { deleteComment, submitComment, toggleLike, updateComment } from '@/lib/actions/comments'
+import { trackEvent } from '@/lib/analytics/mixpanel'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +14,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 interface CommentsSectionProps {
   pollId: string
+  pollType: PollType
+  pollStatus: PollStatus
+  creatorType: 'admin' | 'user'
   initialComments: CommentItem[]
   isMockMode?: boolean
   myVotedOptionLabel?: string | null  // 현재 유저의 투표 항목 (입력 힌트용)
@@ -33,6 +38,9 @@ type LocalComment = CommentItem & { _local?: boolean }
 
 export function CommentsSection({
   pollId,
+  pollType,
+  pollStatus,
+  creatorType,
   initialComments,
   isMockMode = false,
   myVotedOptionLabel = null,
@@ -50,6 +58,14 @@ export function CommentsSection({
     start(async () => {
       const result = await submitComment(pollId, content)
       if ('success' in result) {
+        trackEvent('comment_submitted', {
+          source_page: 'poll_detail',
+          poll_id: pollId,
+          poll_type: pollType,
+          poll_status: pollStatus,
+          creator_type: creatorType,
+          comment_length: content.length,
+        })
         setComments(prev => [{
           ...result.comment,
           voted_option_label: result.comment.voted_option_label ?? myVotedOptionLabel ?? null,
@@ -104,6 +120,17 @@ export function CommentsSection({
   }
 
   function handleLike(commentId: string) {
+    const target = comments.find(comment => comment.id === commentId)
+    if (!target?.is_liked) {
+      trackEvent('comment_liked', {
+        source_page: 'poll_detail',
+        poll_id: pollId,
+        poll_type: pollType,
+        poll_status: pollStatus,
+        creator_type: creatorType,
+        comment_id: commentId,
+      })
+    }
     setComments(prev => prev.map(c =>
       c.id === commentId
         ? { ...c, is_liked: !c.is_liked, like_count: c.is_liked ? c.like_count - 1 : c.like_count + 1 }

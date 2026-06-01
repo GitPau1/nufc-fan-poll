@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { Heart } from 'lucide-react'
 import type { PollDetail, RatingResultItem } from '@/lib/queries/polls'
 import { toggleRatingCommentLike } from '@/lib/actions/ratings'
+import { trackEvent } from '@/lib/analytics/mixpanel'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,6 +36,18 @@ export function OverallRatingResultView({ poll, results, hasVoted }: OverallRati
       results: results.filter(result => result.player.position === group.value),
     }))
     .filter(group => group.results.length > 0)
+
+  useEffect(() => {
+    trackEvent('poll_result_viewed', {
+      source_page: 'poll_detail',
+      poll_id: poll.id,
+      poll_type: poll.type,
+      poll_status: poll.status,
+      creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
+      has_voted: hasVoted,
+      total_votes: results.reduce((sum, result) => sum + result.vote_count, 0),
+    })
+  }, [hasVoted, poll.created_by, poll.creator_name, poll.id, poll.status, poll.type, results])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -119,6 +132,16 @@ export function OverallRatingResultView({ poll, results, hasVoted }: OverallRati
                                     type="button"
                                     disabled={isPending}
                                     onClick={() => startTransition(async () => {
+                                      if (!comment.is_liked) {
+                                        trackEvent('comment_liked', {
+                                          source_page: 'poll_detail',
+                                          poll_id: poll.id,
+                                          poll_type: poll.type,
+                                          poll_status: poll.status,
+                                          creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
+                                          comment_id: comment.id,
+                                        })
+                                      }
                                       await toggleRatingCommentLike(comment.id, poll.id)
                                     })}
                                     className={cn(

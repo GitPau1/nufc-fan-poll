@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { AppHeader } from '@/components/layout/AppHeader'
+import { PollFeedAnalytics } from '@/components/analytics/AppAnalytics'
 import { FarewellBanner } from '@/components/home/FarewellBanner'
 import { PollCard } from '@/components/polls/PollCard'
 import { TransferListItem } from '@/components/transfers/TransferListItem'
@@ -52,6 +53,7 @@ export default async function HomePage() {
 
         {homePolls.length > 0 && (
           <section className="px-4 pt-5 animate-enter">
+            <PollFeedAnalytics sourcePage="home" pollCount={homePolls.length} />
             <div className="mb-2 flex items-center justify-between">
               <p className="px-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 최근 투표

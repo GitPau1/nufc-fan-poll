@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect } from 'react'
 import { Lock } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { IS_MOCK } from '@/lib/config'
 import { mockLogin } from '@/lib/actions/auth'
+import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
 import {
   Sheet,
   SheetContent,
@@ -21,9 +23,20 @@ interface LoginModalProps {
 export function LoginModal({ open, onClose }: LoginModalProps) {
   const pathname = usePathname()
 
+  useEffect(() => {
+    if (!open) return
+    trackEvent('auth_prompt_viewed', {
+      source_page: getSourcePage(pathname),
+    })
+  }, [open, pathname])
+
   async function handleLogin() {
     if (IS_MOCK) {
       await mockLogin()
+      trackEvent('login_completed', {
+        source_page: getSourcePage(pathname),
+        method: 'mock',
+      })
       onClose()
       return
     }

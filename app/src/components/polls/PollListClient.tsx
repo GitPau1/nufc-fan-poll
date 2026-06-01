@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { PollCard } from './PollCard'
+import { PollFeedAnalytics } from '@/components/analytics/AppAnalytics'
 import { loadMorePolls } from '@/lib/actions/polls'
 import { getEffectivePollStatus } from '@/lib/polls/status'
 import type { PollListItem } from '@/lib/queries/polls'
@@ -71,6 +72,7 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
   if (polls.length === 0 && !loading) {
     return (
       <div className="px-4 pt-4 animate-enter">
+        <PollFeedAnalytics sourcePage="polls" pollCount={0} />
         <div className="mb-4 flex items-center justify-between gap-3">
           <PollTabs activeTab={activeTab} ongoingCount={0} closedCount={0} onChange={setActiveTab} />
           {headerRight}
@@ -85,6 +87,7 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
 
   return (
     <div className="px-4 pt-4 pb-10 flex flex-col gap-3 animate-enter">
+      <PollFeedAnalytics sourcePage="polls" pollCount={effectivePolls.length} />
       <div className="mb-1 flex items-center justify-between gap-3">
         <PollTabs activeTab={activeTab} ongoingCount={ongoing.length} closedCount={closed.length} onChange={setActiveTab} />
         {headerRight}

@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import './globals.css'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { AuthCodeHandler } from '@/components/auth/AuthCodeHandler'
+import { AppAnalytics } from '@/components/analytics/AppAnalytics'
 
 export const metadata: Metadata = {
   title: 'NUFC Vote',
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body className="bg-background min-h-screen">
         <div className="max-w-[480px] mx-auto min-h-screen bg-background relative">
+          <AppAnalytics />
           {children}
           <BottomNav />
           {/* OAuth 코드가 어느 페이지에 붙어 오든 세션 교환 처리 */}

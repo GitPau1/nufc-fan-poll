@@ -1,6 +1,10 @@
+'use client'
+
 import Link from 'next/link'
 import { ChevronRight, Lock, Users } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import type { PollListItem } from '@/lib/queries/polls'
+import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
 import { getEffectivePollStatus } from '@/lib/polls/status'
 import { formatScheduled } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -28,9 +32,20 @@ function getPollTypeLabel(type: PollListItem['type']): string {
 // ── 목록형 투표 아이템 ───────────────────────────────────────
 function PollListRow({ poll }: { poll: PollListItem }) {
   const isActive = poll.status === 'active'
+  const pathname = usePathname()
 
   return (
-    <Link href={`/polls/${poll.id}`} className={`block border-b border-border bg-white px-4 py-4 active:bg-secondary/60 transition-colors ${!isActive ? 'opacity-70' : ''}`}>
+    <Link
+      href={`/polls/${poll.id}`}
+      onClick={() => trackEvent('poll_card_clicked', {
+        source_page: getSourcePage(pathname),
+        poll_id: poll.id,
+        poll_type: poll.type,
+        poll_status: poll.status,
+        creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
+      })}
+      className={`block border-b border-border bg-white px-4 py-4 active:bg-secondary/60 transition-colors ${!isActive ? 'opacity-70' : ''}`}
+    >
       <div className="flex items-center gap-4">
         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
           <img

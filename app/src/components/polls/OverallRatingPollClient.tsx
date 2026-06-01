@@ -7,6 +7,7 @@ import type { PollDetail } from '@/lib/queries/polls'
 import type { PlayerRow, Position } from '@/types/database'
 import { sortPlayersForRating } from '@/lib/polls/rating'
 import { submitRatingVotes } from '@/lib/actions/ratings'
+import { trackEvent } from '@/lib/analytics/mixpanel'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -107,6 +108,16 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
       })))
 
       if ('success' in result) {
+        trackEvent('vote_submitted', {
+          source_page: 'poll_detail',
+          poll_id: poll.id,
+          poll_type: poll.type,
+          poll_status: poll.status,
+          creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
+          option_count: players.length,
+          comment_count: players.filter(player => ratings[player.id].comment.trim()).length,
+          is_first_vote: true,
+        })
         router.refresh()
       } else {
         setErrorMsg(

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import type { PollDetail, VoteCountMap } from '@/lib/queries/polls'
 import type { CommentItem } from '@/lib/queries/comments'
+import { trackEvent } from '@/lib/analytics/mixpanel'
 import { calcPercents } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -34,6 +35,18 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
     const id = requestAnimationFrame(() => setAnimated(true))
     return () => cancelAnimationFrame(id)
   }, [])
+
+  useEffect(() => {
+    trackEvent('poll_result_viewed', {
+      source_page: 'poll_detail',
+      poll_id: poll.id,
+      poll_type: poll.type,
+      poll_status: poll.status,
+      creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
+      has_voted: Boolean(myOptionId),
+      total_votes: total,
+    })
+  }, [myOptionId, poll.created_by, poll.creator_name, poll.id, poll.status, poll.type, total])
 
   const coverUrl = poll.thumbnail_url
     ?? poll.player?.photo_url
@@ -238,6 +251,9 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
           {/* 댓글 */}
           <CommentsSection
             pollId={poll.id}
+            pollType={poll.type}
+            pollStatus={poll.status}
+            creatorType={poll.created_by && poll.creator_name ? 'user' : 'admin'}
             initialComments={comments}
             isMockMode={IS_MOCK}
             myVotedOptionLabel={myVotedOptionLabel}

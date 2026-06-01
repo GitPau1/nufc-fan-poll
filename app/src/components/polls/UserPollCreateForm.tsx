@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Plus, Search, Users, X } from 'lucide-react'
 import { createUserPoll } from '@/lib/actions/polls'
+import { trackEvent } from '@/lib/analytics/mixpanel'
 import type { PollFormPlayer } from '@/lib/queries/polls'
 import type { PollType, Position } from '@/types/database'
 import {
@@ -96,6 +97,10 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
     e.preventDefault()
     setMessage(null)
     const fd = new FormData(e.currentTarget)
+    trackEvent('create_poll_clicked', {
+      source_page: 'create',
+      poll_type: pollType,
+    })
 
     if (pollType === 'subject_options') {
       const options = textOptions.map(option => option.trim()).filter(Boolean)
@@ -150,6 +155,15 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
         setMessage(result.error)
         return
       }
+      const optionCount = JSON.parse(String(fd.get('options') ?? '[]')).length as number
+      trackEvent('poll_published', {
+        source_page: 'create',
+        poll_id: result.pollId ?? null,
+        poll_type: pollType,
+        option_count: optionCount,
+        has_thumbnail: Boolean(String(fd.get('thumbnail_url') ?? '').trim()),
+        creator_type: 'user',
+      })
       router.push(result.pollId ? `/polls/${result.pollId}` : '/polls')
       router.refresh()
     })

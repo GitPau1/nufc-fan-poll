@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react'
 import type { PollDetail } from '@/lib/queries/polls'
 import type { PlayerRow } from '@/types/database'
 import { submitVote } from '@/lib/actions/vote'
+import { trackEvent } from '@/lib/analytics/mixpanel'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -46,6 +47,15 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
     startTransition(async () => {
       const result = await submitVote(poll.id, selectedOption.id)
       if ('success' in result) {
+        trackEvent('vote_submitted', {
+          source_page: 'poll_detail',
+          poll_id: poll.id,
+          poll_type: poll.type,
+          poll_status: poll.status,
+          creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
+          option_id: selectedOption.id,
+          is_first_vote: true,
+        })
         setShowConfirm(false)
         router.refresh()
       } else {

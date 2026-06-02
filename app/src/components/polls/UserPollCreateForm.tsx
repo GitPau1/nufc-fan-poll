@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Plus, Search, Users, X } from 'lucide-react'
 import { createUserPoll } from '@/lib/actions/polls'
+import { uploadPollImage } from '@/lib/actions/images'
 import { trackEvent } from '@/lib/analytics/mixpanel'
 import type { PollFormPlayer } from '@/lib/queries/polls'
 import type { PollType, Position } from '@/types/database'
@@ -116,17 +117,23 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
       fd.set('options', JSON.stringify(options.map(label => ({ label }))))
     } else if (pollType === 'free_choice') {
       const options = freeOptions
-        .map(option => ({
+        .map((option, index) => ({
           label: option.label.trim(),
           description: option.description.trim() || null,
           image_url: option.imageUrl.trim() || null,
+          imageField: `free_option_image_${index}`,
         }))
         .filter(option => option.label)
       if (options.length < 2) {
         setMessage('선택지를 최소 2개 입력해주세요.')
         return
       }
-      fd.set('options', JSON.stringify(options))
+      fd.set('options', JSON.stringify(options.map(option => ({
+        label: option.label,
+        description: option.description,
+        image_url: option.image_url,
+        imageField: option.imageField,
+      }))))
       fd.delete('player_id')
     } else {
       const targetPlayerIds = pollType === 'overall_rating'
@@ -150,6 +157,58 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
     fd.set('type', pollType)
 
     startTransition(async () => {
+      const thumbnailFile = fd.get('thumbnail_image_file') as File | null
+      fd.delete('thumbnail_image_file')
+      if (!String(fd.get('thumbnail_url') ?? '').trim() && thumbnailFile && thumbnailFile.size > 0) {
+        const thumbnailForm = new FormData()
+        thumbnailForm.set('file', thumbnailFile)
+        thumbnailForm.set('folder', 'poll-thumbnails')
+        thumbnailForm.set('preset', 'poll-thumbnail')
+        const uploadResult = await uploadPollImage(thumbnailForm)
+        if (uploadResult.error || !uploadResult.url) {
+          setMessage(uploadResult.error ?? '대표 이미지 업로드에 실패했습니다.')
+          return
+        }
+        fd.set('thumbnail_url', uploadResult.url)
+      }
+
+      if (pollType === 'free_choice') {
+        const parsedOptions = JSON.parse(String(fd.get('options') ?? '[]')) as Array<{
+          label: string
+          description: string | null
+          image_url: string | null
+          imageField: string
+        }>
+        const uploadedOptions = []
+        for (const option of parsedOptions) {
+          const imageFile = fd.get(option.imageField) as File | null
+          fd.delete(option.imageField)
+          if (!option.image_url && imageFile && imageFile.size > 0) {
+            const imageForm = new FormData()
+            imageForm.set('file', imageFile)
+            imageForm.set('folder', 'poll-options')
+            imageForm.set('preset', 'poll-option')
+            const uploadResult = await uploadPollImage(imageForm)
+            if (uploadResult.error || !uploadResult.url) {
+              setMessage(uploadResult.error ?? '선택지 이미지 업로드에 실패했습니다.')
+              return
+            }
+            uploadedOptions.push({
+              label: option.label,
+              description: option.description,
+              image_url: uploadResult.url,
+            })
+          } else {
+            uploadedOptions.push({
+              label: option.label,
+              description: option.description,
+              image_url: option.image_url,
+            })
+          }
+        }
+        fd.set('options', JSON.stringify(uploadedOptions))
+      }
+
       const result = await createUserPoll(fd)
       if (result.error) {
         setMessage(result.error)
@@ -197,6 +256,10 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
           <input name="title" required className="input-field" placeholder="투표 제목" />
           <input name="description" className="input-field" placeholder="설명(선택)" />
           <input name="thumbnail_url" className="input-field" placeholder="대표 이미지 URL(선택)" />
+          <label className="block rounded-md border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
+            대표 이미지 첨부
+            <input name="thumbnail_image_file" type="file" accept="image/*" className="mt-1 block w-full text-[12px]" />
+          </label>
           <input name="closes_at" type="datetime-local" required className="input-field" aria-label="투표 종료일" />
         </section>
 
@@ -251,6 +314,10 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
                       className="input-field"
                       placeholder="이미지 URL"
                     />
+                    <label className="block rounded-md border border-dashed border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
+                      선택지 이미지 첨부
+                      <input name={`free_option_image_${index}`} type="file" accept="image/*" className="mt-1 block w-full text-[11px]" />
+                    </label>
                   </div>
                   <button type="button" onClick={() => setFreeOptions(prev => prev.filter((_, itemIndex) => itemIndex !== index))} className="rounded-sm border border-border text-muted-foreground" aria-label="선택지 삭제">
                     <X className="mx-auto h-3.5 w-3.5" />

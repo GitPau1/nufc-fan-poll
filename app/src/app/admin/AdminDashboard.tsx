@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createPlayer, createPoll, createTransfer, deletePlayer, setCurrentSeason, updateClubStatus, updatePlayer, updatePlayerSeasonStats, uploadPhoto } from '@/lib/actions/admin'
 import { createFarewell } from '@/lib/actions/farewells'
-import { BannerImageInput } from '@/components/images/BannerImageInput'
+import { BannerImageInput, CroppedImageInput } from '@/components/images/BannerImageInput'
 import type { PollListItem } from '@/lib/queries/polls'
 import type { SeasonOption } from '@/lib/queries/seasons'
 import type { DepartureType, PollType } from '@/types/database'
@@ -296,10 +296,14 @@ function PollCreateForm({
       <input name="title" required className="input-field" placeholder="투표 제목" />
       <input name="description" className="input-field" placeholder="설명(선택)" />
       <input name="thumbnail_url" className="input-field" placeholder="대표 이미지 URL(선택)" />
-      <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
-        대표 이미지 첨부
-        <input name="thumbnail_image_file" type="file" accept="image/*" className="mt-1 block w-full text-[11px]" />
-      </label>
+      <CroppedImageInput
+        name="thumbnail_image_file"
+        label="대표 이미지 크롭"
+        outputWidth={1200}
+        outputHeight={400}
+        previewClassName="aspect-[3/1]"
+        fileName="poll-thumbnail.webp"
+      />
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => setPollType('subject_options')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'subject_options' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
           대상+선택지
@@ -357,10 +361,16 @@ function PollCreateForm({
                   className="input-field"
                   placeholder="이미지 URL(선택)"
                 />
-                <label className="col-span-2 block rounded-lg border border-dashed border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
-                  선택지 이미지 첨부
-                  <input name={`free_option_image_${index}`} type="file" accept="image/*" className="mt-1 block w-full text-[11px]" />
-                </label>
+                <div className="col-span-2">
+                  <CroppedImageInput
+                    name={`free_option_image_${index}`}
+                    label="선택지 카드 이미지 크롭"
+                    outputWidth={1000}
+                    outputHeight={1300}
+                    previewClassName="aspect-[10/13]"
+                    fileName="poll-option.webp"
+                  />
+                </div>
               </div>
             ))}
           </div>

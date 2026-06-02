@@ -5,6 +5,10 @@ import { useEffect, useRef, useState } from 'react'
 type Props = {
   name: string
   label: string
+  outputWidth?: number
+  outputHeight?: number
+  previewClassName?: string
+  fileName?: string
 }
 
 type CropState = {
@@ -13,16 +17,20 @@ type CropState = {
   y: number
 }
 
-const OUTPUT_WIDTH = 1400
-const OUTPUT_HEIGHT = 600
-
 function setInputFile(input: HTMLInputElement, file: File) {
   const transfer = new DataTransfer()
   transfer.items.add(file)
   input.files = transfer.files
 }
 
-export function BannerImageInput({ name, label }: Props) {
+export function CroppedImageInput({
+  name,
+  label,
+  outputWidth = 1400,
+  outputHeight = 600,
+  previewClassName = 'aspect-[21/9]',
+  fileName = 'cropped.webp',
+}: Props) {
   const previewRef = useRef<HTMLCanvasElement>(null)
   const hiddenFileRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
@@ -43,15 +51,15 @@ export function BannerImageInput({ name, label }: Props) {
     const context = canvas.getContext('2d')
     if (!context) return
 
-    canvas.width = OUTPUT_WIDTH
-    canvas.height = OUTPUT_HEIGHT
-    context.clearRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT)
+    canvas.width = outputWidth
+    canvas.height = outputHeight
+    context.clearRect(0, 0, outputWidth, outputHeight)
 
-    const scale = Math.max(OUTPUT_WIDTH / image.naturalWidth, OUTPUT_HEIGHT / image.naturalHeight) * crop.zoom
+    const scale = Math.max(outputWidth / image.naturalWidth, outputHeight / image.naturalHeight) * crop.zoom
     const drawWidth = image.naturalWidth * scale
     const drawHeight = image.naturalHeight * scale
-    const maxX = Math.max(0, drawWidth - OUTPUT_WIDTH)
-    const maxY = Math.max(0, drawHeight - OUTPUT_HEIGHT)
+    const maxX = Math.max(0, drawWidth - outputWidth)
+    const maxY = Math.max(0, drawHeight - outputHeight)
     const offsetX = -maxX * (crop.x / 100)
     const offsetY = -maxY * (crop.y / 100)
 
@@ -59,9 +67,9 @@ export function BannerImageInput({ name, label }: Props) {
     canvas.toBlob(blob => {
       const input = hiddenFileRef.current
       if (!blob || !input) return
-      setInputFile(input, new File([blob], 'banner.webp', { type: 'image/webp' }))
+      setInputFile(input, new File([blob], fileName, { type: 'image/webp' }))
     }, 'image/webp', 0.72)
-  }, [crop, sourceUrl])
+  }, [crop, fileName, outputHeight, outputWidth, sourceUrl])
 
   function handleSourceChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
@@ -84,7 +92,7 @@ export function BannerImageInput({ name, label }: Props) {
       <input ref={hiddenFileRef} name={name} type="file" accept="image/webp" className="hidden" tabIndex={-1} />
       {sourceUrl && (
         <div className="mt-3 space-y-2">
-          <canvas ref={previewRef} className="aspect-[21/9] w-full rounded-lg bg-[#07111f] object-cover" />
+          <canvas ref={previewRef} className={`${previewClassName} w-full rounded-lg bg-[#07111f] object-cover`} />
           <label className="block text-[11px] font-bold text-foreground">
             확대
             <input
@@ -122,5 +130,18 @@ export function BannerImageInput({ name, label }: Props) {
         </div>
       )}
     </div>
+  )
+}
+
+export function BannerImageInput({ name, label }: Pick<Props, 'name' | 'label'>) {
+  return (
+    <CroppedImageInput
+      name={name}
+      label={label}
+      outputWidth={1400}
+      outputHeight={600}
+      previewClassName="aspect-[21/9]"
+      fileName="banner.webp"
+    />
   )
 }

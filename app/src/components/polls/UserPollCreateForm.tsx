@@ -6,6 +6,7 @@ import { Check, Plus, Search, Users, X } from 'lucide-react'
 import { createUserPoll } from '@/lib/actions/polls'
 import { uploadPollImage } from '@/lib/actions/images'
 import { trackEvent } from '@/lib/analytics/mixpanel'
+import { CroppedImageInput } from '@/components/images/BannerImageInput'
 import type { PollFormPlayer } from '@/lib/queries/polls'
 import type { PollType, Position } from '@/types/database'
 import {
@@ -256,10 +257,14 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
           <input name="title" required className="input-field" placeholder="투표 제목" />
           <input name="description" className="input-field" placeholder="설명(선택)" />
           <input name="thumbnail_url" className="input-field" placeholder="대표 이미지 URL(선택)" />
-          <label className="block rounded-md border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
-            대표 이미지 첨부
-            <input name="thumbnail_image_file" type="file" accept="image/*" className="mt-1 block w-full text-[12px]" />
-          </label>
+          <CroppedImageInput
+            name="thumbnail_image_file"
+            label="대표 이미지 크롭"
+            outputWidth={1200}
+            outputHeight={400}
+            previewClassName="aspect-[3/1]"
+            fileName="poll-thumbnail.webp"
+          />
           <input name="closes_at" type="datetime-local" required className="input-field" aria-label="투표 종료일" />
         </section>
 
@@ -314,10 +319,14 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
                       className="input-field"
                       placeholder="이미지 URL"
                     />
-                    <label className="block rounded-md border border-dashed border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
-                      선택지 이미지 첨부
-                      <input name={`free_option_image_${index}`} type="file" accept="image/*" className="mt-1 block w-full text-[11px]" />
-                    </label>
+                    <CroppedImageInput
+                      name={`free_option_image_${index}`}
+                      label="선택지 카드 이미지 크롭"
+                      outputWidth={1000}
+                      outputHeight={1300}
+                      previewClassName="aspect-[10/13]"
+                      fileName="poll-option.webp"
+                    />
                   </div>
                   <button type="button" onClick={() => setFreeOptions(prev => prev.filter((_, itemIndex) => itemIndex !== index))} className="rounded-sm border border-border text-muted-foreground" aria-label="선택지 삭제">
                     <X className="mx-auto h-3.5 w-3.5" />

@@ -51,3 +51,21 @@ test('outputs transfer banners in a 21:9 frame', async () => {
   assert.equal(metadata.width, 1400)
   assert.equal(metadata.height, 600)
 })
+
+test('preserves cropped poll thumbnail frame', async () => {
+  const file = await pngFile(1200, 400, 'poll-thumbnail.webp')
+  const result = await optimizeImageForUpload(file, 'poll-thumbnail')
+  const metadata = await sharp(result.bytes).metadata()
+
+  assert.equal(metadata.width, 1200)
+  assert.equal(metadata.height, 400)
+})
+
+test('preserves cropped poll option card frame while resizing', async () => {
+  const file = await pngFile(1000, 1300, 'poll-option.webp')
+  const result = await optimizeImageForUpload(file, 'poll-option')
+  const metadata = await sharp(result.bytes).metadata()
+
+  assert.equal(metadata.width, 720)
+  assert.equal(metadata.height, 936)
+})

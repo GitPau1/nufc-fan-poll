@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import type { PlayerStatus, PollType, Position, TransferDirection, TransferType } from '@/types/database'
 import { requireAdminClient, type AnySupabase } from '@/lib/supabase/admin'
 import { datetimeLocalToKoreaIso } from '@/lib/datetime'
+import { createImageStoragePath, getImageUploadPreset, optimizeImageForUpload } from '@/lib/images/optimize'
 
 function parseIntOrNull(value: FormDataEntryValue | null): number | null {
   if (!value) return null
@@ -597,16 +598,16 @@ export async function uploadPhoto(formData: FormData): Promise<{ url?: string; e
     const supabase = await requireAdmin()
 
     const file = formData.get('file') as File | null
-    if (!file || file.size === 0) return { error: '?뚯씪???놁뼱??' }
+    if (!file || file.size === 0) return { error: '파일이 없어요.' }
 
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
     const folder = (formData.get('folder') as string) || 'players'
-    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const preset = getImageUploadPreset(formData.get('preset'))
+    const path = createImageStoragePath(folder, file.name)
+    const optimized = await optimizeImageForUpload(file, preset)
 
-    const bytes = await file.arrayBuffer()
     const { error } = await supabase.storage
       .from('player-photos')
-      .upload(path, bytes, { contentType: file.type, upsert: true })
+      .upload(path, optimized.bytes, { contentType: optimized.contentType, upsert: true })
 
     if (error) return { error: error.message }
 

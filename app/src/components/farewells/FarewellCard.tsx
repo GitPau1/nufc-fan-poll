@@ -37,13 +37,13 @@ export function FarewellCard({ farewell }: { farewell: FarewellItem }) {
 
   return (
     <Link href={`/farewells/${farewell.id}`} className="block h-full active:scale-[0.98] transition-transform duration-100">
-      <Card className={`h-full min-w-[220px] rounded-2xl hover:shadow-sm transition-shadow duration-200 cursor-pointer ${
+      <Card className={`h-full min-w-[220px] cursor-pointer transition-opacity hover:opacity-70 ${
         incoming
-          ? 'border-emerald-200 bg-emerald-50/80'
-          : 'border-sky-200 bg-sky-50/80'
+          ? 'border-positive-dim bg-positive-dim'
+          : 'border-primary-dim bg-primary-dim'
       }`}>
         <div className="flex gap-3 p-3 items-center">
-          <div className="w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-white/70">
+          <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-surface">
             <img src={thumbnail(farewell)} alt={player?.name ?? 'Transfer player'} className="w-full h-full object-cover" />
           </div>
 
@@ -51,8 +51,8 @@ export function FarewellCard({ farewell }: { farewell: FarewellItem }) {
             <div className="flex items-center gap-1.5 mb-1">
               <Badge className={`text-[10px] font-semibold border-0 pointer-events-none ${
                 incoming
-                  ? 'bg-emerald-600 text-white hover:bg-emerald-600'
-                  : 'bg-sky-600 text-white hover:bg-sky-600'
+                  ? 'bg-positive-dim text-positive'
+                  : 'bg-primary-dim text-primary-dark'
               }`}>
                 {TRANSFER_LABEL[farewell.departure_type]}
               </Badge>

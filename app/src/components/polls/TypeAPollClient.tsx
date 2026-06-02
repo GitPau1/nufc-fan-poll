@@ -134,12 +134,12 @@ export function TypeAPollClient({ poll, isAuthenticated }: TypeAPollClientProps)
                   key={option.id}
                   onClick={() => setSelectedId(option.id)}
                   className={cn(
-                    'w-full flex items-center gap-3 px-4 py-4 rounded-xl border-2 text-left',
-                    'transition-all duration-100 focus:outline-none focus-visible:outline-none focus-visible:ring-0',
+                    'w-full flex items-center gap-3 px-4 py-4 rounded-sm border text-left',
+                    'transition-opacity duration-100 hover:opacity-70 focus:outline-none focus-visible:outline-none',
                   'active:scale-[0.98]',
                     selected
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/40 bg-card'
+                      ? 'border-primary bg-primary-dim'
+                      : 'border-border bg-surface'
                   )}
                 >
                   {/* 라디오 인디케이터 */}
@@ -194,7 +194,7 @@ export function TypeAPollClient({ poll, isAuthenticated }: TypeAPollClientProps)
       {/* 하단 고정 제출 버튼 */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] p-4 bg-white/95 backdrop-blur border-t z-30">
         <Button
-          className="w-full h-12 text-sm font-bold rounded-xl"
+          className="w-full h-12 text-sm font-bold"
           disabled={!selectedId || isPending}
           onClick={handleSubmitClick}
         >

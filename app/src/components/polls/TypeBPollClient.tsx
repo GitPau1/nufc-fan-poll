@@ -169,7 +169,7 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
                 key={option.id}
                 onClick={() => !isCenter && isInteractive && setSelectedIdx(i)}
                 className={cn(
-                  'absolute top-0 h-full rounded-2xl overflow-hidden',
+                  'absolute top-0 h-full rounded-lg overflow-hidden',
                   'transition-all duration-300 ease-out',
                   isCenter ? 'cursor-default' : 'cursor-pointer'
                 )}
@@ -209,7 +209,7 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
                 {/* 선택 인디케이터: inset ring (overflow-hidden에 클리핑 안 됨) */}
                 {isCenter && (
                   <>
-                    <div className="absolute inset-0 rounded-2xl ring-inset ring-[3px] ring-primary pointer-events-none" />
+                    <div className="absolute inset-0 rounded-lg ring-inset ring-[3px] ring-primary pointer-events-none" />
                     <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-primary flex items-center justify-center">
                       <Check className="h-4 w-4 text-white" />
                     </div>
@@ -260,7 +260,7 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
         </div>
 
         {/* 선택된 선수 요약 */}
-        <div className="mx-4 mt-4 rounded-xl bg-secondary px-4 py-3">
+        <div className="mx-4 mt-4 rounded-md bg-disabled px-4 py-3">
           <p className="text-xs text-muted-foreground mb-0.5">현재 선택</p>
           <p className="text-sm font-bold text-foreground">{selectedOption?.label}</p>
           {selectedOption?.description && (
@@ -272,7 +272,7 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
       {/* 하단 고정 제출 버튼 */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] p-4 bg-white/95 backdrop-blur border-t z-30">
         <Button
-          className="w-full h-12 text-sm font-bold rounded-xl"
+          className="w-full h-12 text-sm font-bold"
           disabled={isPending}
           onClick={handleSubmit}
         >

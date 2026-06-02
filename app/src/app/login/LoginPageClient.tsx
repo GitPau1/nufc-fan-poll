@@ -42,7 +42,7 @@ export function LoginPageClient() {
   return (
     <div className="min-h-[calc(100vh-56px)] flex flex-col items-center justify-center px-6 py-12">
       {/* 아이콘 */}
-      <div className="w-18 h-18 rounded-full bg-primary/10 flex items-center justify-center mb-5 text-4xl">
+      <div className="w-18 h-18 rounded-full bg-primary-dim flex items-center justify-center mb-5 text-4xl">
         ⚽
       </div>
 
@@ -56,7 +56,7 @@ export function LoginPageClient() {
       <div className="w-full flex flex-col gap-3">
         <button
           onClick={handleLogin}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-primary text-white font-bold text-[15px] hover:bg-primary/90 transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm bg-primary text-white font-bold text-[15px] shadow-w200 transition-opacity hover:opacity-70 active:opacity-50"
         >
           <GoogleIcon color="white" />
           Google로 로그인
@@ -70,7 +70,7 @@ export function LoginPageClient() {
 
         <button
           onClick={handleSignUp}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-white border-[1.5px] border-border text-foreground font-semibold text-[15px] hover:border-primary/50 transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm bg-surface border border-border text-foreground font-semibold text-[15px] transition-opacity hover:opacity-70 active:opacity-50"
         >
           <GoogleIcon color="#41b6e6" />
           Google로 회원가입

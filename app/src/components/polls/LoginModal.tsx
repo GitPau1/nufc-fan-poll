@@ -54,13 +54,13 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
     <Sheet open={open} onOpenChange={o => { if (!o) onClose() }}>
       <SheetContent
         side="bottom"
-        className="rounded-t-2xl border-t-0 pb-10 [&>button]:hidden"
+        className="rounded-t-lg border-t-0 pb-10 [&>button]:hidden"
       >
         {/* 드래그 핸들 */}
         <div className="mx-auto w-10 h-1.5 rounded-full bg-muted mb-6" />
 
         <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-full bg-primary-dim flex items-center justify-center mx-auto mb-4">
             <Lock className="h-6 w-6 text-primary" />
           </div>
           <SheetHeader>

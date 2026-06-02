@@ -203,7 +203,7 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
                         <img
                           src={player.photo_url ?? `https://placehold.co/48x48/0c2340/41b6e6?text=${player.squad_number ?? player.name.slice(0, 1)}`}
                           alt={player.name}
-                          className="h-12 w-12 rounded-xl object-cover"
+                          className="h-12 w-12 rounded-md object-cover"
                         />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-black text-foreground">{player.name}</p>
@@ -223,8 +223,8 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
                               type="button"
                               onClick={() => setScore(player.id, option.score)}
                               className={cn(
-                                'rounded-lg border py-2 text-center text-[12px] font-black transition-colors',
-                                selected ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground'
+                                'rounded-sm border py-2 text-center text-[12px] font-black transition-opacity hover:opacity-70',
+                                selected ? 'border-primary bg-primary-dim text-primary-dark' : 'border-border bg-surface text-foreground'
                               )}
                             >
                               <span className="block text-[13px]">{option.grade}</span>
@@ -252,11 +252,11 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
 
       <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[480px] -translate-x-1/2 border-t bg-white/95 p-4 backdrop-blur">
         {isLastStep ? (
-          <Button className="h-12 w-full rounded-xl text-sm font-bold" disabled={isPending || completedCount !== totalRequired} onClick={handleSubmit}>
+          <Button className="h-12 w-full text-sm font-bold" disabled={isPending || completedCount !== totalRequired} onClick={handleSubmit}>
             {isPending ? <><Loader2 className="h-4 w-4 animate-spin" />제출 중…</> : '전체 평가 제출'}
           </Button>
         ) : (
-          <Button className="h-12 w-full rounded-xl text-sm font-bold" disabled={!currentComplete} onClick={handleNext}>
+          <Button className="h-12 w-full text-sm font-bold" disabled={!currentComplete} onClick={handleNext}>
             다음 포지션 평가
           </Button>
         )}

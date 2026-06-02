@@ -105,7 +105,7 @@ export function OverallRatingResultView({ poll, results, hasVoted }: OverallRati
                           <img
                             src={result.player.photo_url ?? `https://placehold.co/52x52/0c2340/41b6e6?text=${result.player.squad_number ?? result.player.name.slice(0, 1)}`}
                             alt={result.player.name}
-                            className="h-13 w-13 h-[52px] w-[52px] rounded-xl object-cover"
+                            className="h-13 w-13 h-[52px] w-[52px] rounded-md object-cover"
                           />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-black text-foreground">{result.player.name}</p>
@@ -123,7 +123,7 @@ export function OverallRatingResultView({ poll, results, hasVoted }: OverallRati
                           <div className="space-y-2">
                             <p className="text-[11px] font-bold uppercase tracking-widest text-primary">팬 코멘트</p>
                             {visibleComments.map(comment => (
-                              <div key={comment.id} className="rounded-xl bg-secondary/70 px-3 py-2.5">
+                              <div key={comment.id} className="rounded-md bg-disabled px-3 py-2.5">
                                 <div className="mb-1 flex items-center justify-between gap-2">
                                   <span className="text-[11px] font-bold text-muted-foreground">
                                     {comment.user.display_name ?? '뉴캐슬 팬'} · {comment.grade}

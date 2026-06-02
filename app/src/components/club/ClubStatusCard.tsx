@@ -13,7 +13,7 @@ export default function ClubStatusCard({ status }: Props) {
 
   return (
     <div
-      className="rounded-[20px] mb-3 overflow-hidden"
+      className="rounded-lg mb-3 overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #0c2340 0%, #1a3a60 100%)' }}
     >
       <div className="p-4">
@@ -29,7 +29,7 @@ export default function ClubStatusCard({ status }: Props) {
         <div className="flex gap-2">
           {/* 순위 card */}
           <div
-            className="flex-shrink-0 rounded-[12px] px-3 py-2.5 flex flex-col gap-0.5"
+            className="flex-shrink-0 rounded-md px-3 py-2.5 flex flex-col gap-0.5"
             style={{ background: 'rgba(255,255,255,0.08)' }}
           >
             <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
@@ -51,7 +51,7 @@ export default function ClubStatusCard({ status }: Props) {
           {/* 다음 경기 card */}
           {status.next_match_opponent && (
             <div
-              className="flex-1 rounded-[12px] px-3 py-2.5 flex flex-col gap-0.5"
+              className="flex-1 rounded-md px-3 py-2.5 flex flex-col gap-0.5"
               style={{ background: 'rgba(255,255,255,0.08)' }}
             >
               <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>

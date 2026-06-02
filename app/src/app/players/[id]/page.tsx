@@ -30,7 +30,7 @@ function calcAge(birthDate: string | null): number | null {
 
 function StatBox({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-border bg-white px-3 py-3 text-center">
+    <div className="rounded-md border border-border bg-surface px-3 py-3 text-center shadow-g200">
       <p className="text-[11px] font-semibold text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-black text-foreground">{value}</p>
     </div>
@@ -64,14 +64,14 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     <>
       <AppHeader />
       <main className="px-4 pt-4 pb-24 animate-enter">
-        <Card className="rounded-2xl overflow-hidden">
+        <Card className="overflow-hidden">
           <div className="p-4">
             <div className="flex gap-4 items-start">
-              <div className="w-24 h-24 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
+              <div className="w-24 h-24 rounded-md overflow-hidden bg-disabled flex-shrink-0">
                 {player.photo_url ? (
                   <img src={player.photo_url} alt={player.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                  <div className="w-full h-full bg-primary-dim flex items-center justify-center">
                     <span className="text-2xl font-black text-primary">{player.squad_number ?? player.name.slice(0, 2)}</span>
                   </div>
                 )}
@@ -115,7 +115,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
               </div>
             </>
           ) : (
-            <div className="rounded-2xl border border-border bg-white px-4 py-5 text-center">
+            <div className="rounded-md border border-border bg-surface px-4 py-5 text-center shadow-g200">
               <p className="text-[13px] font-semibold text-muted-foreground">등록된 시즌 기록이 없어요.</p>
             </div>
           )}
@@ -126,7 +126,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
             <p className="mb-2 px-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Past Seasons
             </p>
-            <div className="overflow-hidden rounded-2xl border border-border bg-white">
+            <div className="overflow-hidden rounded-md border border-border bg-surface shadow-g200">
               <table className="w-full text-sm">
                 <thead className="bg-secondary/50 text-[11px] text-muted-foreground">
                   <tr>

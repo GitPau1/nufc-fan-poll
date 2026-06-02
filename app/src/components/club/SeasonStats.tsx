@@ -10,11 +10,11 @@ interface StatCardProps {
 
 function StatCard({ label, player, count, unit, emoji }: StatCardProps) {
   return (
-    <div className="bg-white border border-border rounded-[20px] py-3 px-2.5 text-center">
+    <div className="bg-surface border border-border rounded-md py-3 px-2.5 text-center shadow-g200">
       <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">
         {label}
       </p>
-      <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto mb-1.5 flex items-center justify-center overflow-hidden">
+      <div className="w-16 h-16 rounded-full bg-primary-dim mx-auto mb-1.5 flex items-center justify-center overflow-hidden">
         {player?.photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

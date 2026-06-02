@@ -124,7 +124,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
 
           {/* 최다득표 카드 */}
           {total > 0 && (
-            <div className="rounded-2xl bg-primary p-5 text-primary-foreground">
+            <div className="rounded-md bg-primary p-5 text-primary-foreground shadow-g200">
               <p className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-3">
                 최다 득표
               </p>
@@ -188,7 +188,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                         )}
                         {/* 내 선택 칩 */}
                         {isMine && (
-                          <Badge className="text-[10px] bg-primary/15 text-primary border-0 px-1.5 font-bold flex-shrink-0 pointer-events-none hover:bg-primary/15">
+                          <Badge className="text-[10px] bg-primary-dim text-primary-dark border-0 px-1.5 font-bold flex-shrink-0 pointer-events-none hover:bg-primary-dim">
                             내 선택
                           </Badge>
                         )}
@@ -212,7 +212,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                       value={animated ? percents[i] : 0}
                       className={cn(
                         'h-2 transition-all duration-700',
-                        !isMine && '[&>div]:bg-slate-200'
+                        !isMine && '[&>div]:bg-disabled'
                       )}
                     />
                   </div>

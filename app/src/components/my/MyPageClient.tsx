@@ -133,10 +133,10 @@ export function MyPageClient({
       <div className="px-4 pt-6 pb-10 flex flex-col gap-5">
 
         {/* 프로필 */}
-        <div className="bg-white rounded-2xl p-4 flex items-center gap-4">
+        <div className="bg-surface rounded-md p-4 flex items-center gap-4 shadow-g200">
           <Avatar className="h-16 w-16">
             <AvatarImage src={avatarUrl ?? undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xl font-black">
+            <AvatarFallback className="bg-primary-dim text-primary-dark text-xl font-black">
               {initial}
             </AvatarFallback>
           </Avatar>
@@ -209,7 +209,7 @@ export function MyPageClient({
                   <div key={item.pollId}>
                     {i > 0 && <Separator />}
                     <div className="relative">
-                      <Link href={`/polls/${item.pollId}`} className="block active:bg-secondary/70 transition-colors">
+                      <Link href={`/polls/${item.pollId}`} className="block active:bg-disabled transition-colors">
                         <div className="flex items-center gap-3 px-4 py-3.5 pr-12 hover:bg-secondary/50 transition-colors">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-foreground leading-snug line-clamp-1">
@@ -236,7 +236,7 @@ export function MyPageClient({
                         type="button"
                         disabled={isDeletingPoll}
                         onClick={() => handleDeletePoll(item.pollId)}
-                        className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                        className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-negative-dim hover:text-negative disabled:opacity-50"
                         aria-label="투표 삭제"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -267,7 +267,7 @@ export function MyPageClient({
                 {participatedPolls.map((item, i) => (
                   <div key={item.pollId}>
                     {i > 0 && <Separator />}
-                    <Link href={`/polls/${item.pollId}`} className="block active:bg-secondary/70 transition-colors">
+                    <Link href={`/polls/${item.pollId}`} className="block active:bg-disabled transition-colors">
                       <div className="flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-foreground leading-snug line-clamp-1">
@@ -314,7 +314,7 @@ export function MyPageClient({
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-2 h-12 text-destructive hover:text-destructive hover:bg-destructive/5"
+            className="w-full justify-start gap-2 h-12 text-negative hover:text-negative hover:bg-negative-dim"
             onClick={handleDelete}
           >
             <Trash2 className="h-4 w-4" />

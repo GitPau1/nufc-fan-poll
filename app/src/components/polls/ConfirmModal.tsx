@@ -29,7 +29,7 @@ export function ConfirmModal({
       <SheetContent
         side="bottom"
         style={{ left: 'max(0px, calc(50% - 240px))' }}
-        className="right-auto w-full max-w-[480px] rounded-t-2xl border-t-0 pb-10 [&>button]:hidden"
+        className="right-auto w-full max-w-[480px] rounded-t-lg border-t-0 pb-10 [&>button]:hidden"
       >
         {/* 드래그 핸들 */}
         <div className="mx-auto w-10 h-1.5 rounded-full bg-muted mb-6" />
@@ -40,7 +40,7 @@ export function ConfirmModal({
         </SheetHeader>
 
         {/* 선택 요약 */}
-        <div className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3.5 mb-5">
+        <div className="flex items-center gap-3 rounded-sm bg-primary-dim border border-primary px-4 py-3.5 mb-5">
           <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center flex-shrink-0">
             <div className="w-2.5 h-2.5 rounded-full bg-primary" />
           </div>

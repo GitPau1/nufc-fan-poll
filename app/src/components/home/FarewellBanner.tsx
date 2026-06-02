@@ -51,7 +51,7 @@ export function FarewellBanner({ items }: { items: FarewellItem[] }) {
 
   return (
     <section className="px-4 pt-4">
-      <div ref={trackRef} className="flex snap-x snap-mandatory overflow-x-auto rounded-[22px] scrollbar-hide">
+      <div ref={trackRef} className="flex snap-x snap-mandatory overflow-x-auto rounded-lg scrollbar-hide">
         {items.map((farewell, index) => {
           const welcome = isWelcome(farewell.departure_type)
           const playerName = farewell.player?.name ?? (welcome ? '새로운 선수' : '떠나는 선수')
@@ -69,7 +69,7 @@ export function FarewellBanner({ items }: { items: FarewellItem[] }) {
               href={`/farewells/${farewell.id}`}
               className="w-full flex-none snap-center"
             >
-              <article className="relative aspect-[21/9] overflow-hidden rounded-[22px] bg-[#07111f] text-white">
+              <article className="relative aspect-[21/9] overflow-hidden rounded-lg bg-[#07111f] text-white">
                 {imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover blur-[2px]" />

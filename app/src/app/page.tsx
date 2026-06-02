@@ -62,7 +62,7 @@ export default async function HomePage() {
                 전체보기
               </Link>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-border bg-white">
+            <div className="overflow-hidden rounded-md border border-border bg-surface shadow-g200">
               {homePolls.map(poll => (
                 <PollCard key={poll.id} poll={poll} />
               ))}

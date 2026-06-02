@@ -6,6 +6,13 @@ const _url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const IS_MOCK = !_url || !_url.startsWith('http')
 
 export async function middleware(request: NextRequest) {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    request.nextUrl.pathname.startsWith('/dev/design-system')
+  ) {
+    return new NextResponse(null, { status: 404 })
+  }
+
   if (IS_MOCK) {
     return NextResponse.next({ request })
   }
@@ -51,5 +58,6 @@ export const config = {
     '/my/:path*',
     '/onboarding/:path*',
     '/admin/:path*',
+    '/dev/design-system/:path*',
   ],
 }

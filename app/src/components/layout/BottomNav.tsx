@@ -16,7 +16,7 @@ export function BottomNav() {
   if (pathname !== '/' && pathname !== '/polls' && pathname !== '/club') return null
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-border z-40">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-surface border-t border-border z-40">
       <div className="flex pb-4 pt-2">
         {ITEMS.map(({ href, label, Icon }) => {
           const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)

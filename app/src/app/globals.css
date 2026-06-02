@@ -6,35 +6,68 @@
 
 @layer base {
   :root {
-    /* ── Newcastle 화이트 + 블루 테마 ── */
+    /* LDSG 기반 Newcastle 토큰 */
+    --c-primary: #41b6e6;
+    --c-primary-dim: rgba(65, 182, 230, 0.12);
+    --c-primary-dark: #1a9fd4;
+    --c-primary-on: #ffffff;
+
+    --c-black: #111111;
+    --c-gray-1: #333333;
+    --c-gray-2: #666666;
+    --c-gray-3: #a8a8a8;
+    --c-gray-4: #e1e7ef;
+    --c-disabled: #ebebeb;
+
+    --c-bg: #fafafa;
+    --c-surface: #ffffff;
+
+    --c-positive: #2e9e4f;
+    --c-positive-dim: #e6f4ea;
+    --c-negative: #d93025;
+    --c-negative-dim: #fce8e6;
+
+    --r-xs: 8px;
+    --r-sm: 10px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-pill: 9999px;
+
+    --sh-w100: 0px 0px 2px rgba(0, 0, 0, .07), 0px 1px 2px rgba(0, 0, 0, .07);
+    --sh-w200: 0px 1px 6px rgba(0, 0, 0, .12);
+    --sh-w300: 0px 1px 20px rgba(0, 0, 0, .07);
+    --sh-g100: 0px 0px 1px rgba(0, 0, 0, .05), 0px 1px 1px rgba(0, 0, 0, .05);
+    --sh-g200: 0px 1px 4px rgba(0, 0, 0, .06);
+    --sh-g300: 0px 1px 15px rgba(0, 0, 0, .04);
+
     --background:         0 0% 98%;        /* #fafafa */
-    --foreground:         222 47% 11%;     /* #0f172a slate-900 */
+    --foreground:         0 0% 7%;         /* #111111 */
 
     --card:               0 0% 100%;
-    --card-foreground:    222 47% 11%;
+    --card-foreground:    0 0% 7%;
 
     --popover:            0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 7%;
 
-    --primary:            200 74% 58%;     /* #41b6e6 Newcastle blue */
-    --primary-foreground: 0 0% 100%;       /* white */
+    --primary:            198 77% 58%;     /* #41b6e6 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary:          210 40% 96%;     /* slate-100 */
-    --secondary-foreground: 222 47% 20%;
+    --secondary:          0 0% 92%;        /* #ebebeb */
+    --secondary-foreground: 0 0% 20%;      /* #333333 */
 
-    --muted:              210 40% 96%;
-    --muted-foreground:   215 16% 47%;     /* slate-500 */
+    --muted:              0 0% 92%;
+    --muted-foreground:   0 0% 40%;        /* #666666 */
 
-    --accent:             199 89% 96%;     /* sky-50 */
-    --accent-foreground:  200 74% 38%;
+    --accent:             198 77% 95%;
+    --accent-foreground:  198 78% 47%;     /* #1a9fd4 */
 
-    --destructive:        0 84% 60%;
+    --destructive:        4 71% 50%;       /* #d93025 */
     --destructive-foreground: 0 0% 100%;
 
-    --border:             214 32% 91%;     /* slate-200 */
-    --input:              214 32% 91%;
-    --ring:               200 74% 58%;     /* #41b6e6 */
-    --radius:             0.625rem;        /* 10px */
+    --border:             214 30% 91%;     /* #e1e7ef */
+    --input:              214 30% 91%;
+    --ring:               198 77% 58%;
+    --radius:             12px;
   }
 
   * {
@@ -58,13 +91,13 @@
   }
 
   .input-field {
-    @apply w-full px-3 py-2 rounded-lg border border-border text-[13px] text-foreground bg-white outline-none focus:border-primary;
+    @apply w-full rounded-sm border border-border bg-white px-3 py-2 text-[14px] text-foreground outline-none focus:border-primary;
   }
   .btn-primary {
-    @apply w-full py-2.5 rounded-xl bg-primary text-white font-bold text-[13px] hover:bg-primary/90 transition-colors disabled:opacity-60;
+    @apply w-full rounded-sm bg-primary py-3.5 text-[15px] font-bold text-white shadow-w200 transition-opacity hover:opacity-70 active:opacity-50 disabled:bg-disabled disabled:text-gray-3 disabled:opacity-100;
   }
   .btn-secondary {
-    @apply w-full py-2.5 rounded-xl bg-secondary text-foreground font-semibold text-[13px] hover:bg-secondary/80 transition-colors disabled:opacity-60;
+    @apply w-full rounded-sm border border-gray-4 bg-transparent py-3.5 text-[15px] font-bold text-foreground transition-opacity hover:opacity-70 active:opacity-50 disabled:bg-disabled disabled:text-gray-3 disabled:opacity-100;
   }
 }
 

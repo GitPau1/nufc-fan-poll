@@ -44,10 +44,10 @@ function PollListRow({ poll }: { poll: PollListItem }) {
         poll_status: poll.status,
         creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
       })}
-      className={`block border-b border-border bg-white px-4 py-4 active:bg-secondary/60 transition-colors ${!isActive ? 'opacity-70' : ''}`}
+      className={`block border-b border-border bg-surface px-4 py-4 active:bg-disabled transition-colors ${!isActive ? 'opacity-70' : ''}`}
     >
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
+        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-disabled">
           <img
             src={getThumbnailUrl(poll)}
             alt={poll.title}
@@ -61,7 +61,7 @@ function PollListRow({ poll }: { poll: PollListItem }) {
               {getPollTypeLabel(poll.type)}
             </Badge>
             {isActive ? (
-              <Badge className="text-[10px] font-semibold bg-primary/10 text-primary border-0 hover:bg-primary/10 pointer-events-none">
+              <Badge className="text-[10px] font-semibold bg-primary-dim text-primary-dark border-0 hover:bg-primary-dim pointer-events-none">
                 <CountdownTimer closesAt={poll.closes_at} />
               </Badge>
             ) : (
@@ -91,9 +91,9 @@ function PollListRow({ poll }: { poll: PollListItem }) {
 
 function ScheduledRow({ poll }: { poll: PollListItem }) {
   return (
-    <div className="border-b border-border bg-white px-4 py-4">
+    <div className="border-b border-border bg-surface px-4 py-4">
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
+        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-disabled">
           <img
             src={getThumbnailUrl(poll)}
             alt=""
@@ -105,7 +105,7 @@ function ScheduledRow({ poll }: { poll: PollListItem }) {
             <Badge variant="secondary" className="text-[10px] font-semibold pointer-events-none">
               {getPollTypeLabel(poll.type)}
             </Badge>
-            <Badge className="text-[10px] font-semibold bg-primary/10 text-primary border-0 hover:bg-primary/10 pointer-events-none">
+            <Badge className="text-[10px] font-semibold bg-primary-dim text-primary-dark border-0 hover:bg-primary-dim pointer-events-none">
               {poll.scheduled_at ? formatScheduled(poll.scheduled_at) : '공개 예정'}
             </Badge>
           </div>

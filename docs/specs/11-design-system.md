@@ -15,7 +15,7 @@ Newcastle United 브랜드 색상을 적용한 커스텀 디자인 시스템.
 | Primary 색 | `#41b6e6` (Newcastle 하늘색) | LDSG의 LINE Green 자리를 대체 |
 | 테마 | 라이트 모드 우선 | 다크 모드는 MVP 이후 |
 | 언어/폰트 | Pretendard Variable (한국어) | LDSG KR 폴백 권장 폰트 |
-| 기본 배경 | `#f2f3f5` | LDSG on-gray 그룹 표면 |
+| 기본 배경 | `#fafafa` | LDSG on-gray 그룹 표면 |
 
 ---
 
@@ -33,11 +33,11 @@ Newcastle United 브랜드 색상을 적용한 커스텀 디자인 시스템.
 --c-gray-1:        #333333;
 --c-gray-2:        #666666;   /* 부제, 설명 */
 --c-gray-3:        #a8a8a8;   /* 힌트, 메타 */
---c-gray-4:        #d4d4d4;   /* 테두리, 구분선 */
+--c-gray-4:        #e1e7ef;   /* 테두리, 구분선 */
 --c-disabled:      #ebebeb;   /* 비활성 배경 */
 
 /* Surface */
---c-bg:            #f2f3f5;   /* 전체 배경 (on-gray 표면) */
+--c-bg:            #fafafa;   /* 전체 배경 (on-gray 표면) */
 --c-surface:       #ffffff;   /* 카드, 입력창, 헤더 */
 
 /* Role */
@@ -80,10 +80,10 @@ LDSG 구분: **Title** (좁은 line-height, 제목·리스트 타이틀) / **Tex
 
 | 토큰 | 값 | 사용처 |
 |------|-----|--------|
-| `--r-xs` | 3px | 스켈레톤 플레이스홀더, 작은 배지 |
-| `--r-sm` | 5px | 버튼, 입력창, 옵션 버튼 |
-| `--r-md` | 7px | 카드, 선수 정보 영역, 결과 카드 |
-| `--r-lg` | 12px | Bottom Sheet, 모달 상단 |
+| `--r-xs` | 8px | 스켈레톤 플레이스홀더, 작은 배지 |
+| `--r-sm` | 10px | 버튼, 입력창, 옵션 버튼 |
+| `--r-md` | 12px | 카드, 선수 정보 영역, 결과 카드 |
+| `--r-lg` | 16px | Bottom Sheet, 모달 상단 |
 | `--r-pill` | 9999px | Chip, Dot 인디케이터, 플로팅 버튼 |
 
 ---
@@ -98,13 +98,13 @@ LDSG 구분: **Title** (좁은 line-height, 제목·리스트 타이틀) / **Tex
 --sh-w200: 0px 1px 6px rgba(0,0,0,.12);   /* 버튼 (contained), Google 로그인 버튼 */
 --sh-w300: 0px 1px 20px rgba(0,0,0,.07);  /* Bottom Sheet, 대형 카드 */
 
-/* On Gray (#f2f3f5) 배경 위 컴포넌트 */
+/* On Gray (#fafafa) 배경 위 컴포넌트 */
 --sh-g100: 0px 0px 1px rgba(0,0,0,.05), 0px 1px 1px rgba(0,0,0,.05);  /* 소형 */
 --sh-g200: 0px 1px 4px rgba(0,0,0,.06);   /* 투표 카드, 결과 카드, 프로필 카드 */
 --sh-g300: 0px 1px 15px rgba(0,0,0,.04);  /* 대형 시트 */
 ```
 
-> 원칙: `--c-bg` (#f2f3f5) 배경이면 `sh-g*`, `--c-surface` (#ffffff) 배경이면 `sh-w*`
+> 원칙: `--c-bg` (#fafafa) 배경이면 `sh-g*`, `--c-surface` (#ffffff) 배경이면 `sh-w*`
 
 ---
 
@@ -121,7 +121,7 @@ LDSG 구분: **Title** (좁은 line-height, 제목·리스트 타이틀) / **Tex
 ```css
 /* 컨테이너 */
 border: 1px solid var(--c-gray-4);
-border-radius: var(--r-sm);    /* 5px */
+border-radius: var(--r-sm);    /* 10px */
 padding: 14px 16px;
 background: var(--c-surface);
 
@@ -142,7 +142,7 @@ background: var(--c-primary-dim);
 | ghost | transparent | `--c-gray-2` | 없음 | 닫기, 서브 액션 |
 | destructive | `--c-negative-dim` | `--c-negative` | `1px rgba(negative,.2)` | 탈퇴, 삭제 |
 
-공통: `border-radius: 5px`, `font-weight: 700`, `font-size: 15px`, `padding: 14px`
+공통: `border-radius: 10px`, `font-weight: 700`, `font-size: 15px`, `padding: 14px`
 
 ### action-button-full-bleed
 
@@ -182,7 +182,7 @@ font-size: 11px; font-weight: 600;
 ```css
 /* list-group */
 background: var(--c-surface);
-border-radius: var(--r-md);    /* 7px */
+border-radius: var(--r-md);    /* 12px */
 overflow: hidden;
 box-shadow: var(--sh-g200);    /* on-gray 배경 위 */
 
@@ -201,7 +201,7 @@ list-item + list-item {
 ### modal-sheet (Bottom Sheet)
 
 ```css
-border-radius: 12px 12px 0 0;   /* --r-lg top only */
+border-radius: 16px 16px 0 0;   /* --r-lg top only */
 padding: 20px 20px 40px;
 box-shadow: var(--sh-w300);
 
@@ -217,7 +217,7 @@ border-radius: var(--r-pill);
 
 ```css
 border: 1px solid var(--c-gray-4);
-border-radius: var(--r-sm);    /* 5px */
+border-radius: var(--r-sm);    /* 10px */
 padding: 11px 13px;
 font-size: 14px;
 
@@ -230,9 +230,134 @@ outline: none;
 
 ```css
 background: var(--c-surface);
-border-radius: var(--r-md);    /* 7px */
+border-radius: var(--r-md);    /* 12px */
 overflow: hidden;
 box-shadow: var(--sh-g200);    /* on-gray 배경 위 */
+```
+
+### progress
+
+투표 결과 분포, 평점 진행률 등 비율을 표시할 때 사용한다.
+
+```css
+height: 8px;
+border-radius: var(--r-pill);
+background: var(--c-disabled);
+
+/* indicator */
+background: var(--c-primary);
+transition: transform .2s;
+```
+
+### separator
+
+목록 내부 또는 섹션 사이의 구분선. 새 색상을 만들지 않고 `--c-gray-4` 또는 `--c-disabled`를 사용한다.
+
+```css
+height: 1px;       /* 필요 시 0.5px border로 대체 */
+background: var(--c-gray-4);
+```
+
+### app-header / bottom-nav
+
+서비스 공통 내비게이션.
+
+```css
+/* app-header */
+background: rgba(255,255,255,.95);
+border-bottom: 1px solid var(--c-gray-4);
+box-shadow: var(--sh-w100);
+
+/* bottom-nav */
+background: var(--c-surface);
+border-top: 1px solid var(--c-gray-4);
+
+/* active item */
+color: var(--c-primary);
+```
+
+### transfer-item
+
+이적 탭의 선수 카드. 방향 라벨, 선수 썸네일, 이름, 클럽 정보를 중앙 정렬로 표시한다.
+
+```css
+background: var(--c-surface);
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-md);
+box-shadow: var(--sh-g200);
+```
+
+### farewell-card
+
+작별/영입 카드. 이적 방향은 `chip` 톤으로 표현하고, 카드 자체는 `poll-card`와 같은 표면 규칙을 따른다.
+
+```css
+background: var(--c-surface);
+border-radius: var(--r-md);
+box-shadow: var(--sh-g200);
+```
+
+### club-status-card
+
+구단 현황처럼 브랜드가 강한 요약 카드. 예외적으로 클럽 네이비 배경을 허용하되, 내부 보조 카드는 흰색 opacity 표면을 사용한다.
+
+```css
+background: #0c2340;
+border-radius: var(--r-lg);
+color: #fff;
+
+/* inner panel */
+background: rgba(255,255,255,.08);
+border-radius: var(--r-lg);
+```
+
+### squad-list
+
+스쿼드 목록은 segmented control, position header, player row로 구성한다.
+
+```css
+/* segmented control */
+background: var(--c-disabled);
+border-radius: var(--r-lg);
+
+/* active tab */
+background: var(--c-surface);
+color: var(--c-primary-dark);
+box-shadow: var(--sh-g100);
+
+/* group */
+background: var(--c-surface);
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-md);
+```
+
+### rating-matrix
+
+전체 평가 투표의 반복 입력 패턴. 선수 행과 1-10점 선택 버튼을 묶는다.
+
+```css
+/* score option */
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-sm);
+
+/* selected */
+border-color: var(--c-primary);
+background: var(--c-primary-dim);
+color: var(--c-primary-dark);
+```
+
+### form-section / picker
+
+투표 생성·관리자 폼의 기본 섹션. 선택형 picker는 dashed border를 사용한다.
+
+```css
+background: var(--c-surface);
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-md);
+box-shadow: var(--sh-g200);
+
+/* picker */
+border-style: dashed;
 ```
 
 ---
@@ -254,10 +379,14 @@ theme: {
     colors: {
       primary: '#41b6e6',
       'primary-dark': '#1a9fd4',
+      disabled: '#ebebeb',
+      surface: '#ffffff',
+      positive: '#2e9e4f',
+      negative: '#d93025',
       // ... 위 토큰 그대로 매핑
     },
     borderRadius: {
-      'xs': '3px', 'sm': '5px', 'md': '7px', 'lg': '12px',
+      'xs': '8px', 'sm': '10px', 'md': '12px', 'lg': '16px',
     },
     boxShadow: {
       'w100': '0px 0px 2px rgba(0,0,0,.07), 0px 1px 2px rgba(0,0,0,.07)',

@@ -59,11 +59,11 @@ export function PlayerCommentsSection({
             onChange={e => setText(e.target.value.slice(0, 500))}
             placeholder="선수에게 남기고 싶은 메시지를 적어주세요."
             rows={2}
-            className="flex-1 resize-none rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 resize-none rounded-sm border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
           />
           <Button
             size="icon"
-            className="h-10 w-10 rounded-xl flex-shrink-0"
+            className="h-10 w-10 flex-shrink-0"
             onClick={handleSubmit}
             disabled={!text.trim() || isPending}
           >
@@ -71,7 +71,7 @@ export function PlayerCommentsSection({
           </Button>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-secondary/40 px-3 py-3">
+        <div className="rounded-md border border-border bg-disabled px-3 py-3">
           <p className="text-sm font-semibold text-foreground">로그인하면 메시지를 남길 수 있어요</p>
           <p className="text-xs text-muted-foreground mt-1">팬들의 메시지는 모두에게 공개됩니다.</p>
         </div>

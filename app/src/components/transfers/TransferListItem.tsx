@@ -7,7 +7,7 @@ export function TransferListItem({ transfer, compact = false }: { transfer: Tran
   const clubLabel = getTransferClubLabel(transfer.club_name)
 
   return (
-    <article className={`relative flex w-full flex-col items-center justify-center rounded-2xl border border-border bg-white text-center ${compact ? 'min-h-[142px] px-3 py-4' : 'min-h-[180px] px-4 py-5'}`}>
+    <article className={`relative flex w-full flex-col items-center justify-center rounded-md border border-border bg-surface text-center shadow-g200 ${compact ? 'min-h-[142px] px-3 py-4' : 'min-h-[180px] px-4 py-5'}`}>
       <span className={`absolute font-black uppercase tracking-[0.14em] text-primary ${compact ? 'left-3 top-3 text-[10px]' : 'left-4 top-4 text-[12px]'}`}>
         {directionLabel}
       </span>

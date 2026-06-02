@@ -62,7 +62,7 @@ export default function SquadList({ players }: Props) {
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-1.5 mb-3 rounded-xl bg-secondary p-1">
+      <div className="grid grid-cols-3 gap-1.5 mb-3 rounded-lg bg-disabled p-1">
         {STATUS_TABS.map(tab => {
           const isActive = tab.value === activeStatus
           return (
@@ -70,9 +70,9 @@ export default function SquadList({ players }: Props) {
               key={tab.value}
               type="button"
               onClick={() => setActiveStatus(tab.value)}
-              className={`h-9 rounded-lg text-[12px] font-bold transition-colors ${
+              className={`h-9 rounded-sm text-[12px] font-bold transition-opacity hover:opacity-70 ${
                 isActive
-                  ? 'bg-white text-primary shadow-sm'
+                  ? 'bg-surface text-primary-dark shadow-g100'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -84,7 +84,7 @@ export default function SquadList({ players }: Props) {
       </div>
 
       {filteredPlayers.length === 0 ? (
-        <div className="bg-white border border-border rounded-[20px] px-4 py-8 text-center">
+        <div className="bg-surface border border-border rounded-md px-4 py-8 text-center shadow-g200">
           <p className="text-[13px] font-semibold text-foreground">등록된 선수가 없어요.</p>
           <p className="text-[12px] text-muted-foreground mt-1">관리자 페이지에서 상태를 변경해보세요.</p>
         </div>
@@ -92,7 +92,7 @@ export default function SquadList({ players }: Props) {
         Array.from(grouped.entries()).map(([position, group]) => (
           <div
             key={position}
-            className="bg-white border border-border rounded-[20px] overflow-hidden mb-2.5"
+            className="bg-surface border border-border rounded-md overflow-hidden mb-2.5 shadow-g200"
           >
             <div className="px-3.5 pt-3 pb-2 border-b border-border">
               <span className="text-[11px] font-extrabold text-primary tracking-widest">
@@ -112,7 +112,7 @@ export default function SquadList({ players }: Props) {
                       </span>
                     </div>
 
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                    <div className="w-12 h-12 rounded-full bg-primary-dim flex-shrink-0 flex items-center justify-center overflow-hidden">
                       {player.photo_url ? (
                         <img
                           src={player.photo_url}

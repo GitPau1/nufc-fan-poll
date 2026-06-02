@@ -94,7 +94,7 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
       </div>
 
       {visiblePolls.length > 0 ? (
-        <div className="overflow-hidden rounded-2xl border border-border bg-white">
+        <div className="overflow-hidden rounded-md border border-border bg-surface shadow-g200">
           {visiblePolls.map(p => <PollCard key={p.id} poll={p} />)}
         </div>
       ) : (
@@ -128,7 +128,7 @@ function PollTabs({
   ]
 
   return (
-    <div className="inline-flex rounded-lg border border-border bg-white p-1">
+    <div className="inline-flex rounded-lg border border-border bg-surface p-1">
       {tabs.map(tab => {
         const selected = tab.id === activeTab
         return (

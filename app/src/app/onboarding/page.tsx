@@ -35,19 +35,19 @@ export default function OnboardingPage() {
           <label className="text-[13px] font-semibold text-foreground">닉네임</label>
           <input
             name="displayName"
-            className="w-full px-3.5 py-3 rounded-xl border-[1.5px] border-border text-[15px] text-foreground bg-white outline-none focus:border-primary placeholder:text-slate-300"
+            className="w-full px-3.5 py-3 rounded-sm border border-border text-[15px] text-foreground bg-surface outline-none focus:border-primary placeholder:text-gray-3"
             placeholder="예: 까치사랑해"
             maxLength={12}
             autoFocus
           />
           <span className="text-[11px] text-muted-foreground">2~12자, 특수문자 제외</span>
-          {error && <span className="text-[12px] text-red-500 font-medium">{error}</span>}
+          {error && <span className="text-[12px] text-negative font-medium">{error}</span>}
         </div>
 
         <button
           type="submit"
           disabled={isPending}
-          className="w-full py-3.5 rounded-2xl bg-primary text-white font-bold text-[15px] hover:bg-primary/90 transition-colors disabled:opacity-60 mt-2"
+          className="w-full py-3.5 rounded-sm bg-primary text-white font-bold text-[15px] shadow-w200 transition-opacity hover:opacity-70 active:opacity-50 disabled:bg-disabled disabled:text-gray-3 disabled:opacity-100 mt-2"
         >
           {isPending ? '저장 중...' : '시작하기 →'}
         </button>

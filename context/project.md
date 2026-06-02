@@ -42,7 +42,7 @@
 
 ## 브랜딩 요약
 - Primary: `#41b6e6` (Newcastle 하늘색)
-- 배경: `#f2f3f5` (on-gray 표면)
+- 배경: `#fafafa` (on-gray 표면)
 - 폰트: Pretendard Variable
 
 ---

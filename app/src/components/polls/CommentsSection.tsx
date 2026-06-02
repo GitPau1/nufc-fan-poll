@@ -159,14 +159,13 @@ export function CommentsSection({
             onChange={e => setText(e.target.value.slice(0, 300))}
             placeholder="이번 투표에 대한 생각을 남겨주세요…"
             rows={2}
-            className="flex-1 resize-none rounded-xl border border-border bg-white px-3 py-2.5
+            className="flex-1 resize-none rounded-sm border border-border bg-surface px-3 py-2.5
                        text-sm text-foreground placeholder:text-muted-foreground
-                       focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0
-                       transition-all"
+                       focus:border-primary focus:outline-none"
           />
           <Button
             size="icon"
-            className="h-10 w-10 rounded-xl flex-shrink-0"
+            className="h-10 w-10 flex-shrink-0"
             onClick={handleSubmit}
             disabled={!text.trim() || isPending}
           >
@@ -179,7 +178,7 @@ export function CommentsSection({
           <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 px-1">
             <span className="opacity-60">💬</span>
             댓글에{' '}
-            <Badge className="text-[10px] bg-primary/10 text-primary border-0 px-1.5 font-bold pointer-events-none hover:bg-primary/10">
+            <Badge className="text-[10px] bg-primary-dim text-primary-dark border-0 px-1.5 font-bold pointer-events-none hover:bg-primary-dim">
               {myVotedOptionLabel}
             </Badge>
             {' '}항목이 함께 표시됩니다
@@ -217,7 +216,7 @@ export function CommentsSection({
                       <span className="text-xs font-semibold text-foreground leading-none">{name}</span>
                       {/* 댓글 작성자의 투표 항목 칩 */}
                       {comment.voted_option_label && (
-                        <Badge className="text-[10px] bg-primary/10 text-primary border-0 px-1.5 font-bold flex-shrink-0 pointer-events-none hover:bg-primary/10">
+                        <Badge className="text-[10px] bg-primary-dim text-primary-dark border-0 px-1.5 font-bold flex-shrink-0 pointer-events-none hover:bg-primary-dim">
                           {comment.voted_option_label}
                         </Badge>
                       )}
@@ -233,7 +232,7 @@ export function CommentsSection({
                         <button type="button" onClick={() => startEditing(comment)} className="hover:text-foreground">
                           수정
                         </button>
-                        <button type="button" onClick={() => handleDelete(comment.id)} className="hover:text-red-500">
+                        <button type="button" onClick={() => handleDelete(comment.id)} className="hover:text-negative">
                           삭제
                         </button>
                       </div>
@@ -245,7 +244,7 @@ export function CommentsSection({
                         value={editingText}
                         onChange={event => setEditingText(event.target.value.slice(0, 300))}
                         rows={2}
-                        className="resize-none rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="resize-none rounded-sm border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
                       <div className="flex justify-end gap-1.5">
                         <Button size="sm" variant="outline" className="h-8 px-2 text-[12px]" onClick={cancelEditing} disabled={isPending}>

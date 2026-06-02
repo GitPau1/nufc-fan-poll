@@ -38,12 +38,12 @@ export default async function TransfersPage({
         </div>
 
         {selectedSeason ? (
-          <div className="mb-3 rounded-2xl border border-border bg-white px-4 py-3">
+          <div className="mb-3 rounded-md border border-border bg-surface px-4 py-3 shadow-g200">
             <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.14em] text-primary">Season</p>
             <TransferSeasonSelect seasons={seasons} selectedSeasonName={selectedSeason.name} />
           </div>
         ) : (
-          <div className="rounded-2xl border border-border bg-white px-4 py-8 text-center">
+          <div className="rounded-md border border-border bg-surface px-4 py-8 text-center shadow-g200">
             <p className="text-[13px] font-semibold text-foreground">등록된 시즌이 아직 없어요.</p>
             <p className="mt-1 text-[12px] text-muted-foreground">관리자에서 현재 시즌을 설정하면 이적 탭이 열립니다.</p>
           </div>
@@ -51,7 +51,7 @@ export default async function TransfersPage({
 
         {selectedSeason && (
           transfers.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-white px-4 py-8 text-center">
+            <div className="rounded-md border border-border bg-surface px-4 py-8 text-center shadow-g200">
               <p className="text-[13px] font-semibold text-foreground">이번 시즌 이적 이력이 없어요.</p>
             </div>
           ) : (
@@ -66,7 +66,7 @@ export default async function TransfersPage({
                       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{items.length}건</p>
                     </div>
                     {items.length === 0 ? (
-                      <div className="rounded-2xl border border-border bg-white px-4 py-6 text-center">
+                      <div className="rounded-md border border-border bg-surface px-4 py-6 text-center shadow-g200">
                         <p className="text-[13px] text-muted-foreground">등록된 이적이 없어요.</p>
                       </div>
                     ) : (

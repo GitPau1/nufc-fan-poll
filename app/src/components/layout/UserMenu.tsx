@@ -51,20 +51,20 @@ export function UserMenu({ avatarUrl, displayName, isAdmin }: UserMenuProps) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="rounded-full focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="rounded-pill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="user menu"
         aria-expanded={open}
       >
         <Avatar className="h-8 w-8">
           <AvatarImage src={avatarUrl} alt={displayName ?? 'profile'} />
-          <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+          <AvatarFallback className="bg-primary-dim text-primary-dark text-xs font-bold">
             {displayName?.[0]?.toUpperCase() ?? 'U'}
           </AvatarFallback>
         </Avatar>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-50 min-w-[144px] bg-white border border-border rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute right-0 top-10 z-50 min-w-[144px] bg-surface border border-border rounded-md shadow-w300 overflow-hidden">
           <Link
             href="/my"
             onClick={() => setOpen(false)}
@@ -77,7 +77,7 @@ export function UserMenu({ avatarUrl, displayName, isAdmin }: UserMenuProps) {
             <Link
               href="/admin"
               onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 text-[13px] font-semibold text-primary border-b border-border hover:bg-primary/5"
+              className="block px-4 py-2.5 text-[13px] font-semibold text-primary border-b border-border hover:bg-primary-dim"
             >
               ⚙ 관리자 페이지
             </Link>
@@ -85,7 +85,7 @@ export function UserMenu({ avatarUrl, displayName, isAdmin }: UserMenuProps) {
 
           <button
             onClick={handleLogout}
-            className="block w-full text-left px-4 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-50"
+            className="block w-full text-left px-4 py-2.5 text-[13px] font-medium text-negative hover:bg-negative-dim"
           >
             로그아웃
           </button>

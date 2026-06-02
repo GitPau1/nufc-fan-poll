@@ -218,6 +218,7 @@ export function TypeAPollClient({ poll, isAuthenticated }: TypeAPollClientProps)
       <LoginModal
         open={showLogin}
         onClose={() => setShowLogin(false)}
+        triggerAction="vote"
       />
     </div>
   )

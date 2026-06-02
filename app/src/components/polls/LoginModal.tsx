@@ -18,17 +18,19 @@ import { Button } from '@/components/ui/button'
 interface LoginModalProps {
   open: boolean
   onClose: () => void
+  triggerAction?: 'vote' | 'comment' | 'create_poll'
 }
 
-export function LoginModal({ open, onClose }: LoginModalProps) {
+export function LoginModal({ open, onClose, triggerAction = 'vote' }: LoginModalProps) {
   const pathname = usePathname()
 
   useEffect(() => {
     if (!open) return
     trackEvent('auth_prompt_viewed', {
       source_page: getSourcePage(pathname),
+      trigger_action: triggerAction,
     })
-  }, [open, pathname])
+  }, [open, pathname, triggerAction])
 
   async function handleLogin() {
     if (IS_MOCK) {

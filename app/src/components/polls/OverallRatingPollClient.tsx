@@ -262,7 +262,7 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
         )}
       </div>
 
-      <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+      <LoginModal open={showLogin} onClose={() => setShowLogin(false)} triggerAction="vote" />
     </div>
   )
 }

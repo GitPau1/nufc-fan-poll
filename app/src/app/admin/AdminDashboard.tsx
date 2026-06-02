@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createPlayer, createPoll, createTransfer, deletePlayer, setCurrentSeason, updateClubStatus, updatePlayer, updatePlayerSeasonStats, uploadPhoto } from '@/lib/actions/admin'
 import { createFarewell } from '@/lib/actions/farewells'
+import { BannerImageInput } from '@/components/images/BannerImageInput'
 import type { PollListItem } from '@/lib/queries/polls'
 import type { SeasonOption } from '@/lib/queries/seasons'
 import type { DepartureType, PollType } from '@/types/database'
@@ -254,6 +255,7 @@ function PollCreateForm({
             const uploadForm = new FormData()
             uploadForm.set('file', imageFile)
             uploadForm.set('folder', 'poll-options')
+            uploadForm.set('preset', 'poll-option')
             const uploadResult = await uploadPhoto(uploadForm)
             if (uploadResult.error || !uploadResult.url) {
               onError(uploadResult.error ?? '선택지 이미지 업로드에 실패했습니다.')
@@ -265,6 +267,21 @@ function PollCreateForm({
           }
         }
         fd.set('options', JSON.stringify(uploadedOptions))
+      }
+
+      const thumbnailFile = fd.get('thumbnail_image_file') as File | null
+      fd.delete('thumbnail_image_file')
+      if (!String(fd.get('thumbnail_url') ?? '').trim() && thumbnailFile && thumbnailFile.size > 0) {
+        const thumbnailForm = new FormData()
+        thumbnailForm.set('file', thumbnailFile)
+        thumbnailForm.set('folder', 'poll-thumbnails')
+        thumbnailForm.set('preset', 'poll-thumbnail')
+        const uploadResult = await uploadPhoto(thumbnailForm)
+        if (uploadResult.error || !uploadResult.url) {
+          onError(uploadResult.error ?? '대표 이미지 업로드에 실패했습니다.')
+          return
+        }
+        fd.set('thumbnail_url', uploadResult.url)
       }
 
       const result = await createPoll(fd)
@@ -279,6 +296,10 @@ function PollCreateForm({
       <input name="title" required className="input-field" placeholder="투표 제목" />
       <input name="description" className="input-field" placeholder="설명(선택)" />
       <input name="thumbnail_url" className="input-field" placeholder="대표 이미지 URL(선택)" />
+      <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[11px] font-semibold text-muted-foreground">
+        대표 이미지 첨부
+        <input name="thumbnail_image_file" type="file" accept="image/*" className="mt-1 block w-full text-[11px]" />
+      </label>
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => setPollType('subject_options')} className={`rounded-lg border py-2 text-[12px] font-bold ${pollType === 'subject_options' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}>
           대상+선택지
@@ -431,6 +452,7 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, transfe
         const bannerForm = new FormData()
         bannerForm.set('file', bannerFile)
         bannerForm.set('folder', 'transfer-banners')
+        bannerForm.set('preset', 'transfer-banner')
         const uploadResult = await uploadPhoto(bannerForm)
         if (uploadResult.error || !uploadResult.url) {
           toast(uploadResult.error ?? '배너 이미지 업로드에 실패했습니다.', 'err')
@@ -482,6 +504,7 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, transfe
         const photoForm = new FormData()
         photoForm.set('file', photoFile)
         photoForm.set('folder', 'players')
+        photoForm.set('preset', 'player-photo')
         const uploadResult = await uploadPhoto(photoForm)
         if (uploadResult.error || !uploadResult.url) {
           toast(uploadResult.error ?? '사진 업로드에 실패했습니다.', 'err')
@@ -544,6 +567,7 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, transfe
         const bannerForm = new FormData()
         bannerForm.set('file', bannerFile)
         bannerForm.set('folder', 'transfer-banners')
+        bannerForm.set('preset', 'transfer-banner')
         const uploadResult = await uploadPhoto(bannerForm)
         if (uploadResult.error || !uploadResult.url) {
           toast(uploadResult.error ?? '배너 이미지 업로드에 실패했습니다.', 'err')
@@ -731,10 +755,7 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, transfe
                   <input name="birth_date" type="date" className="input-field" />
                   <input name="destination_club" className="input-field" placeholder="원소속 구단 또는 Free Agent" />
                   <textarea name="departure_note" rows={3} className="input-field resize-none" placeholder="이적 메모" />
-                  <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
-                    배너 이미지
-                    <input name="banner_image_file" type="file" accept="image/*" className="mt-2 block w-full text-[12px]" />
-                  </label>
+                  <BannerImageInput name="banner_image_file" label="배너 이미지" />
                   <label className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
                     <input name="create_in_transfer" type="checkbox" className="h-4 w-4 rounded border-border" />
                     이번 시즌 In 이력 생성
@@ -780,10 +801,7 @@ export function AdminDashboard({ adminEmail, players, polls, clubStatus, transfe
                     <input name="destination_club" className="input-field" placeholder="구단 명 또는 FA" />
                   </div>
                   <textarea name="departure_note" rows={3} className="input-field resize-none" placeholder="이적 메모" />
-                  <label className="block rounded-lg border border-dashed border-border px-3 py-2 text-[12px] font-semibold text-muted-foreground">
-                    배너 이미지
-                    <input name="banner_image_file" type="file" accept="image/*" className="mt-2 block w-full text-[12px]" />
-                  </label>
+                  <BannerImageInput name="banner_image_file" label="배너 이미지" />
                   <button type="submit" disabled={isPending} className="btn-primary">이적 등록</button>
                 </form>
               </div>

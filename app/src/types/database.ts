@@ -124,6 +124,17 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['comment_likes']['Row'], 'id' | 'created_at'>
         Update: never
       }
+      user_feedback: {
+        Row: {
+          id: string
+          user_id: string
+          content: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['user_feedback']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: never
+      }
       rating_votes: {
         Row: {
           id: string
@@ -249,6 +260,7 @@ export type PollOptionRow   = Database['public']['Tables']['poll_options']['Row'
 export type VoteRow         = Database['public']['Tables']['votes']['Row']
 export type CommentRow      = Database['public']['Tables']['comments']['Row']
 export type CommentLikeRow  = Database['public']['Tables']['comment_likes']['Row']
+export type UserFeedbackRow = Database['public']['Tables']['user_feedback']['Row']
 export type RatingVoteRow   = Database['public']['Tables']['rating_votes']['Row']
 export type RatingVoteLikeRow = Database['public']['Tables']['rating_vote_likes']['Row']
 export type PublicProfileRow = Database['public']['Tables']['public_profiles']['Row']

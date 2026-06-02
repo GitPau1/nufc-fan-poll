@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LogOut, Trash2, ChevronRight, Pencil, Check, X } from 'lucide-react'
+import { LogOut, Trash2, ChevronRight, Pencil, Check, X, MessageSquare } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -304,6 +304,12 @@ export function MyPageClient({
 
         {/* 계정 설정 */}
         <div className="flex flex-col gap-2">
+          <Button asChild variant="outline" className="w-full justify-start gap-2 h-12">
+            <Link href="/my/feedback">
+              <MessageSquare className="h-4 w-4" />
+              피드백 남기기
+            </Link>
+          </Button>
           <Button
             variant="outline"
             className="w-full justify-start gap-2 h-12"

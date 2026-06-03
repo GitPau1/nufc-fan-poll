@@ -1,0 +1,558 @@
+# Supabase 데이터 연결 구조
+
+최종 업데이트: 2026-05-29
+
+이 문서는 현재 서비스가 Supabase와 어떻게 연결되어 있는지 정리한 기준 문서입니다. 테이블, 컬럼, RLS 정책, Storage 버킷, 기능별 데이터 흐름을 바꿀 때마다 함께 업데이트하세요.
+
+## 전체 연결 구조
+
+앱은 `app/` 아래의 Next.js App Router 프로젝트입니다. Supabase는 Auth, PostgreSQL, RLS 기반 데이터 접근, Storage에 사용됩니다.
+
+실행 모드는 `app/src/lib/config.ts`에서 결정됩니다.
+
+- `NEXT_PUBLIC_SUPABASE_URL`이 비어 있거나 `http`로 시작하지 않으면 `IS_MOCK = true`가 되어 mock 데이터/쿠키를 사용합니다.
+- 실제 Supabase URL이 있으면 서버/브라우저 클라이언트가 Supabase 프로젝트에 연결됩니다.
+
+Supabase 클라이언트 생성 위치:
+
+- `app/src/lib/supabase/server.ts`: 서버 컴포넌트/서버 액션용 SSR 클라이언트. Next cookies와 anon key를 사용합니다.
+- `app/src/lib/supabase/client.ts`: 브라우저 클라이언트. 로그인/로그아웃 등 클라이언트 Auth 동작에 사용합니다.
+- `app/src/lib/actions/admin.ts`, `app/src/lib/actions/farewells.ts`: 관리자 쓰기 작업에서 현재 로그인 사용자가 `ADMIN_EMAILS`에 포함되는지 확인한 뒤 `SUPABASE_SERVICE_ROLE_KEY`로 service-role 클라이언트를 만듭니다.
+
+필수 환경변수:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `ADMIN_EMAILS`
+
+## 인증 흐름
+
+Google OAuth 시작:
+
+- `app/src/app/login/LoginPageClient.tsx`
+- `app/src/components/polls/LoginModal.tsx`
+
+OAuth 콜백:
+
+- `app/src/app/auth/callback/route.ts`에서 auth code를 session으로 교환합니다.
+- 로그인 후 `public.users.display_name`을 조회합니다.
+- `display_name`이 없으면 `/onboarding`으로 보냅니다.
+
+세션 갱신/라우트 보호:
+
+- `app/src/middleware.ts`가 대부분의 라우트에서 Supabase SSR 클라이언트를 만들고 세션 쿠키를 갱신합니다.
+- `/my`, `/onboarding`은 로그인 필요.
+- `/admin`은 로그인 + `ADMIN_EMAILS`에 포함된 이메일 필요.
+
+사용자 프로필 동기화:
+
+- `supabase/migrations/20260527155049_initial_schema.sql`에서 `auth.users` INSERT 시 `public.users`를 생성하는 트리거를 만듭니다.
+- `supabase/migrations/20260528_fix_user_trigger.sql`에서 신규 사용자의 `display_name`을 자동 생성하지 않고 `NULL`로 두도록 바꿉니다.
+- `app/src/lib/actions/onboarding.ts`가 온보딩/마이페이지 닉네임 저장 시 `public.users`를 upsert합니다.
+
+## 스키마 기준 파일
+
+현재 DB 스키마는 다음 마이그레이션이 기준입니다.
+
+- `supabase/migrations/20260527155049_initial_schema.sql`
+- `supabase/migrations/20260528_fix_user_trigger.sql`
+- `supabase/migrations/20260528_club_squad.sql`
+- `supabase/migrations/20260529_farewells.sql`
+- `supabase/migrations/20260529_player_comments.sql`
+- `supabase/migrations/20260529_transfer_events_player_history.sql`
+- `supabase/migrations/20260529_player_status_poll_thumbnail.sql`
+- `supabase/migrations/20260529_public_profiles_storage_vote_guards.sql`
+
+TypeScript DB 타입은 `app/src/types/database.ts`에 수동으로 관리됩니다. Supabase에서 자동 생성되는 타입이 아니므로, 마이그레이션을 바꾸면 이 파일도 반드시 같이 수정해야 합니다.
+
+## 테이블별 연결
+
+### `users`
+
+역할: Supabase Auth의 `auth.users`와 연결되는 앱 프로필 테이블입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `email`, `avatar_url`, `display_name`, `created_at`, `deleted_at`
+
+사용 위치:
+
+- OAuth 후 온보딩 여부 확인: `app/src/app/auth/callback/route.ts`
+- 헤더/마이페이지 프로필 표시: `app/src/components/layout/AppHeader.tsx`, `app/src/app/my/page.tsx`
+- 닉네임 저장: `app/src/lib/actions/onboarding.ts`
+- 댓글 작성자 join: `app/src/lib/queries/comments.ts`, `app/src/lib/queries/club.ts`, `app/src/lib/queries/farewells.ts`
+
+RLS:
+
+- 본인 row만 SELECT/UPDATE.
+- row 생성은 주로 Auth 트리거 또는 로그인 사용자의 onboarding upsert로 처리됩니다.
+
+### `public_profiles`
+
+역할: 댓글 작성자 표시에 필요한 공개 프로필 테이블입니다. `users` 전체를 공개하지 않고 `display_name`, `avatar_url`만 공개하기 위해 사용합니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `display_name`, `avatar_url`, `updated_at`
+
+사용 위치:
+
+- 투표 댓글 작성자 join: `app/src/lib/queries/comments.ts`
+- 선수 댓글 작성자 join: `app/src/lib/queries/club.ts`
+- 작별 댓글 작성자 join: `app/src/lib/queries/farewells.ts`
+- 댓글 작성 직후 반환 join: `app/src/lib/actions/farewells.ts`, `app/src/lib/actions/player-comments.ts`
+
+동기화:
+
+- `public.users`의 `display_name`, `avatar_url` 변경 시 trigger가 `public_profiles`를 upsert합니다.
+
+RLS:
+
+- 공개 SELECT.
+
+### `players`
+
+역할: 선수/감독 마스터 데이터입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `name`, `position`, `squad_number`, `photo_url`, `is_active`, `created_at`, `nationality`, `birth_date`, `squad_status`
+
+사용 위치:
+
+- 구단/스쿼드/선수 상세 조회: `app/src/lib/queries/club.ts`
+- 투표 목록/상세 join: `app/src/lib/queries/polls.ts`
+- 작별/이적 글 join: `app/src/lib/queries/farewells.ts`
+- 관리자 선수 생성/수정/활성화/비활성화: `app/src/lib/actions/admin.ts`
+- 작별 글 생성 시 `is_active` 또는 `squad_status` 변경: `app/src/lib/actions/farewells.ts`
+
+RLS:
+
+- 공개 SELECT.
+- 일반 사용자는 쓰기 정책 없음.
+- 관리자 쓰기는 service-role 클라이언트 사용.
+
+### `club_status`
+
+역할: 구단 현황 singleton 테이블입니다. 앱은 `id = 1`인 row 하나를 기대합니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `league_rank`, `next_match_opponent`, `next_match_date`, `next_match_venue`
+- `top_appearances_player_id`, `top_appearances_count`
+- `top_goals_player_id`, `top_goals_count`
+- `top_assists_player_id`, `top_assists_count`
+- `updated_at`
+
+사용 위치:
+
+- 구단 현황 조회: `app/src/lib/queries/club.ts`
+- 관리자 구단 현황 수정: `app/src/lib/actions/admin.ts`
+- 관리자 초기 데이터 조회: `app/src/app/admin/page.tsx`
+
+주의:
+
+- 현재 마이그레이션의 write policy가 넓게 열려 있습니다. 앱에서는 관리자 확인 후 service role로 쓰지만, DB 정책 자체도 점검 대상입니다.
+
+### `polls`
+
+역할: 투표 본문 테이블입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `type`, `title`, `description`, `player_id`, `status`, `thumbnail_url`, `scheduled_at`, `closes_at`, `created_at`
+
+사용 위치:
+
+- 투표 목록/상세 조회: `app/src/lib/queries/polls.ts`
+- 마이페이지 참여 투표 join: `app/src/app/my/page.tsx`
+- 관리자 투표 생성/상태 변경: `app/src/lib/actions/admin.ts`
+
+관계:
+
+- Type A/evaluation 투표는 `polls.player_id -> players.id`로 단일 선수를 연결합니다.
+- Type B/selection 투표는 `poll_options.player_id -> players.id`로 옵션별 선수를 연결합니다.
+
+RLS:
+
+- 공개 SELECT.
+- 관리자 쓰기는 service role 사용.
+
+### `poll_options`
+
+역할: 투표 선택지 테이블입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `poll_id`, `label`, `player_id`, `display_order`, `created_at`
+
+사용 위치:
+
+- 투표 목록/상세 join: `app/src/lib/queries/polls.ts`
+- 댓글 작성자가 선택한 옵션 라벨 조회: `app/src/lib/queries/comments.ts`
+- 마이페이지 선택 옵션 join: `app/src/app/my/page.tsx`
+- 관리자 투표 생성 시 옵션 INSERT: `app/src/lib/actions/admin.ts`
+
+RLS:
+
+- 공개 SELECT.
+- 관리자 쓰기는 service role 사용.
+
+### `votes`
+
+역할: 사용자 투표 기록입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `poll_id`, `user_id`, `option_id`, `created_at`
+
+DB 제약:
+
+- `UNIQUE(poll_id, user_id)`로 한 사용자당 한 투표만 허용합니다.
+
+사용 위치:
+
+- 투표 제출: `app/src/lib/actions/vote.ts`
+- 투표 수/내 투표 조회: `app/src/lib/queries/polls.ts`
+- 댓글 작성자의 선택 옵션 라벨 조회: `app/src/lib/queries/comments.ts`
+- 마이페이지 참여 투표 조회: `app/src/app/my/page.tsx`
+
+RLS:
+
+- 사용자는 본인 vote row만 SELECT.
+- 로그인 사용자는 `user_id = auth.uid()`인 row만 INSERT.
+- 일반 사용자 UPDATE/DELETE 정책 없음.
+
+주의:
+
+- 현재 DB는 `option_id`가 같은 `poll_id`에 속한 옵션인지 복합 제약으로 강제하지 않습니다.
+- `20260529_public_profiles_storage_vote_guards.sql` 이후부터는 `votes(option_id, poll_id)`가 `poll_options(id, poll_id)`를 참조하도록 보강됩니다.
+- `submitVote()`는 INSERT 전에 `status`, `scheduled_at`, `closes_at`를 확인합니다.
+
+### `comments`
+
+역할: 투표 상세 댓글입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `poll_id`, `user_id`, `content`, `is_hidden`, `created_at`
+
+사용 위치:
+
+- 댓글 조회: `app/src/lib/queries/comments.ts`
+- 댓글 작성: `app/src/lib/actions/comments.ts`
+
+RLS:
+
+- `is_hidden = false`인 댓글 공개 SELECT.
+- INSERT는 `auth.uid() = user_id`이고, 같은 poll에 대한 본인 vote가 있어야 허용됩니다.
+
+### `comment_likes`
+
+역할: 투표 댓글 좋아요입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `comment_id`, `user_id`, `created_at`
+
+DB 제약:
+
+- `UNIQUE(comment_id, user_id)`로 댓글당 사용자 1회 좋아요만 허용합니다.
+
+사용 위치:
+
+- 좋아요 수/내 좋아요 여부 조회: `app/src/lib/queries/comments.ts`
+- 좋아요 토글: `app/src/lib/actions/comments.ts`
+
+RLS:
+
+- 공개 SELECT.
+- 로그인 사용자는 `user_id = auth.uid()`인 row만 INSERT.
+- 사용자는 본인 좋아요만 DELETE.
+
+### `farewells`
+
+역할: 떠나는 선수의 작별/이적 글입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `player_id`, `departure_type`, `destination_club`, `departure_note`
+- `appearances`, `goals`, `assists`, `clean_sheets`
+- `joined_at`, `left_at`, `is_published`, `created_at`, `updated_at`
+
+사용 위치:
+
+- 최신/상세 조회: `app/src/lib/queries/farewells.ts`
+- 관리자 전체 조회: `app/src/app/admin/page.tsx`
+- 관리자 생성/공개 토글: `app/src/lib/actions/farewells.ts`
+
+RLS:
+
+- `is_published = true`인 글만 공개 SELECT.
+- 관리자 쓰기는 service role 사용.
+
+동작:
+
+- `createFarewell()`은 `player_season_stats`로 통산 기록을 계산합니다.
+- `transferred`, `contract_expired`, `released`는 `players.is_active = false`로 바꿉니다.
+- `loan_out`은 `players.squad_status = 'loan'`으로 바꿉니다.
+
+### `farewell_comments`
+
+역할: 작별/이적 글 댓글입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `farewell_id`, `user_id`, `content`, `is_hidden`, `created_at`
+
+사용 위치:
+
+- 댓글 조회: `app/src/lib/queries/farewells.ts`
+- 댓글 작성: `app/src/lib/actions/farewells.ts`
+
+RLS:
+
+- `is_hidden = false`인 댓글 공개 SELECT.
+- 로그인 사용자는 `user_id = auth.uid()`인 row만 INSERT.
+
+### `player_comments`
+
+역할: 선수 상세 페이지 댓글입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `player_id`, `user_id`, `content`, `is_hidden`, `created_at`
+
+사용 위치:
+
+- 댓글 조회: `app/src/lib/queries/club.ts`
+- 댓글 작성: `app/src/lib/actions/player-comments.ts`
+
+RLS:
+
+- `is_hidden = false`인 댓글 공개 SELECT.
+- 로그인 사용자는 `user_id = auth.uid()`인 row만 INSERT.
+
+### `player_season_stats`
+
+Update note 2026-05-30:
+
+- Admin season-stat writes run through `app/src/lib/actions/admin.ts` with the service-role client.
+- Admin season-stat reads in `app/src/app/admin/page.tsx` also use the service-role client so saved rows are visible to the admin dashboard even when public/RLS reads drift.
+- `app/src/app/admin/AdminDashboard.tsx` calls `router.refresh()` after a successful player edit so the client receives refreshed server props before the next edit.
+- If `player_season_stats` is missing, `updatePlayerSeasonStats()` must return an error, not a success toast. Otherwise the UI can say "saved" while no row was written.
+
+역할: 선수별 시즌 기록입니다.
+
+코드에서 쓰는 주요 컬럼:
+
+- `id`, `player_id`, `season`, `appearances`, `goals`, `assists`, `created_at`, `updated_at`
+
+DB 제약:
+
+- `UNIQUE(player_id, season)`
+- `appearances`, `goals`, `assists`는 0 이상.
+
+사용 위치:
+
+- 선수 상세 기록: `app/src/lib/queries/club.ts`
+- 작별 글 통산 기록 계산/상세 기록: `app/src/lib/queries/farewells.ts`, `app/src/lib/actions/farewells.ts`
+- 관리자 시즌 기록 수정: `app/src/lib/actions/admin.ts`
+
+주의:
+
+- 관리자 수정은 기존 해당 선수의 `player_season_stats`를 전부 DELETE한 뒤 전달된 row들을 다시 INSERT합니다.
+- 현재 마이그레이션의 write policy가 넓게 열려 있습니다. 앱에서는 service role을 쓰지만 DB 정책은 별도 점검 대상입니다.
+
+## Storage 연결
+
+사용 버킷:
+
+- `player-photos`
+
+사용 위치:
+
+- 업로드: `app/src/lib/actions/admin.ts`
+- public URL 생성: `app/src/lib/actions/admin.ts`
+- 생성된 URL은 `players.photo_url` 또는 `polls.thumbnail_url`에 저장됩니다.
+
+주의:
+
+- `20260529_public_profiles_storage_vote_guards.sql`에서 `player-photos`를 public bucket으로 생성/보정하고 public read policy를 추가합니다.
+
+## 기능별 데이터 흐름
+
+### 홈/투표 목록
+
+진입점:
+
+- `app/src/app/page.tsx`
+- `app/src/lib/queries/polls.ts`
+- `app/src/lib/queries/farewells.ts`
+
+사용 데이터:
+
+- `polls`, `poll_options`, `players`
+- `votes` count aggregate
+- 최신 공개 `farewells`
+- `farewell_comments` count aggregate
+
+### 투표 상세
+
+진입점:
+
+- `app/src/app/polls/[id]/page.tsx`
+- `app/src/lib/queries/polls.ts`
+- `app/src/lib/queries/comments.ts`
+- `app/src/lib/actions/vote.ts`
+- `app/src/lib/actions/comments.ts`
+
+사용 데이터:
+
+- `polls`, `poll_options`, `players`, `votes`, `comments`, `comment_likes`, `users`
+
+쓰기:
+
+- 투표 제출은 `votes` INSERT.
+- 댓글 작성은 `comments` INSERT. DB RLS상 같은 poll에 대한 본인 vote가 먼저 있어야 합니다.
+- 좋아요 토글은 `comment_likes` INSERT/DELETE.
+
+### 로그인/온보딩
+
+진입점:
+
+- `app/src/app/login/LoginPageClient.tsx`
+- `app/src/app/auth/callback/route.ts`
+- `app/src/app/onboarding/page.tsx`
+- `app/src/lib/actions/onboarding.ts`
+
+사용 데이터:
+
+- Supabase Auth `auth.users`
+- `public.users`
+
+쓰기:
+
+- Auth trigger가 `public.users` row를 생성합니다.
+- 온보딩이 `display_name`, `email`, `avatar_url`을 upsert합니다.
+
+### 마이페이지
+
+진입점:
+
+- `app/src/app/my/page.tsx`
+- `app/src/components/my/MyPageClient.tsx`
+
+사용 데이터:
+
+- `users`, `votes`, `poll_options`, `polls`
+
+쓰기:
+
+- 닉네임 수정은 `app/src/lib/actions/onboarding.ts`를 통해 `users` upsert.
+- 로그아웃은 브라우저 Supabase auth client 사용.
+
+### 구단 페이지
+
+진입점:
+
+- `app/src/app/club/page.tsx`
+- `app/src/lib/queries/club.ts`
+
+사용 데이터:
+
+- `club_status`, `players`, `player_season_stats`
+
+### 선수 상세
+
+진입점:
+
+- `app/src/app/players/[id]/page.tsx`
+- `app/src/lib/queries/club.ts`
+- `app/src/lib/actions/player-comments.ts`
+
+사용 데이터:
+
+- `players`, `player_season_stats`, `player_comments`, `users`
+
+쓰기:
+
+- 선수 댓글은 `player_comments` INSERT.
+
+### 이적/작별
+
+진입점:
+
+- `app/src/app/transfers/page.tsx`
+- `app/src/app/farewells/[id]/page.tsx`
+- `app/src/lib/queries/farewells.ts`
+- `app/src/lib/actions/farewells.ts`
+
+사용 데이터:
+
+- `farewells`, `players`, `farewell_comments`, `player_season_stats`, `users`
+
+쓰기:
+
+- 공개 댓글은 `farewell_comments` INSERT.
+- 관리자 작별 글 생성은 `farewells` INSERT 후 필요하면 `players`를 UPDATE.
+
+### 관리자 대시보드
+
+Update note 2026-05-30:
+
+- Admin transfer rows are edited through `updateFarewell()` in `app/src/lib/actions/farewells.ts`.
+- Admin transfer restore uses `restorePlayerFromFarewell()`: it sets `players.is_active = true`, `players.squad_status = 'first_team'`, and hides the related `farewells` row with `is_published = false` while keeping the history row.
+- The admin transfer tab no longer exposes the `is_published` toggle directly.
+
+진입점:
+
+- `app/src/app/admin/page.tsx`
+- `app/src/app/admin/AdminDashboard.tsx`
+- `app/src/lib/actions/admin.ts`
+- `app/src/lib/actions/farewells.ts`
+
+사용 데이터:
+
+- `players`, `player_season_stats`, `club_status`, `polls`, `poll_options`, `farewells`
+- Storage bucket `player-photos`
+
+쓰기:
+
+- 관리자 여부는 앱 코드에서 `ADMIN_EMAILS`로 확인합니다.
+- 실제 DB 쓰기는 service role로 실행되어 RLS를 우회합니다.
+
+## DB 수정 체크리스트
+
+Supabase 스키마를 바꿀 때는 아래를 함께 처리하세요.
+
+1. `supabase/migrations/`에 새 마이그레이션을 추가하거나 기존 기준을 명확히 수정합니다.
+2. `app/src/types/database.ts`를 수동 업데이트합니다.
+   - 실제 Supabase 프로젝트와 연결된 환경에서는 `cd app && npm run types:supabase`로 generated type도 생성할 수 있습니다.
+3. 영향받는 테이블/컬럼을 코드에서 검색합니다.
+   - `rg -n "from\\('table_name'\\)|column_name" app/src`
+4. `app/src/lib/queries/*`, server actions, route 파일의 `select(...)` 문자열을 업데이트합니다.
+5. 호환용 fallback query가 있는 경우 fallback도 같이 수정합니다.
+6. RLS 정책을 기능별로 확인합니다.
+   - 공개 읽기
+   - 로그인 사용자 INSERT/UPDATE/DELETE
+   - 관리자 전용 service-role 쓰기
+7. Storage가 관련되면 버킷 존재 여부와 공개/비공개 정책을 확인합니다.
+8. 최소 검증:
+   - `cd app`
+   - `npm run lint`
+   - `npm run build`
+9. mock mode가 아니라 실제 Supabase 연결 상태에서 영향받은 화면을 smoke test합니다.
+10. 이 문서를 업데이트합니다.
+
+## 현재 연동 오류 위험 지점
+
+- `app/src/types/database.ts`가 수동 관리라서 실제 DB와 쉽게 어긋날 수 있습니다.
+- `players.squad_status`, `polls.thumbnail_url`처럼 일부 쿼리는 누락 컬럼 fallback을 가지고 있습니다. 부분 마이그레이션 상태를 견디게 해주지만, 스키마 drift를 숨길 수도 있습니다.
+- `player-photos` Storage 버킷은 `20260529_public_profiles_storage_vote_guards.sql`에서 public bucket으로 생성/보정합니다.
+- `club_status`, `player_season_stats`의 DB write policy가 넓게 열려 있습니다. 앱에서는 service role로 관리자 쓰기를 하지만 DB 정책 자체는 재검토가 필요합니다.
+- 관리자 권한은 DB role이 아니라 `ADMIN_EMAILS` 환경변수 기반 앱 코드로 판단합니다.
+- `votes`는 `20260529_public_profiles_storage_vote_guards.sql`에서 option-poll 복합 FK를 추가합니다. 기존 운영 DB에 이미 잘못된 vote row가 있으면 FK validation은 별도 점검이 필요합니다.
+- 예정/마감 투표의 상태 자동 전환 cron/Edge Function은 아직 별도 구현 대상입니다. 현재는 `submitVote()`에서 잘못된 INSERT를 방어합니다.
+- 일부 기존 소스 파일의 한글 주석/문자열이 깨져 있습니다. DB 동작과 직접 관련은 없지만 유지보수 중 오해를 만들 수 있습니다.

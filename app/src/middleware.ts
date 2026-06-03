@@ -55,9 +55,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/my/:path*',
-    '/onboarding/:path*',
-    '/admin/:path*',
-    '/dev/design-system/:path*',
+    /*
+     * Supabase SSR: 세션 갱신을 위해 모든 경로에서 실행.
+     * 정적 파일·이미지·파비콘 제외.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

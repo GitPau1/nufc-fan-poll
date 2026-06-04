@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Poll Card States</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+
+    :root {
+      --c-primary: #41b6e6;
+      --c-primary-dim: rgba(65, 182, 230, 0.12);
+      --c-primary-dark: #1a9fd4;
+      --c-primary-on: #ffffff;
+      --c-black: #111111;
+      --c-gray-1: #333333;
+      --c-gray-2: #666666;
+      --c-gray-3: #a8a8a8;
+      --c-gray-4: #e1e7ef;
+      --c-disabled: #ebebeb;
+      --c-bg: #fafafa;
+      --c-surface: #ffffff;
+      --r-sm: 10px;
+      --r-md: 12px;
+      --r-pill: 9999px;
+      --sh-w200: 0px 1px 6px rgba(0, 0, 0, .12);
+      --sh-g200: 0px 1px 4px rgba(0, 0, 0, .06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--c-bg);
+      color: var(--c-black);
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .page {
+      width: min(100%, 1120px);
+      margin: 0 auto;
+      padding: 28px 16px 48px;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.2;
+      font-weight: 900;
+    }
+
+    .page-copy {
+      max-width: 760px;
+      margin: 8px 0 0;
+      color: var(--c-gray-2);
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+
+    .panel {
+      margin-top: 18px;
+      overflow: hidden;
+      border: 1px solid var(--c-gray-4);
+      border-radius: var(--r-md);
+      background: var(--c-surface);
+      box-shadow: var(--sh-g200);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--c-gray-4);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.3;
+      font-weight: 900;
+    }
+
+    .panel-copy {
+      margin: 4px 0 0;
+      color: var(--c-gray-2);
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      border-radius: var(--r-pill);
+      background: var(--c-primary-dim);
+      padding: 4px 9px;
+      color: var(--c-primary-dark);
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(164px, 1fr));
+      gap: 14px;
+      padding: 16px;
+      overflow-x: auto;
+    }
+
+    .state {
+      min-width: 164px;
+    }
+
+    .state-label {
+      margin: 0 0 8px;
+      color: var(--c-gray-2);
+      font-size: 12px;
+      line-height: 1.35;
+      font-weight: 800;
+    }
+
+    .poll-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--c-gray-4);
+      border-radius: var(--r-md);
+      background: var(--c-surface);
+      box-shadow: var(--sh-g200);
+      transition: opacity .2s ease, transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .poll-card.selected {
+      border-color: var(--c-primary);
+      box-shadow: 0 0 0 3px var(--c-primary), var(--sh-w200);
+    }
+
+    .poll-card.side {
+      opacity: .54;
+      transform: scale(.88);
+      transform-origin: center top;
+    }
+
+    .poll-card.active {
+      transform: scale(.98);
+      border-color: var(--c-primary-dark);
+      background: var(--c-primary-dim);
+    }
+
+    .image-square {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      background: #0c2340;
+    }
+
+    .image-square img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-square::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 46px;
+      background: linear-gradient(to top, rgba(0,0,0,.34), rgba(0,0,0,0));
+      pointer-events: none;
+    }
+
+    .number-chip {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+      border-radius: var(--r-pill);
+      background: rgba(255,255,255,.94);
+      padding: 5px 9px;
+      color: var(--c-black);
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 900;
+      box-shadow: 0 1px 2px rgba(0,0,0,.08);
+    }
+
+    .check {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--r-pill);
+      background: var(--c-primary);
+      color: var(--c-primary-on);
+      font-size: 17px;
+      line-height: 1;
+      font-weight: 900;
+      box-shadow: 0 1px 6px rgba(0,0,0,.18);
+    }
+
+    .fallback {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(65,182,230,.26), #0c2340 76%);
+      color: white;
+      font-size: 38px;
+      font-weight: 900;
+    }
+
+    .card-info {
+      min-height: 62px;
+      padding: 10px 12px;
+      background: var(--c-surface);
+    }
+
+    .free .card-info {
+      min-height: 92px;
+    }
+
+    .card-title {
+      margin: 0;
+      display: -webkit-box;
+      overflow: hidden;
+      color: var(--c-black);
+      font-size: 15px;
+      line-height: 1.22;
+      font-weight: 900;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+    }
+
+    .player-position {
+      margin: 5px 0 0;
+      color: var(--c-gray-2);
+      font-size: 12px;
+      line-height: 1.25;
+      font-weight: 700;
+    }
+
+    .free-copy {
+      margin: 6px 0 0;
+      display: -webkit-box;
+      overflow: hidden;
+      color: var(--c-gray-2);
+      font-size: 12px;
+      line-height: 1.36;
+      font-weight: 500;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .free .card-title {
+      -webkit-line-clamp: 2;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 0 16px 16px;
+    }
+
+    .summary-item {
+      border-radius: var(--r-sm);
+      background: var(--c-disabled);
+      padding: 12px;
+    }
+
+    .summary-item small {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--c-gray-2);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .summary-item strong {
+      display: block;
+      color: var(--c-black);
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 900;
+    }
+
+    @media (max-width: 900px) {
+      .state-grid {
+        grid-template-columns: repeat(5, 172px);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 18px 12px 36px;
+      }
+
+      .panel-head {
+        display: block;
+      }
+
+      .badge {
+        margin-top: 10px;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1 class="page-title">투표 캐러셀 카드 상태 보드</h1>
+    <p class="page-copy">
+      이미지 슬롯은 모두 정사각형입니다. 선수 카드는 사용자가 별도 설명을 작성하지 않는 전제로 이름과 포지션만 보여주며, 등번호는 이미지 위 칩으로 한 번만 노출합니다.
+    </p>
+
+    <section class="panel" aria-labelledby="player-version">
+      <div class="panel-head">
+        <div>
+          <h2 id="player-version" class="panel-title">선수 카드</h2>
+          <p class="panel-copy">여러 선수 후보를 넘겨 선택하는 투표 카드 상태입니다.</p>
+        </div>
+        <span class="badge">정사각형 이미지</span>
+      </div>
+
+      <div class="state-grid">
+        <div class="state">
+          <p class="state-label">기본</p>
+          <article class="poll-card">
+            <div class="image-square">
+              <img src="https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=700&q=80" alt="">
+              <span class="number-chip">#39</span>
+            </div>
+            <div class="card-info">
+              <p class="card-title">Bruno Guimaraes</p>
+              <p class="player-position">MID</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="state">
+          <p class="state-label">선택됨</p>
+          <article class="poll-card selected">
+            <div class="image-square">
+              <img src="https://images.unsplash.com/photo-1598880513655-d6d6d8b3f7a1?auto=format&fit=crop&w=700&q=80" alt="">
+              <span class="number-chip">#14</span>
+              <span class="check">✓</span>
+            </div>
+            <div class="card-info">
+              <p class="card-title">Alexander Isak</p>
+              <p class="player-position">FWD</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="state">
+          <p class="state-label">사이드</p>
+          <article class="poll-card side">
+            <div class="image-square">
+              <img src="https://images.unsplash.com/photo-1624526267942-ab0ff8a3e972?auto=format&fit=crop&w=700&q=80" alt="">
+              <span class="number-chip">#10</span>
+            </div>
+            <div class="card-info">
+              <p class="card-title">Anthony Gordon</p>
+              <p class="player-position">MID</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="state">
+          <p class="state-label">이미지 없음</p>
+          <article class="poll-card">
+            <div class="image-square">
+              <div class="fallback">NP</div>
+              <span class="number-chip">#22</span>
+            </div>
+            <div class="card-info">
+              <p class="card-title">Nick Pope</p>
+              <p class="player-position">GK</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="state">
+          <p class="state-label">긴 이름</p>
+          <article class="poll-card">
+            <div class="image-square">
+              <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=700&q=80" alt="">
+              <span class="number-chip">#8</span>
+            </div>
+            <div class="card-info">
+              <p class="card-title">Sandro Tonali Long Display Name</p>
+              <p class="player-position">MID</p>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="summary-item">
+          <small>선수 카드 정보량</small>
+          <strong>이름, 포지션, 등번호 1회만 표시</strong>
+        </div>
+        <div class="summary-item">
+          <small>선택 상태</small>
+          <strong>기존 Button/Card 톤에 맞춘 primary 링과 체크 배지</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="free-version">
+      <div class="panel-head">
+        <div>
+          <h2 id="free-version" class="panel-title">자유 입력 카드</h2>
+          <p class="panel-copy">사용자가 직접 입력한 선택지를 넘겨 선택하는 투표 카드 상태입니다.</p>
+        </div>
+        <span class="badge">제목 + 설명</span>
+      </div>
+
+      <div class="state-grid">
+        <div class="state">
+          <p class="state-label">기본</p>
+          <article class="poll-card free">
+            <div class="image-square">
+              <img src="https://images.unsplash.com/photo-1517747614396-d21a78b850e8?auto=format&fit=crop&w=700&q=80" alt="">
+            </div>
+            <div class="card-info">
+              <p class="card-title">빠른 역습 전개</p>
+              <p class="free-copy">공을 빼앗은 뒤 바로 전방으로 연결하는 장면이 가장 좋았습니다.</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="state">
+          <p class="state-label">선택됨</p>
+          <article class="poll-card free selected">
+            <div class="image-square">
+              <img src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=700&q=80" alt="">
+              <span class="check">✓</span>
+            </div>
+            <div class="card-info">
+              <p class="card-title">후반 교체 타이밍</p>
+              <p class="free-copy">경기 흐름을 바꾼 선택이라 가장 인상적이었습니다.</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="state">
+          <p class="state-label">사이드</p>
+          <article class="poll-card free side">
+            <div class="image-square">
+              <img src="https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=700&q=80" alt="">
+            </div>
+            <div class="card-info">
+              <p class="card-title">세트피스 집중력</p>
+              <p class="free-copy">위험한 장면에서도 수비 라인이 잘 버텼습니다.</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="state">
+          <p class="state-label">이미지 없음</p>
+          <article class="poll-card free">
+            <div class="image-square">
+              <div class="fallback">투표</div>
+            </div>
+            <div class="card-info">
+              <p class="card-title">응원 분위기</p>
+              <p class="free-copy">이미지가 없어도 정사각형 기본 배경으로 카드 밀도를 유지합니다.</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="state">
+          <p class="state-label">긴 입력</p>
+          <article class="poll-card free">
+            <div class="image-square">
+              <img src="https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?auto=format&fit=crop&w=700&q=80" alt="">
+            </div>
+            <div class="card-info">
+              <p class="card-title">경기 마지막 10분 동안 보여준 압박 유지와 빠른 측면 전환</p>
+              <p class="free-copy">자유 입력은 길이를 예측하기 어렵기 때문에 제목과 설명을 각각 두 줄로 제한합니다.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="summary-item">
+          <small>카드 내부 라벨</small>
+          <strong>보조 유형 텍스트 없이 사용자가 입력한 제목과 설명만 표시</strong>
+        </div>
+        <div class="summary-item">
+          <small>긴 텍스트 방어</small>
+          <strong>제목 2줄, 설명 2줄 제한으로 카드 높이 고정</strong>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

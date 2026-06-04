@@ -235,6 +235,70 @@ overflow: hidden;
 box-shadow: var(--sh-g200);    /* on-gray 배경 위 */
 ```
 
+### poll-carousel-card (투표 상세 캐러셀 카드)
+
+`selection`, `question_targets`, `free_choice`처럼 카드를 넘겨 하나를 선택하는 투표 상세 화면에 사용한다.
+사진 위 텍스트 오버레이를 금지하고, 텍스트는 항상 하단 `surface` 정보 패널에 배치한다.
+
+공통 규칙:
+- 이미지 영역은 항상 `1:1` 정사각형이다.
+- 카드 표면은 `--c-surface`, `border: 1px solid --c-gray-4`, `border-radius: --r-md`, `box-shadow: --sh-g200`.
+- 선택 상태는 `border-color: --c-primary` + `3px` inset ring + 우상단 primary check로 표시한다.
+- 사이드 카드는 같은 구조를 유지하고 opacity/scale만 낮춘다.
+- 이미지가 없으면 클럽 네이비 계열 fallback 배경과 2글자 이니셜을 사용한다.
+
+선수 카드:
+```css
+/* image */
+aspect-ratio: 1 / 1;
+
+/* info */
+min-height: 62px;
+padding: 10px 12px;
+
+/* title */
+font-size: 15px;
+font-weight: 900;
+line-height: 1.22;
+line-clamp: 1;
+
+/* meta */
+font-size: 12px;
+font-weight: 700;
+color: var(--c-gray-2);
+```
+
+- 표시 정보는 선수 이름과 포지션만 둔다.
+- 등번호는 이미지 좌상단 pill chip에서 1회만 표시한다.
+- 선수 후보에는 사용자가 추가로 작성하는 설명 문구가 없으므로 설명 영역을 만들지 않는다.
+
+자유 입력 카드:
+```css
+/* image */
+aspect-ratio: 1 / 1;
+
+/* info */
+min-height: 92px;
+padding: 10px 12px;
+
+/* title */
+font-size: 15px;
+font-weight: 900;
+line-height: 1.22;
+line-clamp: 2;
+
+/* description */
+margin-top: 6px;
+font-size: 12px;
+font-weight: 500;
+line-height: 1.36;
+line-clamp: 2;
+color: var(--c-gray-2);
+```
+
+- `자유 선택` 같은 유형 라벨은 카드 내부에 노출하지 않는다.
+- 사용자가 입력한 제목과 설명만 보여준다.
+
 ### progress
 
 투표 결과 분포, 평점 진행률 등 비율을 표시할 때 사용한다.

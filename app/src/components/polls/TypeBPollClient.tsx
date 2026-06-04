@@ -21,6 +21,8 @@ interface TypeBPollClientProps {
 
 const CARD_W  = 200  // 센터 카드 px
 const SIDE_SCALE = 0.83
+const PLAYER_INFO_H = 62
+const FREE_INFO_H = 92
 
 export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps) {
   const [selectedIdx, setSelectedIdx] = useState(0)
@@ -33,6 +35,12 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
 
   const options = poll.poll_options
   const selectedOption = options[selectedIdx]
+  const isFreeChoice = poll.type === 'free_choice'
+  const cardH = CARD_W + (isFreeChoice ? FREE_INFO_H : PLAYER_INFO_H)
+  const selectedPlayer: PlayerRow | null =
+    selectedOption?.player_id && poll.option_players
+      ? poll.option_players[selectedOption.player_id] ?? null
+      : null
 
   function prev() { setSelectedIdx(i => Math.max(0, i - 1)) }
   function next() { setSelectedIdx(i => Math.min(options.length - 1, i + 1)) }
@@ -129,7 +137,8 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
 
         {/* 캐러셀 */}
         <div
-          className="relative h-[260px] overflow-hidden mt-4"
+          className="relative overflow-hidden mt-4"
+          style={{ height: cardH + 8 }}
           onTouchStart={e => setTouchStartX(e.touches[0].clientX)}
           onTouchEnd={e => {
             if (touchStartX === null) return
@@ -157,7 +166,10 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
 
             const thumbUrl = option.image_url
               ?? player?.photo_url
-              ?? `https://placehold.co/${CARD_W}x260/0c2340/41b6e6?text=${encodeURIComponent(option.label.slice(0, 2))}`
+              ?? null
+            const fallbackText = isFreeChoice
+              ? option.label.slice(0, 2)
+              : player?.name.slice(0, 2) ?? option.label.slice(0, 2)
 
             // ±2 카드는 투명하게 대기 (위치는 유지해 transition smooth)
             const opacity      = absPOS >= 2 ? 0 : isCenter ? 1 : 0.5
@@ -167,14 +179,17 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
             return (
               <button
                 key={option.id}
+                type="button"
                 onClick={() => !isCenter && isInteractive && setSelectedIdx(i)}
                 className={cn(
-                  'absolute top-0 h-full rounded-lg overflow-hidden',
-                  'transition-all duration-300 ease-out',
+                  'absolute top-0 overflow-hidden rounded-md border border-border bg-surface text-left shadow-g200',
+                  'transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  isCenter && 'border-primary shadow-w200',
                   isCenter ? 'cursor-default' : 'cursor-pointer'
                 )}
                 style={{
                   width:         CARD_W,
+                  height:        cardH,
                   left:          `calc(50% - ${CARD_W / 2}px + ${x}px)`,
                   transform:     `scale(${isCenter ? 1 : SIDE_SCALE})`,
                   opacity,
@@ -182,38 +197,51 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
                   pointerEvents: isInteractive ? 'auto' : 'none',
                 }}
               >
-                {/* 선수 사진 */}
-                <img
-                  src={thumbUrl}
-                  alt={option.label}
-                  className="w-full h-full object-cover"
-                />
-                {/* 그라디언트 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-                {/* 선수 정보 */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <p className="text-white font-black text-base leading-tight">
+                <div className="relative aspect-square w-full overflow-hidden bg-[#0c2340]">
+                  {thumbUrl ? (
+                    <img
+                      src={thumbUrl}
+                      alt={option.label}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/30 to-[#0c2340] text-[38px] font-black text-white">
+                      {fallbackText}
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/35 to-transparent" />
+                  {player?.squad_number != null && (
+                    <span className="absolute left-2.5 top-2.5 rounded-pill bg-white/95 px-2.5 py-1 text-[12px] font-black leading-none text-foreground shadow-g100">
+                      #{player.squad_number}
+                    </span>
+                  )}
+                  {isCenter && (
+                    <div className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-w200">
+                      <Check className="h-4 w-4 text-white" />
+                    </div>
+                  )}
+                </div>
+
+                <div className={cn('bg-surface px-3 py-2.5', isFreeChoice ? 'min-h-[92px]' : 'min-h-[62px]')}>
+                  <p className={cn(
+                    'text-[15px] font-black leading-tight text-foreground',
+                    isFreeChoice ? 'line-clamp-2' : 'line-clamp-1'
+                  )}>
                     {option.label}
                   </p>
-                  {option.description && (
-                    <p className="mt-1 line-clamp-2 text-left text-xs leading-snug text-white/75">
+                  {isFreeChoice && option.description && (
+                    <p className="mt-1.5 line-clamp-2 text-[12px] font-medium leading-snug text-muted-foreground">
                       {option.description}
                     </p>
                   )}
-                  {player && (
-                    <p className="text-white/70 text-xs mt-0.5">
-                      {player.position} · #{player.squad_number}
+                  {!isFreeChoice && player && (
+                    <p className="mt-0.5 text-[12px] font-bold leading-tight text-muted-foreground">
+                      {player.position}
                     </p>
                   )}
                 </div>
-                {/* 선택 인디케이터: inset ring (overflow-hidden에 클리핑 안 됨) */}
                 {isCenter && (
-                  <>
-                    <div className="absolute inset-0 rounded-lg ring-inset ring-[3px] ring-primary pointer-events-none" />
-                    <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="h-4 w-4 text-white" />
-                    </div>
-                  </>
+                  <div className="absolute inset-0 rounded-md ring-inset ring-[3px] ring-primary pointer-events-none" />
                 )}
               </button>
             )
@@ -263,7 +291,10 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
         <div className="mx-4 mt-4 rounded-md bg-disabled px-4 py-3">
           <p className="text-xs text-muted-foreground mb-0.5">현재 선택</p>
           <p className="text-sm font-bold text-foreground">{selectedOption?.label}</p>
-          {selectedOption?.description && (
+          {!isFreeChoice && selectedPlayer && (
+            <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{selectedPlayer.position}</p>
+          )}
+          {isFreeChoice && selectedOption?.description && (
             <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{selectedOption.description}</p>
           )}
         </div>

@@ -70,6 +70,7 @@ text-xxs 11px / lh 1.45 — section-label, 뱃지
 | `btn-full-bleed` | 투표 상세 하단 고정 제출 버튼. border-radius 0, 전체 너비 | 11-design-system.md |
 | `chip` | 뱃지·태그. pill radius. 9종 (eval/select/closed/deadline/primary/done/vote/vote-neg/vote-neutral) | 11-design-system.md |
 | `poll-card` | 투표 목록 카드. surface 배경, radius 12px, shadow g200 | 11-design-system.md |
+| `poll-carousel-card` | 투표 상세 캐러셀 카드. 1:1 이미지 + 하단 정보 패널. 선수형/자유 입력형 분리 | 11-design-system.md |
 | `list-group` / `list-item` | 마이페이지·댓글 목록. 0.5px divider | 11-design-system.md |
 | `modal-sheet` | Bottom Sheet. radius 16px top, shadow w300 | 11-design-system.md |
 | `text-input` | 댓글 입력창. 1px gray-4 테두리, focus 시 primary border | 11-design-system.md |

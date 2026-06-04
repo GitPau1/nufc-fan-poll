@@ -47,6 +47,7 @@ const coreItems = [
 
 const serviceItems = [
   ['Poll Card', 'poll-card'],
+  ['Poll Carousel Card', 'poll-carousel-card'],
   ['Poll Option', 'poll-option'],
   ['Result View', 'result-view'],
   ['Comment Item', 'comment-item'],
@@ -282,6 +283,78 @@ function PollOptionSample({
         <p className="mt-1 text-[12px] leading-snug text-muted-foreground">
           선수의 현재 폼과 스쿼드 밸런스를 고려한 선택지
         </p>
+      </div>
+    </div>
+  )
+}
+
+function PollCarouselCardSample({
+  type,
+  selected = false,
+  side = false,
+  missingImage = false,
+  longText = false,
+}: {
+  type: 'player' | 'free'
+  selected?: boolean
+  side?: boolean
+  missingImage?: boolean
+  longText?: boolean
+}) {
+  const isFree = type === 'free'
+  const imageUrl = isFree
+    ? 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=600&q=80'
+    : 'https://images.unsplash.com/photo-1598880513655-d6d6d8b3f7a1?auto=format&fit=crop&w=600&q=80'
+  const title = isFree
+    ? longText
+      ? '경기 마지막 10분 동안 보여준 압박 유지와 빠른 측면 전환'
+      : '후반 교체 타이밍'
+    : longText
+      ? 'Sandro Tonali Long Display Name'
+      : 'Alexander Isak'
+
+  return (
+    <div
+      className={cn(
+        'w-[200px] overflow-hidden rounded-md border border-border bg-surface text-left shadow-g200 transition-all',
+        selected && 'border-primary shadow-w200 ring-[3px] ring-inset ring-primary',
+        side && 'scale-[.88] opacity-55'
+      )}
+    >
+      <div
+        className="relative aspect-square w-full overflow-hidden bg-[#0c2340]"
+        style={missingImage ? undefined : { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
+        {missingImage && (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/30 to-[#0c2340] text-[38px] font-black text-white">
+            {isFree ? '투표' : 'AI'}
+          </div>
+        )}
+        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/35 to-transparent" />
+        {!isFree && (
+          <span className="absolute left-2.5 top-2.5 rounded-pill bg-white/95 px-2.5 py-1 text-[12px] font-black leading-none text-foreground shadow-g100">
+            #14
+          </span>
+        )}
+        {selected && (
+          <div className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-w200">
+            <Check className="h-4 w-4 text-white" />
+          </div>
+        )}
+      </div>
+      <div className={cn('bg-surface px-3 py-2.5', isFree ? 'min-h-[92px]' : 'min-h-[62px]')}>
+        <p className={cn('text-[15px] font-black leading-tight text-foreground', isFree ? 'line-clamp-2' : 'line-clamp-1')}>
+          {title}
+        </p>
+        {isFree ? (
+          <p className="mt-1.5 line-clamp-2 text-[12px] font-medium leading-snug text-muted-foreground">
+            경기 흐름을 바꾼 선택이라 가장 인상적이었습니다.
+          </p>
+        ) : (
+          <p className="mt-0.5 text-[12px] font-bold leading-tight text-muted-foreground">
+            FWD
+          </p>
+        )}
       </div>
     </div>
   )
@@ -845,6 +918,41 @@ export default function DevDesignSystemPage() {
                   </div>
                 </div>
               ))}
+            </PreviewGrid>
+          </Section>
+
+          <Section
+            id="poll-carousel-card"
+            eyebrow="Service UI"
+            title="투표 캐러셀 카드"
+            description="투표 상세에서 카드를 넘겨 하나를 선택하는 패턴입니다. 이미지는 1:1이고, 텍스트는 이미지 위가 아니라 하단 정보 패널에 고정합니다."
+            source="src/components/polls/TypeBPollClient.tsx"
+          >
+            <PreviewGrid>
+              <PreviewPanel title="선수 · 기본" description="선수 카드는 이름과 포지션만 표시합니다. 등번호는 이미지 칩에서만 1회 노출합니다.">
+                <PollCarouselCardSample type="player" />
+              </PreviewPanel>
+              <PreviewPanel title="선수 · 선택됨">
+                <PollCarouselCardSample type="player" selected />
+              </PreviewPanel>
+              <PreviewPanel title="선수 · 사이드">
+                <PollCarouselCardSample type="player" side />
+              </PreviewPanel>
+              <PreviewPanel title="선수 · 이미지 없음">
+                <PollCarouselCardSample type="player" missingImage />
+              </PreviewPanel>
+              <PreviewPanel title="자유 입력 · 기본" description="카드 내부에 유형 라벨을 넣지 않고 사용자가 입력한 제목과 설명만 표시합니다.">
+                <PollCarouselCardSample type="free" />
+              </PreviewPanel>
+              <PreviewPanel title="자유 입력 · 선택됨">
+                <PollCarouselCardSample type="free" selected />
+              </PreviewPanel>
+              <PreviewPanel title="자유 입력 · 사이드">
+                <PollCarouselCardSample type="free" side />
+              </PreviewPanel>
+              <PreviewPanel title="자유 입력 · 긴 텍스트">
+                <PollCarouselCardSample type="free" longText />
+              </PreviewPanel>
             </PreviewGrid>
           </Section>
 

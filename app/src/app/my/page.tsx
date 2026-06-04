@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { IS_MOCK } from '@/lib/config'
 import { MOCK_PARTICIPATED, MOCK_POLL_LIST } from '@/lib/mock/data'
 import { getEffectivePollStatus } from '@/lib/polls/status'
+import { countRatingParticipantsByPoll } from '@/lib/polls/participation'
 import { MyPageClient } from '@/components/my/MyPageClient'
 
 type PollStatusForMy = 'scheduled' | 'active' | 'closed'
@@ -127,13 +128,14 @@ export default async function MyPage() {
   const createdPollResult = await supabase
     .from('polls')
     .select(`
-      id, title, status, scheduled_at, closes_at, created_at,
+      id, type, title, status, scheduled_at, closes_at, created_at,
       vote_count:votes(count)
     `)
     .eq('created_by', user.id)
     .order('created_at', { ascending: false }) as {
       data: Array<{
         id: string
+        type: string
         title: string
         status: PollStatusForMy
         scheduled_at: string | null
@@ -142,15 +144,32 @@ export default async function MyPage() {
         vote_count: Array<{ count: number }> | null
       }> | null
       error: { message?: string } | null
-    }
+  }
 
   if (!createdPollResult.error) {
-    createdPolls = (createdPollResult.data ?? []).map(poll => ({
+    const createdPollsData = createdPollResult.data ?? []
+    const overallRatingPollIds = createdPollsData
+      .filter(poll => poll.type === 'overall_rating')
+      .map(poll => poll.id)
+    const { data: ratingRows } = overallRatingPollIds.length > 0
+      ? await supabase
+        .from('rating_votes')
+        .select('poll_id, user_id')
+        .in('poll_id', overallRatingPollIds) as {
+          data: Array<{ poll_id: string; user_id: string }> | null
+          error: { message?: string } | null
+        }
+      : { data: [] }
+    const ratingParticipantCounts = countRatingParticipantsByPoll(ratingRows ?? [])
+
+    createdPolls = createdPollsData.map(poll => ({
       pollId: poll.id,
       pollTitle: poll.title,
       createdAt: poll.created_at,
       pollStatus: getEffectivePollStatus(poll),
-      voteCount: poll.vote_count?.[0]?.count ?? 0,
+      voteCount: poll.type === 'overall_rating'
+        ? ratingParticipantCounts.get(poll.id) ?? 0
+        : poll.vote_count?.[0]?.count ?? 0,
     }))
   }
 

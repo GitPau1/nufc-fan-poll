@@ -5,6 +5,7 @@ import { IS_MOCK } from '@/lib/config'
 import { isAdmin } from '@/lib/admin'
 import { getRatingGrade, sortPlayersForRating } from '@/lib/polls/rating'
 import { getEffectivePollStatus } from '@/lib/polls/status'
+import { countRatingParticipantsByPoll } from '@/lib/polls/participation'
 import {
   mockGetPollList,
   mockGetPollById,
@@ -86,6 +87,21 @@ export type PollFormPlayer = Pick<PlayerRow, 'id' | 'name' | 'position' | 'squad
 // 쿼리 결과의 raw 타입 (supabase-js join 추론 한계로 명시적 cast 사용)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRow = any
+
+async function getRatingParticipantCounts(
+  supabase: AnyRow,
+  pollIds: string[]
+): Promise<Map<string, number>> {
+  if (pollIds.length === 0) return new Map()
+
+  const { data, error } = await supabase
+    .from('rating_votes')
+    .select('poll_id, user_id')
+    .in('poll_id', pollIds) as { data: Array<{ poll_id: string; user_id: string }> | null; error: AnyRow }
+
+  if (error || !data) return new Map()
+  return countRatingParticipantsByPoll(data)
+}
 
 function isMissingColumnError(error: AnyRow): boolean {
   const message = String(error?.message ?? '')
@@ -204,8 +220,15 @@ export async function getPollList(page = 0): Promise<PollListItem[]> {
   }
 
   const now = new Date()
-  const creatorNames = await getCreatorNamesById((data ?? []).map((row: AnyRow) => row.created_by as string))
-  return (data ?? []).map((row: AnyRow) => ({
+  const rows = data ?? []
+  const overallRatingPollIds = rows
+    .filter((row: AnyRow) => row.type === 'overall_rating')
+    .map((row: AnyRow) => row.id as string)
+  const [creatorNames, ratingParticipantCounts] = await Promise.all([
+    getCreatorNamesById(rows.map((row: AnyRow) => row.created_by as string)),
+    getRatingParticipantCounts(supabase, overallRatingPollIds),
+  ])
+  return rows.map((row: AnyRow) => ({
     id:           row.id          as string,
     type:         row.type        as PollType,
     title:        row.title       as string,
@@ -225,7 +248,9 @@ export async function getPollList(page = 0): Promise<PollListItem[]> {
     player:       normalizePlayer(row.player as PlayerRow | null),
     poll_options: (row.poll_options as PollOptionRow[]) ?? [],
     // supabase 집계: [{count: N}] 형태로 반환
-    vote_count:   (row.vote_count as { count: number }[])?.[0]?.count ?? 0,
+    vote_count:   row.type === 'overall_rating'
+      ? ratingParticipantCounts.get(row.id as string) ?? 0
+      : (row.vote_count as { count: number }[])?.[0]?.count ?? 0,
   }))
 }
 

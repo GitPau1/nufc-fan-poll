@@ -72,6 +72,10 @@ text-xxs 11px / lh 1.45 — section-label, 뱃지
 | `poll-card` | 투표 목록 카드. surface 배경, radius 12px, shadow g200 | 11-design-system.md |
 | `poll-carousel-card` | 투표 상세 캐러셀 카드. 1:1 이미지 + 하단 정보 패널. 선수형/자유 입력형 분리 | 11-design-system.md |
 | `list-group` / `list-item` | 마이페이지·댓글 목록. 0.5px divider | 11-design-system.md |
+| `post-feed` / `post-card` | 소식 탭 독립 피드. filter tabs + sort select + surface feed shell + post-card item | 11-design-system.md |
+| `post-fab` | 소식 작성 전용 FAB. 54px pill, primary 배경, elevated primary shadow | 11-design-system.md |
+| `post-composer-sheet` | 소식 작성 Bottom Sheet. segmented type control + textarea + URL input + submit | 11-design-system.md |
+| `post-reaction-chip` | 소식 카드 내 이모지 반응. pill, bg surface/bg, active primary-dim | 11-design-system.md |
 | `modal-sheet` | Bottom Sheet. radius 16px top, shadow w300 | 11-design-system.md |
 | `text-input` | 댓글 입력창. 1px gray-4 테두리, focus 시 primary border | 11-design-system.md |
 | `progress` | 결과 분포와 진행률. 8px height, pill radius, disabled track + primary indicator | 11-design-system.md |
@@ -81,8 +85,9 @@ text-xxs 11px / lh 1.45 — section-label, 뱃지
 | `section-label` | 섹션 구분 레이블. 11px / 600 / uppercase / gray-3 | 11-design-system.md |
 | `transfer-item` | 이적 탭 선수 카드. 방향 라벨 + 원형 썸네일 + 클럽 메타 | 11-design-system.md |
 | `farewell-card` | 영입/이탈 카드. 방향 chip + 선수/클럽 요약 | 11-design-system.md |
+| `season-stat-card` | 구단 정보 시즌 스탯 3열 카드. label + 64px 선수 이미지 + 이름 + 수치 | 11-design-system.md |
 | `club-status-card` | 구단 현황 요약. 클럽 네이비 예외 배경 + 내부 opacity 패널 | 11-design-system.md |
-| `squad-list` | segmented control + position group + player row | 11-design-system.md |
+| `squad-list` | feed-style underline tab + position group + player row | 11-design-system.md |
 | `rating-matrix` | 전체 평가 투표의 선수별 점수 선택 매트릭스 | 11-design-system.md |
 | `form-section` / `picker` | 투표 생성·관리자 폼의 surface 섹션과 dashed picker | 11-design-system.md |
 

@@ -85,10 +85,10 @@ export function PostFeedClient({
                     key={item.id}
                     type="button"
                     onClick={() => setFilter(item.id)}
-                    className={`relative h-11 shrink-0 text-[14px] font-black transition-colors ${active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`relative h-11 shrink-0 text-[14px] font-black transition-opacity hover:opacity-70 active:opacity-50 ${active ? 'text-primary-dark' : 'text-muted-foreground'}`}
                   >
                     {item.label}
-                    {active && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />}
+                    {active && <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-full bg-primary" />}
                   </button>
                 )
               })}
@@ -96,7 +96,7 @@ export function PostFeedClient({
             <select
               value={sort}
               onChange={event => setSort(event.target.value as SortMode)}
-              className="mb-2 h-8 shrink-0 rounded-sm border border-border bg-surface px-2 text-[12px] font-black text-foreground focus:border-primary focus:outline-none"
+              className="mb-2 h-8 shrink-0 rounded-pill border border-border bg-surface px-2 text-[12px] font-black text-foreground focus:border-primary focus:outline-none"
             >
               <option value="latest">최신순</option>
               <option value="popular">반응순</option>
@@ -125,7 +125,7 @@ export function PostFeedClient({
           <button
             type="button"
             onClick={openComposer}
-            className="pointer-events-auto absolute bottom-0 right-4 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-w300"
+            className="pointer-events-auto absolute bottom-0 right-4 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_22px_rgba(26,159,212,.36)]"
             title="소식 작성"
           >
             <Plus className="h-7 w-7" />

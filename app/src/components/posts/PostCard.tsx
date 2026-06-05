@@ -79,18 +79,19 @@ export function PostCard({ post, isLoggedIn }: { post: PostListItem; isLoggedIn:
 
   return (
     <article className="border-b border-border bg-surface px-4 py-4 last:border-b-0">
-<div className="flex items-start gap-2.5">
-  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary-dim text-[12px] font-black text-primary-dark">
-    {initial}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-black text-foreground">{author}</p>
-              <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">
-                {formatRelative(post.created_at)}
-                {isEdited(post) ? ' · 수정됨' : ''}
-              </p>
+              <div className="flex min-h-5 min-w-0 items-center gap-1.5">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-disabled text-[9px] font-black text-gray-1">
+                  {initial}
+                </span>
+                <p className="truncate text-[12px] font-black text-foreground">{author}</p>
+                <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
+                  {formatRelative(post.created_at)}
+                  {isEdited(post) ? ' · 수정됨' : ''}
+                </span>
+              </div>
             </div>
 
             {post.is_mine && (
@@ -98,7 +99,7 @@ export function PostCard({ post, isLoggedIn }: { post: PostListItem; isLoggedIn:
                 <button
                   type="button"
                   onClick={() => setMenuOpen(open => !open)}
-                  className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground"
+                  className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-opacity hover:opacity-70 active:opacity-50"
                   title="게시글 메뉴"
                 >
                   <MoreVertical className="h-4 w-4" />
@@ -111,7 +112,7 @@ export function PostCard({ post, isLoggedIn }: { post: PostListItem; isLoggedIn:
                         setMenuOpen(false)
                         setEditing(true)
                       }}
-                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-[12px] font-bold text-foreground hover:bg-background"
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-[12px] font-bold text-foreground transition-opacity hover:opacity-70 active:opacity-50"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                       수정
@@ -120,7 +121,7 @@ export function PostCard({ post, isLoggedIn }: { post: PostListItem; isLoggedIn:
                       type="button"
                       onClick={remove}
                       disabled={isPending}
-                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-[12px] font-bold text-negative hover:bg-background disabled:opacity-60"
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-[12px] font-bold text-negative transition-opacity hover:opacity-70 active:opacity-50 disabled:opacity-60"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       삭제
@@ -129,9 +130,9 @@ export function PostCard({ post, isLoggedIn }: { post: PostListItem; isLoggedIn:
                 )}
               </div>
             )}
-          </div>
+        </div>
 
-          <p className="mt-3 whitespace-pre-wrap break-words text-[14px] font-semibold leading-relaxed text-foreground">
+        <p className="mt-3 whitespace-pre-wrap break-words text-[14px] font-semibold leading-relaxed text-foreground">
             <span className={cn(
               badgeVariants({ variant: TYPE_BADGE_VARIANTS[post.type] }),
               'pointer-events-none mr-1.5 align-baseline font-bold',
@@ -139,11 +140,10 @@ export function PostCard({ post, isLoggedIn }: { post: PostListItem; isLoggedIn:
               {TYPE_LABELS[post.type]}
             </span>
             {post.content}
-          </p>
+        </p>
 
-          <PostEmbedCard post={post} />
-          <PostReactionRow post={post} isLoggedIn={isLoggedIn} />
-        </div>
+        <PostEmbedCard post={post} />
+        <PostReactionRow post={post} isLoggedIn={isLoggedIn} />
       </div>
     </article>
   )

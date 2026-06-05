@@ -76,7 +76,7 @@ export function PostEmbedCard({ post }: { post: PostListItem }) {
         <iframe
           src={`https://www.youtube.com/embed/${videoId}`}
           title={title ?? 'YouTube video'}
-          className="mt-3 aspect-video w-full rounded-md bg-[#0c2340]"
+          className="mt-3 aspect-video w-full rounded-sm bg-[#0c2340]"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
@@ -91,7 +91,7 @@ export function PostEmbedCard({ post }: { post: PostListItem }) {
             trackClick()
             setPlaying(true)
           }}
-          className="relative mt-3 block aspect-video w-full overflow-hidden rounded-md bg-[#0c2340]"
+          className="relative mt-3 block aspect-video w-full overflow-hidden rounded-sm bg-[#0c2340]"
         >
           <img
             src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
@@ -122,7 +122,7 @@ export function PostEmbedCard({ post }: { post: PostListItem }) {
       target="_blank"
       rel="noreferrer"
       onClick={trackClick}
-      className="mt-3 block rounded-md border border-border bg-background px-3 py-3"
+      className="mt-3 block rounded-sm border border-border bg-background px-3 py-3"
     >
       <p className="text-[11px] font-black text-primary-dark">{domain}</p>
       <p className="mt-1 line-clamp-2 text-[13px] font-black leading-snug text-foreground">{title}</p>

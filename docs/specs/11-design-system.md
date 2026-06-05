@@ -176,6 +176,9 @@ font-size: 11px; font-weight: 600;
 | `chip-vote` | `primary-dim` | `primary-dark` | 댓글 투표 뱃지 (재계약 계열) |
 | `chip-vote-neg` | `negative-dim` | `negative` | 댓글 투표 뱃지 (방출 계열) |
 | `chip-vote-neutral` | `disabled` | `gray-2` | 댓글 투표 뱃지 (보류 계열) |
+| `chip-post-official` | `primary-dim` | `primary-dark` | 소식 게시글 유형 (오피셜) |
+| `chip-post-info` | `positive-dim` | `positive` | 소식 게시글 유형 (정보) |
+| `chip-post-free` | `disabled` | `gray-2` | 소식 게시글 유형 (자유) |
 
 ### list-group / list-item
 
@@ -197,6 +200,126 @@ list-item + list-item {
 ```
 
 마이페이지 참여 투표 목록, 댓글 목록에 사용.
+
+### post-feed / post-card
+
+소식 탭 전용 독립 피드 컴포넌트. 일반 `list-group`의 단순 확장이 아니라, 필터·정렬·작성 진입·임베드·반응을 포함하는 별도 패턴으로 관리한다.
+
+```css
+/* feed controls */
+background: rgba(250,250,250,.96);
+border-bottom: 1px solid rgba(225,231,239,.78);
+backdrop-filter: blur(10px);
+
+/* filter tab */
+height: 44px;
+font-size: 14px;
+font-weight: 900;
+color: var(--c-gray-2);
+
+/* active filter tab */
+color: var(--c-primary-dark);
+border-bottom: 3px solid var(--c-primary);
+
+/* sort select */
+height: 32px;
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-pill);
+background: var(--c-surface);
+
+/* feed shell */
+background: var(--c-surface);
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-md);
+box-shadow: var(--sh-g200);
+
+/* post-card */
+padding: 16px;
+border-bottom: 1px solid var(--c-gray-4);
+background: var(--c-surface);
+```
+
+`post-card`는 작성자 라인, inline post type chip, 본문, URL 임베드, 반응 행, 작성자 전용 수정/삭제 컨트롤 순서로 배치한다. 작성자 표시는 카드 내부 전용 `post-avatar`를 사용하며, 일반 `avatar`보다 작은 20px 크기를 허용한다. 작성 시각과 수정됨 표시는 작성자 이름 오른쪽의 같은 줄에 둔다.
+
+### post-composer-sheet
+
+소식 작성 전용 Bottom Sheet. `modal-sheet`의 overlay, handle, top radius, shadow 규칙을 따른다.
+
+```css
+/* type segmented control */
+display: inline-flex;
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-sm);
+background: var(--c-bg);
+padding: 3px;
+
+/* segment */
+height: 32px;
+border-radius: var(--r-xs);
+padding: 0 12px;
+font-size: 12px;
+font-weight: 700;
+
+/* active segment */
+background: var(--c-primary);
+color: var(--c-primary-on);
+
+/* textarea / url input */
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-sm);
+background: var(--c-bg);
+
+/* focus */
+border-color: var(--c-primary);
+background: var(--c-surface);
+```
+
+### post-reaction-chip
+
+소식 카드 내 이모지 반응 버튼. 선택 상태는 contained 버튼처럼 강하게 채우지 않고 chip 계열의 낮은 강조 톤을 사용한다.
+
+```css
+height: 32px;
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-pill);
+background: var(--c-bg);
+color: var(--c-gray-2);
+font-size: 12px;
+font-weight: 900;
+
+/* active */
+border-color: rgba(65,182,230,.4);
+background: var(--c-primary-dim);
+color: var(--c-primary-dark);
+```
+
+### post-embed-card
+
+소식 카드에 첨부된 URL 미리보기. 일반 링크, X, YouTube를 지원하되, 실패 시 일반 링크 카드로 대체한다.
+
+```css
+margin-top: 12px;
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-sm);
+background: var(--c-bg);
+
+/* YouTube */
+aspect-ratio: 16 / 9;
+background: #0c2340;
+```
+
+### post-fab
+
+소식 작성 전용 플로팅 버튼. 화면 하단 내비게이션 위에 위치하며, 일반 contained button이나 Bottom Sheet shadow를 재사용하지 않고 FAB 전용 elevation을 사용한다.
+
+```css
+width: 54px;
+height: 54px;
+border-radius: var(--r-pill);
+background: var(--c-primary);
+color: var(--c-primary-on);
+box-shadow: 0 8px 22px rgba(26,159,212,.36);
+```
 
 ### modal-sheet (Bottom Sheet)
 
@@ -361,13 +484,41 @@ border-radius: var(--r-md);
 box-shadow: var(--sh-g200);
 ```
 
-### club-status-card
+### season-stat-card
 
-구단 현황처럼 브랜드가 강한 요약 카드. 예외적으로 클럽 네이비 배경을 허용하되, 내부 보조 카드는 흰색 opacity 표면을 사용한다.
+구단 정보 페이지의 시즌 대표 기록 3열 카드. `최다 출전`, `최다 득점`, `최다 어시`처럼 같은 구조의 요약 지표를 나란히 보여준다.
 
 ```css
-background: #0c2340;
+/* grid */
+display: grid;
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 8px;
+
+/* card */
+background: var(--c-surface);
+border: 1px solid var(--c-gray-4);
+border-radius: var(--r-md);
+box-shadow: var(--sh-g200);
+padding: 12px 10px;
+text-align: center;
+
+/* player image */
+width: 64px;
+height: 64px;
+border-radius: var(--r-pill);
+background: var(--c-primary-dim);
+```
+
+카드 내부 순서는 label, 선수 이미지, 선수 이름, 수치, 단위로 고정한다. 이름은 한 줄로 줄이고, 수치는 `primary` 색과 강한 weight를 사용한다.
+
+### club-status-card
+
+구단 현황처럼 브랜드가 강한 요약 카드. 예외적으로 클럽 네이비 배경 또는 `#0c2340 → #1a3a60` 그라디언트를 허용하되, 내부 보조 카드는 흰색 opacity 표면을 사용한다.
+
+```css
+background: #0c2340; /* or linear-gradient(135deg, #0c2340 0%, #1a3a60 100%) */
 border-radius: var(--r-lg);
+box-shadow: var(--sh-g200);
 color: #fff;
 
 /* inner panel */
@@ -377,23 +528,32 @@ border-radius: var(--r-lg);
 
 ### squad-list
 
-스쿼드 목록은 segmented control, position header, player row로 구성한다.
+스쿼드 목록은 소식 피드와 같은 underline tab, position header, player row로 구성한다.
 
 ```css
-/* segmented control */
-background: var(--c-disabled);
-border-radius: var(--r-lg);
+/* status tab row */
+display: flex;
+gap: 16px;
+overflow-x: auto;
+border-bottom: 1px solid var(--c-gray-4);
+
+/* tab */
+height: 44px;
+font-size: 14px;
+font-weight: 900;
+color: var(--c-gray-2);
 
 /* active tab */
-background: var(--c-surface);
 color: var(--c-primary-dark);
-box-shadow: var(--sh-g100);
+border-bottom: 3px solid var(--c-primary);
 
 /* group */
 background: var(--c-surface);
 border: 1px solid var(--c-gray-4);
 border-radius: var(--r-md);
 ```
+
+선수 행 hover/pressed는 색을 바꾸지 않고 opacity로만 표현한다.
 
 ### rating-matrix
 

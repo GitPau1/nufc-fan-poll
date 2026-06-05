@@ -77,7 +77,7 @@ export function PostComposer({
             key={item.id}
             type="button"
             onClick={() => setType(item.id)}
-            className={`h-8 rounded-md px-3 text-[12px] font-bold transition-colors ${type === item.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`h-8 rounded-xs px-3 text-[12px] font-bold transition-opacity hover:opacity-70 active:opacity-50 ${type === item.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
           >
             {item.label}
           </button>

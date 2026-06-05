@@ -68,7 +68,7 @@ export function PostReactionRow({ post, isLoggedIn }: { post: PostListItem; isLo
             onClick={() => react(reaction.type)}
             disabled={disabled}
             title={isLoggedIn ? reaction.label : '로그인 후 반응할 수 있어요'}
-            className={`inline-flex h-8 items-center gap-1 rounded-full border px-2.5 text-[12px] font-black transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${active ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary hover:text-primary'}`}
+            className={`inline-flex h-8 items-center gap-1 rounded-full border px-2.5 text-[12px] font-black transition-opacity hover:opacity-70 active:opacity-50 disabled:cursor-not-allowed disabled:opacity-60 ${active ? 'border-primary/40 bg-primary-dim text-primary-dark' : 'border-border bg-background text-muted-foreground'}`}
           >
             <span aria-hidden>{reaction.emoji}</span>
             <span>{counts[reaction.type]}</span>

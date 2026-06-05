@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import type { PlayerRow, PlayerStatus, Position } from '@/types/database'
 
@@ -46,13 +46,6 @@ interface Props {
 export default function SquadList({ players }: Props) {
   const [activeStatus, setActiveStatus] = useState<PlayerStatus>('first_team')
 
-  const counts = useMemo(() => {
-    return STATUS_TABS.reduce<Record<PlayerStatus, number>>((acc, tab) => {
-      acc[tab.value] = players.filter(player => player.squad_status === tab.value).length
-      return acc
-    }, { first_team: 0, loan: 0, u21: 0 })
-  }, [players])
-
   const filteredPlayers = players.filter(player => player.squad_status === activeStatus)
   const grouped = POSITION_ORDER.reduce<Map<Position, PlayerRow[]>>((map, pos) => {
     const group = filteredPlayers.filter(player => player.position === pos)
@@ -62,7 +55,7 @@ export default function SquadList({ players }: Props) {
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-1.5 mb-3 rounded-lg bg-disabled p-1">
+      <div className="mb-3 flex min-w-0 gap-4 overflow-x-auto border-b border-border">
         {STATUS_TABS.map(tab => {
           const isActive = tab.value === activeStatus
           return (
@@ -70,14 +63,14 @@ export default function SquadList({ players }: Props) {
               key={tab.value}
               type="button"
               onClick={() => setActiveStatus(tab.value)}
-              className={`h-9 rounded-sm text-[12px] font-bold transition-opacity hover:opacity-70 ${
+              className={`relative h-11 shrink-0 text-[14px] font-black transition-opacity hover:opacity-70 active:opacity-50 ${
                 isActive
-                  ? 'bg-surface text-primary-dark shadow-g100'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'text-primary-dark'
+                  : 'text-muted-foreground'
               }`}
             >
               {tab.label}
-              <span className="ml-1 text-[10px] font-semibold opacity-70">{counts[tab.value]}</span>
+              {isActive && <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-full bg-primary" />}
             </button>
           )
         })}
@@ -105,7 +98,7 @@ export default function SquadList({ players }: Props) {
               return (
                 <div key={player.id}>
                   {idx > 0 && <div className="h-px bg-border mx-3.5" />}
-                  <Link href={`/players/${player.id}`} className="flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-secondary/50 transition-colors">
+                  <Link href={`/players/${player.id}`} className="flex items-center gap-2.5 px-3.5 py-2.5 transition-opacity hover:opacity-70 active:opacity-50">
                     <div className="w-7 flex-shrink-0 text-center">
                       <span className="text-[15px] font-black text-muted-foreground">
                         {player.squad_number ?? '-'}

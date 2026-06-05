@@ -1,44 +1,44 @@
-# Short News Posts Design
+# 짧은 소식 게시글 설계
 
-## Goal
+## 목표
 
-Logged-in users can publish short Newcastle-related posts, attach one URL, react with a fixed emoji set from the feed card, and edit or delete their own posts.
+로그인한 사용자가 뉴캐슬 관련 짧은 글을 작성하고, URL 1개를 첨부하며, 게시글 목록 카드에서 고정 이모지 반응을 남길 수 있게 한다. 작성자는 본인 게시글을 수정하거나 삭제할 수 있다.
 
-## Scope
+## 범위
 
-- Add a short post feed for user-created news and thoughts.
-- Allow all logged-in users to create posts.
-- Support three post types: `free`, `info`, and `official`.
-- Limit post body text to 300 characters.
-- Require a URL when the post type is `official`.
-- Show helper text for `official` posts asking users to share only content from official accounts, club announcements, player channels, or trusted official sources.
-- Support author-only edit and delete.
-- Mark edited posts with a small `edited` indicator.
-- Allow operators to hide posts through admin-level access.
-- Add feed-card emoji reactions with one reaction per user per post.
-- Support rich embeds for X and YouTube only.
+- 사용자 생성 소식과 짧은 의견을 위한 게시글 피드를 추가한다.
+- 모든 로그인 사용자가 게시글을 작성할 수 있다.
+- 게시글 유형은 `free`, `info`, `official` 세 가지를 지원한다.
+- 게시글 본문은 최대 300자로 제한한다.
+- `official` 유형은 URL 첨부를 필수로 한다.
+- `official` 유형 선택 시 공식 계정, 구단 발표, 선수 채널, 신뢰 가능한 공식 출처의 내용만 공유해달라는 안내 문구를 보여준다.
+- 작성자 본인만 게시글을 수정하거나 삭제할 수 있다.
+- 수정된 게시글에는 작은 `수정됨` 표시를 보여준다.
+- 운영자는 관리자 권한으로 문제 게시글을 숨길 수 있다.
+- 게시글 목록 카드에서 이모지 반응을 남길 수 있고, 사용자당 게시글 1개에 반응 1개만 허용한다.
+- 리치 임베드는 X와 YouTube만 지원한다.
 
-Out of scope:
+제외 범위:
 
-- Image upload.
-- Open-ended custom emojis.
-- Comments or threaded discussion.
-- User reports.
-- Full edit history display.
-- Automatic official-source verification.
-- Thumbnail-rich previews for every URL.
+- 이미지 업로드.
+- 사용자 정의 이모지.
+- 댓글 또는 스레드형 토론.
+- 사용자 신고 기능.
+- 전체 수정 이력 공개.
+- `official` 출처 자동 검증.
+- 모든 URL에 대한 썸네일 중심 미리보기.
 
-## Post Types
+## 게시글 유형
 
-`free` is for short opinions, quick thoughts, and casual fan notes.
+`free`는 짧은 의견, 가벼운 생각, 팬 메모를 위한 유형이다.
 
-`info` is for useful fan-shared information that is not necessarily an official announcement.
+`info`는 공식 발표는 아니지만 팬들이 공유할 만한 유용한 정보를 위한 유형이다.
 
-`official` is for posts based on official or trusted source material. Any logged-in user can select it, but the write form must nudge them toward source discipline. `official` posts require a URL so source-less official claims are not created.
+`official`은 공식 또는 신뢰 가능한 출처를 기반으로 한 게시글을 위한 유형이다. 모든 로그인 사용자가 선택할 수 있지만, 작성 폼에서 출처를 신중하게 공유하도록 유도해야 한다. 출처 없는 공식성 주장을 막기 위해 `official` 게시글은 URL을 필수로 요구한다.
 
-## Reactions
+## 반응
 
-Use a fixed set of five reactions that represent distinct emotional lanes:
+서로 다른 감정 축을 표현하는 고정 반응 5개를 사용한다.
 
 - `expecting`: `🙌` 기대
 - `shocked`: `😳` 충격
@@ -46,25 +46,25 @@ Use a fixed set of five reactions that represent distinct emotional lanes:
 - `sad`: `😢` 아쉬움
 - `curious`: `🤔` 의문
 
-Users can react directly from the post list card. Each user can have at most one active reaction per post. Selecting another reaction changes the existing reaction. Selecting the same reaction again removes it.
+사용자는 게시글 목록 카드에서 바로 반응할 수 있다. 사용자 1명은 게시글 1개에 최대 1개의 활성 반응만 가질 수 있다. 다른 반응을 선택하면 기존 반응이 변경되고, 같은 반응을 다시 선택하면 반응이 취소된다.
 
-The card shows each reaction count and highlights the current user's selected reaction.
+카드에는 각 반응의 개수와 현재 사용자가 선택한 반응 상태를 표시한다.
 
-## URL Embeds
+## URL 임베드
 
-Every post can attach at most one URL.
+게시글마다 URL은 최대 1개만 첨부할 수 있다.
 
-General URLs render as a lightweight link card with domain and fetched title when available. If metadata lookup fails, the card falls back to domain and URL.
+일반 URL은 도메인과 가져온 제목을 중심으로 가벼운 링크 카드로 렌더링한다. 메타데이터 조회에 실패하면 도메인과 URL만 표시하는 카드로 대체한다.
 
-X URLs render through the official X embed path when possible. The app should keep a fallback general link card because X embed markup and availability can change.
+X URL은 가능한 경우 공식 X 임베드 경로를 사용해 렌더링한다. X 임베드 마크업과 제공 상태는 바뀔 수 있으므로 항상 일반 링크 카드 fallback을 유지한다.
 
-YouTube URLs render as a lightweight video card in the feed. The card shows a thumbnail and play affordance first, then loads an iframe player inside the card when clicked. Supported URL shapes include `youtube.com/watch`, `youtu.be`, and `youtube.com/shorts`.
+YouTube URL은 피드 안에서 가벼운 비디오 카드로 렌더링한다. 먼저 썸네일과 재생 버튼을 보여주고, 사용자가 클릭하면 카드 안에서 iframe 플레이어를 로드한다. 지원하는 URL 형태는 `youtube.com/watch`, `youtu.be`, `youtube.com/shorts`이다.
 
-No external thumbnail or media file is stored by the app in the first version.
+첫 버전에서는 외부 썸네일이나 미디어 파일을 앱에 저장하지 않는다.
 
-## Data Model
+## 데이터 모델
 
-Add a `posts` table:
+`posts` 테이블을 추가한다.
 
 - `id`
 - `user_id`
@@ -78,63 +78,72 @@ Add a `posts` table:
 - `created_at`
 - `updated_at`
 
-Add a `post_reactions` table:
+`post_reactions` 테이블을 추가한다.
 
 - `id`
 - `post_id`
 - `user_id`
 - `reaction_type`
 - `created_at`
-- unique constraint on `post_id, user_id`
+- `post_id, user_id` 유니크 제약
 
-RLS rules:
+RLS 규칙:
 
-- Everyone can read non-hidden posts.
-- Authenticated users can insert posts as themselves.
-- Authors can update and delete their own posts.
-- Operators can hide posts through privileged access.
-- Everyone can read reaction counts.
-- Authenticated users can create, update, or delete their own post reaction.
+- 모든 사용자는 숨김 처리되지 않은 게시글을 읽을 수 있다.
+- 인증된 사용자는 본인 사용자 ID로 게시글을 작성할 수 있다.
+- 작성자는 본인 게시글을 수정하거나 삭제할 수 있다.
+- 운영자는 관리자 권한으로 게시글을 숨길 수 있다.
+- 모든 사용자는 반응 개수를 읽을 수 있다.
+- 인증된 사용자는 본인의 게시글 반응을 생성, 수정, 삭제할 수 있다.
 
 ## UI
 
-Add a dedicated `/posts` feed route with mobile-first cards matching the app's compact sports-feed style.
+전용 `/posts` 피드 라우트를 추가하고, 기존 앱의 컴팩트한 스포츠 피드 스타일에 맞춘 모바일 우선 카드 레이아웃을 사용한다.
 
-The composer includes:
+피드 상단은 설명 헤드라인 대신 탐색 컨트롤을 우선한다.
 
-- Post type segmented control.
-- Textarea with 300-character counter.
-- URL field.
-- Contextual helper text when `official` is selected.
-- Submit state and validation messaging.
+- 밑줄형 탭: `전체`, `자유`, `정보`, `오피셜`.
+- 정렬 컨트롤: `최신순`, `반응순`.
 
-Each feed card includes:
+작성 폼은 인라인으로 노출하지 않는다. 우측 하단 플로팅 작성 버튼을 누르면 바텀시트가 올라오고, 바텀시트 안에서 글을 작성한다.
 
-- Post type badge.
-- Author display name and timestamp.
-- Edited indicator when `updated_at` differs from `created_at`.
-- Body content.
-- URL embed card.
-- Reaction row.
-- Author-only edit and delete controls.
+작성 바텀시트는 다음 요소를 포함한다.
 
-The bottom navigation includes the new feed as `소식`, making it a primary destination alongside home, polls, and club information.
+- 게시글 유형 segmented control.
+- 300자 카운터가 있는 textarea.
+- URL 입력 필드.
+- 유형별 URL placeholder. `free`와 `info`는 X와 YouTube 링크가 임베드로 표시된다는 안내를 담고, `official`은 구단 공식 출처 URL을 공유해달라는 안내를 담는다.
+- 우측 상단 `게시` 버튼.
+- 제출 상태와 validation 메시지.
+- 본문 trim 기준 15자 이상일 때만 `게시` 버튼을 활성화한다.
+- 유형 변경으로 placeholder가 바뀌어도 바텀시트 높이는 흔들리지 않는다.
 
-## Data Flow
+각 피드 카드는 다음 요소를 포함한다.
 
-1. User opens the post feed.
-2. Feed loads recent non-hidden posts with author info, embed metadata, reaction counts, and current user's reaction when logged in.
-3. User writes content, selects a type, and optionally adds a URL.
-4. Server action validates authentication, type, content length, URL shape, and official URL requirement.
-5. Server action derives `embed_kind`, title, and domain for the URL when possible.
-6. Supabase inserts or updates the post.
-7. Feed refreshes or prepends the changed post.
-8. User clicks a reaction on a card.
-9. Server action inserts, updates, or deletes the user's reaction, then returns updated counts.
+- 작성자 표시명과 작성 시각.
+- `updated_at`이 `created_at`과 다를 때 표시되는 수정됨 상태.
+- 본문 첫머리에 inline으로 들어가는 게시글 유형 배지.
+- URL 임베드 카드.
+- 반응 행.
+- 작성자 본인에게만 보이는 수정/삭제 컨트롤.
 
-## Testing
+하단 내비게이션에는 새 피드를 `소식`으로 추가해 홈, 투표, 구단 정보와 함께 주요 목적지로 둔다.
 
-- Add pure tests for post content validation, post type validation, official URL requirement, URL normalization, and embed kind detection.
-- Add pure tests for reaction toggling decisions: create, change, and remove.
-- Add query/action coverage where the existing project test style allows it.
-- Run the new tests and the app's available type or build verification before implementation is considered complete.
+## 데이터 흐름
+
+1. 사용자가 게시글 피드를 연다.
+2. 피드는 숨김 처리되지 않은 최신 게시글을 작성자 정보, 임베드 메타데이터, 반응 개수, 로그인 사용자의 현재 반응 상태와 함께 불러온다.
+3. 사용자가 본문을 작성하고, 유형을 선택하고, 필요하면 URL을 첨부한다.
+4. Server Action은 인증 상태, 게시글 유형, 본문 길이, URL 형식, `official` URL 필수 조건을 검증한다.
+5. Server Action은 가능한 경우 URL에서 `embed_kind`, 제목, 도메인을 파생한다.
+6. Supabase에 게시글을 삽입하거나 수정한다.
+7. 피드는 변경된 게시글을 새로고침하거나 목록 상단에 반영한다.
+8. 사용자가 카드의 반응을 클릭한다.
+9. Server Action은 사용자의 반응을 생성, 변경, 삭제하고 갱신된 반응 개수를 반환한다.
+
+## 테스트
+
+- 게시글 본문 validation, 게시글 유형 validation, `official` URL 필수 조건, URL 정규화, 임베드 유형 판별에 대한 순수 함수 테스트를 추가한다.
+- 반응 토글 결정 로직에 대한 순수 함수 테스트를 추가한다. 생성, 변경, 삭제 케이스를 포함한다.
+- 기존 프로젝트 테스트 스타일이 허용하는 범위에서 쿼리와 Server Action 테스트를 추가한다.
+- 구현 완료 전 새 테스트와 앱에서 사용 가능한 타입 또는 빌드 검증을 실행한다.

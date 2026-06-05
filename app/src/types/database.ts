@@ -7,6 +7,9 @@ export type PlayerStatus = 'first_team' | 'loan' | 'u21'
 export type TransferDirection = 'in' | 'out'
 export type TransferType = 'signing' | 'loan_in' | 'promotion' | 'loan_return' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
 export type DepartureType = 'signing' | 'loan_in' | 'promotion' | 'loan_return' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
+export type PostType = 'free' | 'info' | 'official'
+export type PostEmbedKind = 'none' | 'link' | 'x' | 'youtube'
+export type PostReactionType = 'expecting' | 'shocked' | 'angry' | 'sad' | 'curious'
 export type TransferRow = {
   id: string
   player_id: string
@@ -135,6 +138,34 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['user_feedback']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: never
       }
+      posts: {
+        Row: {
+          id: string
+          user_id: string
+          type: PostType
+          content: string
+          url: string | null
+          embed_kind: PostEmbedKind
+          embed_title: string | null
+          embed_domain: string | null
+          is_hidden: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['posts']['Row'], 'id' | 'is_hidden' | 'created_at' | 'updated_at'>
+        Update: Partial<Pick<Database['public']['Tables']['posts']['Row'], 'type' | 'content' | 'url' | 'embed_kind' | 'embed_title' | 'embed_domain' | 'is_hidden'>>
+      }
+      post_reactions: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          reaction_type: PostReactionType
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['post_reactions']['Row'], 'id' | 'created_at'>
+        Update: Pick<Database['public']['Tables']['post_reactions']['Row'], 'reaction_type'>
+      }
       rating_votes: {
         Row: {
           id: string
@@ -261,6 +292,8 @@ export type VoteRow         = Database['public']['Tables']['votes']['Row']
 export type CommentRow      = Database['public']['Tables']['comments']['Row']
 export type CommentLikeRow  = Database['public']['Tables']['comment_likes']['Row']
 export type UserFeedbackRow = Database['public']['Tables']['user_feedback']['Row']
+export type PostRow         = Database['public']['Tables']['posts']['Row']
+export type PostReactionRow = Database['public']['Tables']['post_reactions']['Row']
 export type RatingVoteRow   = Database['public']['Tables']['rating_votes']['Row']
 export type RatingVoteLikeRow = Database['public']['Tables']['rating_vote_likes']['Row']
 export type PublicProfileRow = Database['public']['Tables']['public_profiles']['Row']

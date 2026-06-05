@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NUFC Vote - 소식 피드 레이아웃</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+
+    :root {
+      --c-primary: #41b6e6;
+      --c-primary-dim: rgba(65, 182, 230, 0.12);
+      --c-primary-dark: #1a9fd4;
+      --c-primary-on: #ffffff;
+      --c-black: #111111;
+      --c-gray-1: #333333;
+      --c-gray-2: #666666;
+      --c-gray-3: #a8a8a8;
+      --c-gray-4: #e1e7ef;
+      --c-disabled: #ebebeb;
+      --c-bg: #fafafa;
+      --c-surface: #ffffff;
+      --c-positive: #2e9e4f;
+      --c-positive-dim: #e6f4ea;
+      --c-negative: #d93025;
+      --c-negative-dim: #fce8e6;
+      --r-xs: 8px;
+      --r-sm: 10px;
+      --r-md: 12px;
+      --r-lg: 16px;
+      --r-pill: 9999px;
+      --sh-w100: 0 0 2px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.07);
+      --sh-w200: 0 1px 6px rgba(0,0,0,.12);
+      --sh-g200: 0 1px 4px rgba(0,0,0,.06);
+    }
+
+    * { box-sizing: border-box; }
+    html { background: #111827; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #111827;
+      color: var(--c-black);
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    p, h1, h2, h3 { margin: 0; }
+
+    .stage {
+      width: 100%;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px 0;
+    }
+
+    .phone {
+      position: relative;
+      width: min(100vw, 390px);
+      height: min(100vh, 844px);
+      overflow: hidden;
+      background: var(--c-bg);
+      border-radius: 34px;
+      box-shadow: 0 28px 70px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08);
+    }
+
+    .app-header {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      background: var(--c-surface);
+      box-shadow: var(--sh-w100);
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--c-black);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+    .brand-mark {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--c-primary);
+      box-shadow: 0 0 0 4px var(--c-primary-dim);
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--c-primary);
+      color: white;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .scroll {
+      height: calc(100% - 56px);
+      overflow-y: auto;
+      padding-bottom: 92px;
+    }
+    .scroll::-webkit-scrollbar { width: 0; }
+
+    .feed-controls {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      padding: 12px 16px 10px;
+      background: rgba(250,250,250,.96);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(225,231,239,.78);
+    }
+    .filter-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .filter-tabs {
+      min-width: 0;
+      display: flex;
+      gap: 18px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--c-gray-4);
+    }
+    .filter-tabs::-webkit-scrollbar { width: 0; height: 0; }
+    .filter-tab {
+      position: relative;
+      height: 35px;
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      padding: 0 1px;
+      color: var(--c-gray-2);
+      font-size: 14px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+    .filter-tab.active {
+      color: var(--c-primary-dark);
+    }
+    .filter-tab.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 3px;
+      border-radius: var(--r-pill);
+      background: var(--c-primary);
+    }
+    .sort-select {
+      height: 32px;
+      flex: 0 0 auto;
+      border: 1px solid var(--c-gray-4);
+      border-radius: var(--r-pill);
+      background: var(--c-surface);
+      padding: 0 24px 0 10px;
+      color: var(--c-gray-1);
+      font-size: 12px;
+      font-weight: 900;
+      outline: none;
+    }
+
+    .feed-shell {
+      margin: 12px 16px 18px;
+      overflow: hidden;
+      border: 1px solid var(--c-gray-4);
+      border-radius: var(--r-md);
+      background: var(--c-surface);
+      box-shadow: var(--sh-g200);
+    }
+
+    .composer {
+      border-bottom: 1px solid var(--c-gray-4);
+      padding: 14px;
+      background: var(--c-surface);
+    }
+    .segmented {
+      display: inline-flex;
+      gap: 2px;
+      border: 1px solid var(--c-gray-4);
+      border-radius: var(--r-sm);
+      background: var(--c-bg);
+      padding: 3px;
+    }
+    .segment {
+      height: 31px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      padding: 0 12px;
+      color: var(--c-gray-2);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .segment.active {
+      background: var(--c-primary);
+      color: white;
+      box-shadow: var(--sh-w100);
+    }
+    .composer-text {
+      width: 100%;
+      height: 92px;
+      margin-top: 10px;
+      resize: none;
+      border: 1px solid var(--c-gray-4);
+      border-radius: var(--r-sm);
+      background: var(--c-bg);
+      padding: 10px 11px;
+      color: var(--c-black);
+      font-size: 14px;
+      line-height: 1.55;
+      outline: none;
+    }
+    .composer-text:focus,
+    .url-input:focus {
+      border-color: var(--c-primary);
+      background: white;
+    }
+    .composer-meta {
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .counter {
+      color: var(--c-gray-3);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .url-row {
+      margin-top: 9px;
+      display: flex;
+      gap: 7px;
+    }
+    .url-input {
+      min-width: 0;
+      flex: 1;
+      height: 39px;
+      border: 1px solid var(--c-gray-4);
+      border-radius: var(--r-sm);
+      background: var(--c-bg);
+      padding: 0 11px;
+      color: var(--c-black);
+      font-size: 13px;
+      font-weight: 650;
+      outline: none;
+    }
+    .post-button {
+      height: 32px;
+      min-width: 52px;
+      border: 0;
+      border-radius: var(--r-sm);
+      background: var(--c-primary);
+      color: white;
+      font-size: 13px;
+      font-weight: 900;
+      box-shadow: var(--sh-w200);
+    }
+    .post-button:disabled {
+      background: var(--c-disabled);
+      color: var(--c-gray-3);
+      box-shadow: none;
+      cursor: default;
+    }
+
+    .post {
+      padding: 15px 14px 14px;
+      border-bottom: 1px solid var(--c-gray-4);
+      background: var(--c-surface);
+    }
+    .post:last-child { border-bottom: 0; }
+    .post-top { display: block; }
+    .post-body { min-width: 0; flex: 1; }
+    .post-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 24px;
+    }
+    .time {
+      color: var(--c-gray-3);
+      font-size: 10px;
+      line-height: 1.2;
+      font-weight: 750;
+    }
+    .type {
+      display: inline-flex;
+      align-items: center;
+      height: 20px;
+      border-radius: var(--r-pill);
+      padding: 0 7px;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .type.official { background: var(--c-primary-dim); color: var(--c-primary-dark); }
+    .type.info { background: var(--c-positive-dim); color: var(--c-positive); }
+    .type.free { background: var(--c-disabled); color: var(--c-gray-2); }
+    .more-actions {
+      display: flex;
+      gap: 8px;
+      color: var(--c-gray-2);
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .more-actions button {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font: inherit;
+    }
+    .post-type-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .post-meta-stack {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 7px;
+    }
+    .author-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 20px;
+    }
+    .copy {
+      margin-top: 8px;
+      color: var(--c-black);
+      font-size: 15px;
+      line-height: 1.58;
+      font-weight: 580;
+      word-break: keep-all;
+    }
+    .copy .type {
+      position: relative;
+      top: -1px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .edited {
+      color: var(--c-gray-3);
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .mini-avatar {
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--c-disabled);
+      color: var(--c-gray-1);
+      font-size: 9px;
+      font-weight: 950;
+    }
+    .author-name {
+      color: var(--c-black);
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .embed {
+      margin-top: 11px;
+      overflow: hidden;
+      border: 1px solid var(--c-gray-4);
+      border-radius: var(--r-sm);
+      background: var(--c-bg);
+    }
+    .embed-link {
+      display: block;
+      padding: 11px;
+      color: inherit;
+      text-decoration: none;
+    }
+    .embed-domain {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--c-primary-dark);
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 900;
+    }
+    .embed-title {
+      margin-top: 5px;
+      color: var(--c-black);
+      font-size: 13px;
+      line-height: 1.38;
+      font-weight: 850;
+    }
+    .embed-desc {
+      margin-top: 4px;
+      color: var(--c-gray-2);
+      font-size: 11px;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+    .x-shell {
+      padding: 11px;
+    }
+    .x-card {
+      margin-top: 7px;
+      border: 1px solid var(--c-gray-4);
+      border-radius: 10px;
+      background: white;
+      padding: 11px;
+    }
+    .x-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--c-gray-2);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .x-text {
+      margin-top: 8px;
+      color: var(--c-black);
+      font-size: 13px;
+      line-height: 1.48;
+      font-weight: 680;
+    }
+    .youtube-thumb {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(12,35,64,.92), rgba(65,182,230,.48)),
+        url("https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg") center / cover;
+    }
+    .play {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,.92);
+      color: var(--c-primary-dark);
+      box-shadow: var(--sh-w200);
+      font-size: 22px;
+      line-height: 1;
+    }
+    .video-frame {
+      display: none;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      background: #0c2340;
+    }
+    .embed.playing .youtube-thumb { display: none; }
+    .embed.playing .video-frame {
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .reactions {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .reaction {
+      height: 31px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--c-gray-4);
+      border-radius: var(--r-pill);
+      background: var(--c-bg);
+      padding: 0 9px;
+      color: var(--c-gray-2);
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 900;
+    }
+    .reaction.active {
+      border-color: rgba(65,182,230,.4);
+      background: var(--c-primary-dim);
+      color: var(--c-primary-dark);
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 70px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--c-gray-4);
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(10px);
+      padding: 7px 0 12px;
+      z-index: 4;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--c-gray-3);
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .nav-item.active { color: var(--c-primary-dark); }
+    .nav-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .fab {
+      position: absolute;
+      right: 18px;
+      bottom: 86px;
+      z-index: 6;
+      width: 54px;
+      height: 54px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--c-primary);
+      color: white;
+      box-shadow: 0 8px 22px rgba(26,159,212,.36), var(--sh-w200);
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 700;
+    }
+    .sheet-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      display: none;
+      align-items: flex-end;
+      background: rgba(0,0,0,.46);
+    }
+    .sheet-overlay.active { display: flex; }
+    .bottom-sheet {
+      width: 100%;
+      overflow: hidden;
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+      background: var(--c-surface);
+      box-shadow: 0 -12px 30px rgba(0,0,0,.14);
+      animation: sheet-up .18s ease-out both;
+    }
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      margin: 10px auto 8px;
+      border-radius: var(--r-pill);
+      background: var(--c-gray-4);
+    }
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px 10px;
+    }
+    .sheet-title {
+      color: var(--c-black);
+      font-size: 16px;
+      font-weight: 950;
+    }
+    .bottom-sheet .composer {
+      border-bottom: 0;
+      padding: 0 16px 22px;
+    }
+
+    @keyframes sheet-up {
+      from { transform: translateY(18px); opacity: .8; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @media (max-width: 420px) {
+      .stage { padding: 0; }
+      .phone {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="phone">
+      <header class="app-header">
+        <div class="brand"><span class="brand-mark"></span> NUFC Vote</div>
+        <div class="avatar">BG</div>
+      </header>
+
+      <main class="scroll">
+        <section class="feed-controls">
+          <div class="filter-row">
+            <div class="filter-tabs" aria-label="소식 필터">
+              <button class="filter-tab active" type="button" data-filter="all">전체</button>
+              <button class="filter-tab" type="button" data-filter="free">자유</button>
+              <button class="filter-tab" type="button" data-filter="info">정보</button>
+              <button class="filter-tab" type="button" data-filter="official">오피셜</button>
+            </div>
+            <select class="sort-select" aria-label="소식 정렬">
+              <option value="latest">최신순</option>
+              <option value="popular">반응순</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="feed-shell" id="feed">
+          <article class="post" data-category="official" data-time="30" data-hot="34">
+            <div class="post-top">
+              <div class="post-body">
+                <div class="post-type-row">
+                  <div class="post-meta-stack">
+                    <div class="author-line">
+                      <span class="mini-avatar">TA</span>
+                      <span class="author-name">Toon Army</span>
+                      <span class="time">18분 전</span>
+                    </div>
+                  </div>
+                  <div class="more-actions">
+                    <button type="button">수정</button>
+                    <button type="button">삭제</button>
+                  </div>
+                </div>
+                <p class="copy"><span class="type official">오피셜</span>뉴캐슬 공식 계정에 프리시즌 일정 관련 공지가 올라왔습니다. 자세한 내용은 원문에서 확인하는 게 좋겠어요.</p>
+                <div class="embed">
+                  <div class="x-shell">
+                    <div class="embed-domain">X · x.com/NUFC</div>
+                    <div class="x-card">
+                      <div class="x-meta">
+                        <span>Newcastle United</span>
+                        <span>공식 임베드 영역</span>
+                      </div>
+                      <p class="x-text">Pre-season fixtures confirmed. Full schedule and ticket details are now available.</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="reactions">
+                  <button class="reaction active" type="button">🙌 <span>24</span></button>
+                  <button class="reaction" type="button">😳 <span>3</span></button>
+                  <button class="reaction" type="button">😡 <span>0</span></button>
+                  <button class="reaction" type="button">😢 <span>1</span></button>
+                  <button class="reaction" type="button">🤔 <span>6</span></button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="post" data-category="info" data-time="60" data-hot="31">
+            <div class="post-top">
+              <div class="post-body">
+                <div class="post-type-row">
+                  <div class="post-meta-stack">
+                    <div class="author-line">
+                      <span class="mini-avatar">GN</span>
+                      <span class="author-name">Geordie Notes</span>
+                      <span class="time">1시간 전</span>
+                      <span class="edited">수정됨</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="copy"><span class="type info">정보</span>이 전술 분석 영상은 후방 빌드업 변화를 꽤 잘 설명해요. 특히 오른쪽 측면 전개 파트가 볼 만합니다.</p>
+                <div class="embed youtube" id="youtube-card">
+                  <div class="youtube-thumb">
+                    <button class="play" type="button" aria-label="YouTube 카드 안에서 재생">▶</button>
+                  </div>
+                  <div class="video-frame">YouTube iframe player</div>
+                  <a class="embed-link" href="#">
+                    <p class="embed-domain">YouTube · youtu.be</p>
+                    <p class="embed-title">Newcastle tactical analysis: right-side buildup</p>
+                  </a>
+                </div>
+                <div class="reactions">
+                  <button class="reaction" type="button">🙌 <span>8</span></button>
+                  <button class="reaction active" type="button">😳 <span>5</span></button>
+                  <button class="reaction" type="button">😡 <span>1</span></button>
+                  <button class="reaction" type="button">😢 <span>2</span></button>
+                  <button class="reaction" type="button">🤔 <span>15</span></button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="post" data-category="free" data-time="180" data-hot="26">
+            <div class="post-top">
+              <div class="post-body">
+                <div class="post-type-row">
+                  <div class="post-meta-stack">
+                    <div class="author-line">
+                      <span class="mini-avatar">KM</span>
+                      <span class="author-name">Keegan Mode</span>
+                      <span class="time">3시간 전</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="copy"><span class="type free">자유</span>이번 여름은 루머보다 실제 영입 속도가 더 중요할 것 같아요. 센터백 한 자리만 빨리 정리되면 분위기가 꽤 달라질 듯.</p>
+                <div class="embed">
+                  <a class="embed-link" href="#">
+                    <p class="embed-domain">nufc.com</p>
+                    <p class="embed-title">Newcastle United summer planning notes</p>
+                    <p class="embed-desc">일반 URL은 제목과 도메인 중심의 가벼운 링크 카드로만 표시합니다.</p>
+                  </a>
+                </div>
+                <div class="reactions">
+                  <button class="reaction" type="button">🙌 <span>11</span></button>
+                  <button class="reaction" type="button">😳 <span>0</span></button>
+                  <button class="reaction" type="button">😡 <span>4</span></button>
+                  <button class="reaction" type="button">😢 <span>2</span></button>
+                  <button class="reaction active" type="button">🤔 <span>9</span></button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+      </main>
+
+      <button class="fab" type="button" aria-label="소식 작성">+</button>
+
+      <div class="sheet-overlay" id="composer-sheet" aria-hidden="true">
+        <div class="bottom-sheet" role="dialog" aria-modal="true" aria-label="소식 작성">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <h2 class="sheet-title">소식 작성</h2>
+            <button class="post-button sheet-submit" type="button" disabled>게시</button>
+          </div>
+          <div class="composer">
+            <div class="segmented" aria-label="게시글 유형">
+              <button class="segment active" type="button" data-type="free">자유</button>
+              <button class="segment" type="button" data-type="info">정보</button>
+              <button class="segment" type="button" data-type="official">오피셜</button>
+            </div>
+            <textarea class="composer-text" maxlength="300" placeholder="짧은 소식이나 생각을 남겨주세요.">토날리 관련 인터뷰가 꽤 인상적이네요. 다음 시즌 중원 조합 이야기가 더 많아질 듯.</textarea>
+            <div class="composer-meta">
+              <span class="counter"><span id="count">52</span> / 300</span>
+            </div>
+            <div class="url-row">
+              <input class="url-input" placeholder="X, YouTube 링크는 임베드로 보여져요" value="">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav" aria-label="하단 내비게이션">
+        <div class="nav-item"><span class="nav-icon">⌂</span><span>홈</span></div>
+        <div class="nav-item"><span class="nav-icon">◉</span><span>투표</span></div>
+        <div class="nav-item active"><span class="nav-icon">▤</span><span>소식</span></div>
+        <div class="nav-item"><span class="nav-icon">◇</span><span>구단 정보</span></div>
+      </nav>
+    </div>
+  </div>
+
+  <script>
+    const segments = document.querySelectorAll('.segment')
+    const textarea = document.querySelector('.composer-text')
+    const urlInput = document.querySelector('.url-input')
+    const count = document.querySelector('#count')
+    const youtube = document.querySelector('#youtube-card')
+    const filterTabs = document.querySelectorAll('.filter-tab')
+    const sortSelect = document.querySelector('.sort-select')
+    const feed = document.querySelector('#feed')
+    const fab = document.querySelector('.fab')
+    const sheet = document.querySelector('#composer-sheet')
+    const sheetSubmit = document.querySelector('.sheet-submit')
+
+    function updateCount() {
+      count.textContent = textarea.value.length
+      sheetSubmit.disabled = textarea.value.trim().length < 15
+    }
+
+    function applyFeedControls() {
+      const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all'
+      const posts = Array.from(feed.querySelectorAll('.post'))
+
+      posts.forEach(post => {
+        post.hidden = activeFilter !== 'all' && post.dataset.category !== activeFilter
+      })
+
+      const sorted = posts.sort((a, b) => {
+        if (sortSelect.value === 'popular') {
+          return Number(b.dataset.hot) - Number(a.dataset.hot)
+        }
+        return Number(a.dataset.time) - Number(b.dataset.time)
+      })
+      sorted.forEach(post => feed.appendChild(post))
+    }
+
+    segments.forEach(button => {
+      button.addEventListener('click', () => {
+        segments.forEach(item => item.classList.remove('active'))
+        button.classList.add('active')
+        const type = button.dataset.type
+        if (type === 'official') {
+          textarea.placeholder = '공식 계정, 구단 발표, 선수 채널 등 공식 출처의 내용만 URL과 함께 공유해주세요.'
+          urlInput.placeholder = '구단 공식 출처 URL을 공유해주세요'
+        } else {
+          textarea.placeholder = '짧은 소식이나 생각을 남겨주세요.'
+          urlInput.placeholder = 'X, YouTube 링크는 임베드로 보여져요'
+        }
+      })
+    })
+
+    textarea.addEventListener('input', updateCount)
+    updateCount()
+
+    filterTabs.forEach(button => {
+      button.addEventListener('click', () => {
+        filterTabs.forEach(item => item.classList.remove('active'))
+        button.classList.add('active')
+        applyFeedControls()
+      })
+    })
+
+    sortSelect.addEventListener('change', applyFeedControls)
+
+    fab.addEventListener('click', () => {
+      sheet.classList.add('active')
+      sheet.setAttribute('aria-hidden', 'false')
+    })
+
+    sheetSubmit.addEventListener('click', () => {
+      if (sheetSubmit.disabled) return
+      sheet.classList.remove('active')
+      sheet.setAttribute('aria-hidden', 'true')
+    })
+
+    sheet.addEventListener('click', event => {
+      if (event.target === sheet) {
+        sheet.classList.remove('active')
+        sheet.setAttribute('aria-hidden', 'true')
+      }
+    })
+
+    document.querySelectorAll('.reactions').forEach(group => {
+      group.querySelectorAll('.reaction').forEach(button => {
+        button.addEventListener('click', () => {
+          if (button.classList.contains('active')) {
+            button.classList.remove('active')
+            return
+          }
+          group.querySelectorAll('.reaction').forEach(item => item.classList.remove('active'))
+          button.classList.add('active')
+        })
+      })
+    })
+
+    youtube.querySelector('.play').addEventListener('click', () => {
+      youtube.classList.add('playing')
+    })
+  </script>
+</body>
+</html>

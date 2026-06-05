@@ -138,12 +138,15 @@ export async function getTransfersBySeason(season: string): Promise<TransferItem
   return data.map(mapTransferRow)
 }
 
-export async function getTransfersBySeasonId(seasonId: string): Promise<TransferItem[]> {
+export async function getTransfersBySeasonId(seasonId: string, limit?: number): Promise<TransferItem[]> {
   if (!seasonId.trim()) return []
-  if (IS_MOCK) return MOCK_TRANSFERS.filter(transfer => transfer.season_id === seasonId || transfer.season_record?.id === seasonId)
+  if (IS_MOCK) {
+    const transfers = MOCK_TRANSFERS.filter(transfer => transfer.season_id === seasonId || transfer.season_record?.id === seasonId)
+    return limit === undefined ? transfers : transfers.slice(0, limit)
+  }
 
   const supabase = createPublicClient()
-  const { data, error } = await supabase
+  let query = supabase
     .from('transfers')
     .select(`
       id, player_id, direction, transfer_type, season, season_id, club_name, note, is_published, created_at, updated_at,
@@ -152,7 +155,11 @@ export async function getTransfersBySeasonId(seasonId: string): Promise<Transfer
     `)
     .eq('season_id', seasonId)
     .eq('is_published', true)
-    .order('created_at', { ascending: false }) as { data: AnyRow[] | null; error: AnyRow | null }
+    .order('created_at', { ascending: false })
+
+  if (limit !== undefined) query = query.limit(limit)
+
+  const { data, error } = await query as { data: AnyRow[] | null; error: AnyRow | null }
 
   if (error && (isMissingRelationError(error) || isMissingColumnError(error))) return []
   if (error || !data) return []
@@ -160,6 +167,5 @@ export async function getTransfersBySeasonId(seasonId: string): Promise<Transfer
 }
 
 export async function getLatestTransfersBySeasonId(seasonId: string, limit = 5): Promise<TransferItem[]> {
-  const transfers = await getTransfersBySeasonId(seasonId)
-  return transfers.slice(0, limit)
+  return getTransfersBySeasonId(seasonId, limit)
 }

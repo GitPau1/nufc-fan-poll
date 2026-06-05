@@ -6,6 +6,7 @@ import { IS_MOCK } from '@/lib/config'
 import { isAdmin } from '@/lib/admin'
 
 export type HeaderAuth = {
+  userId?: string
   displayName?: string
   avatarUrl?: string
   isAdmin: boolean
@@ -24,6 +25,7 @@ export async function getHeaderAuth(): Promise<HeaderAuth | null> {
     const email = adminEmail || 'mock@example.com'
 
     return {
+      userId: 'mock-user',
       displayName: 'Mock User',
       isAdmin: isAdmin(email),
     }
@@ -41,6 +43,7 @@ export async function getHeaderAuth(): Promise<HeaderAuth | null> {
     .single<HeaderProfile>()
 
   return {
+    userId: data.user.id,
     displayName: profile?.display_name ?? data.user.user_metadata?.name ?? undefined,
     avatarUrl: data.user.user_metadata?.avatar_url ?? undefined,
     isAdmin: isAdmin(data.user.email),

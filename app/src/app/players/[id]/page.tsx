@@ -1,11 +1,10 @@
-import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { PlayerCommentsSection } from '@/components/club/PlayerCommentsSection'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
+import { getHeaderAuth } from '@/lib/actions/auth'
 import { getPlayerById, getPlayerComments, getPlayerStats } from '@/lib/queries/club'
-import { IS_MOCK } from '@/lib/config'
 
 interface PlayerPageProps {
   params: Promise<{ id: string }>
@@ -39,30 +38,20 @@ function StatBox({ label, value }: { label: string; value: number }) {
 
 export default async function PlayerPage({ params }: PlayerPageProps) {
   const { id } = await params
-  const [player, stats, comments] = await Promise.all([
+  const [player, stats, comments, auth] = await Promise.all([
     getPlayerById(id),
     getPlayerStats(id),
     getPlayerComments(id),
+    getHeaderAuth(),
   ])
   if (!player) notFound()
-
-  let user = null
-  if (IS_MOCK) {
-    const cookieStore = await cookies()
-    if (cookieStore.get('mock-auth')?.value === 'true') user = { id: 'mock-user' }
-  } else {
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  }
 
   const [currentSeason, ...pastSeasons] = stats
   const age = calcAge(player.birth_date)
 
   return (
     <>
-      <AppHeader />
+      <AppHeader auth={auth} />
       <main className="px-4 pt-4 pb-24 animate-enter">
         <Card className="overflow-hidden">
           <div className="p-4">
@@ -155,7 +144,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           <PlayerCommentsSection
             playerId={player.id}
             initialComments={comments}
-            isAuthenticated={!!user}
+            isAuthenticated={!!auth}
           />
         </section>
       </main>

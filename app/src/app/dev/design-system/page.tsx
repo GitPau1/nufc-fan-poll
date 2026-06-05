@@ -8,6 +8,7 @@ import {
   Loader2,
   Lock,
   MessageCircle,
+  Plus,
   Search,
   Send,
   Shield,
@@ -53,6 +54,9 @@ const serviceItems = [
   ['Comment Item', 'comment-item'],
   ['Player Summary', 'player-summary'],
   ['Status Badge', 'status-badge'],
+  ['Season Stats', 'season-stats'],
+  ['Post Feed', 'post-feed'],
+  ['Post FAB', 'post-fab'],
   ['Farewell Card', 'farewell-card'],
   ['Transfer Item', 'transfer-item'],
   ['Club Status', 'club-status'],
@@ -1036,6 +1040,92 @@ export default function DevDesignSystemPage() {
           </Section>
 
           <Section
+            id="post-feed"
+            eyebrow="Service UI"
+            title="소식 피드"
+            description="소식 피드는 list-group의 확장이 아니라 필터, 정렬, 게시글, 임베드, 반응을 포함하는 독립 컴포넌트입니다."
+            source="src/components/posts"
+          >
+            <PreviewPanel title="피드 카드">
+              <div className="overflow-hidden rounded-md border border-border bg-surface shadow-g200">
+                <div className="flex items-end justify-between gap-3 border-b border-border bg-background/95 px-3 pt-2 backdrop-blur">
+                  <div className="flex min-w-0 gap-4 overflow-x-auto">
+                    {['전체', '자유', '정보', '오피셜'].map((tab, index) => (
+                      <div
+                        key={tab}
+                        className={cn(
+                          'relative h-11 shrink-0 text-[14px] font-black leading-[44px]',
+                          index === 0 ? 'text-primary-dark' : 'text-muted-foreground'
+                        )}
+                      >
+                        {tab}
+                        {index === 0 && <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-full bg-primary" />}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mb-2 h-8 shrink-0 rounded-pill border border-border bg-surface px-2 text-[12px] font-black leading-8 text-foreground">
+                    최신순
+                  </div>
+                </div>
+                <div className="border-b border-border bg-surface px-4 py-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex min-h-5 min-w-0 items-center gap-1.5">
+                        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-disabled text-[9px] font-black text-gray-1">TA</span>
+                        <p className="truncate text-[12px] font-black text-foreground">Toon Army</p>
+                        <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">18분 · 수정됨</span>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold text-muted-foreground">수정</span>
+                  </div>
+                  <p className="mt-3 whitespace-pre-wrap break-words text-[14px] font-semibold leading-relaxed text-foreground">
+                    <StatusPill tone="primary">오피셜</StatusPill>
+                    <span className="ml-1.5">뉴캐슬 공식 계정에 프리시즌 일정 관련 공지가 올라왔습니다.</span>
+                  </p>
+                  <div className="mt-3 rounded-sm border border-border bg-background px-3 py-3">
+                    <p className="text-[11px] font-black text-primary-dark">x.com/NUFC</p>
+                    <p className="mt-1 line-clamp-2 text-[13px] font-black leading-snug text-foreground">Pre-season fixtures confirmed</p>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">
+                    {['🙌 24', '😳 3', '🤔 6'].map((reaction, index) => (
+                      <span
+                        key={reaction}
+                        className={cn(
+                          'inline-flex h-8 items-center gap-1 rounded-full border px-2.5 text-[12px] font-black',
+                          index === 0 ? 'border-primary/40 bg-primary-dim text-primary-dark' : 'border-border bg-background text-muted-foreground'
+                        )}
+                      >
+                        {reaction}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </PreviewPanel>
+          </Section>
+
+          <Section
+            id="post-fab"
+            eyebrow="Service UI"
+            title="소식 작성 FAB"
+            description="소식 작성 전용 플로팅 버튼입니다. 하단 내비게이션 위에 배치하고, FAB 전용 primary elevation을 사용합니다."
+            source="src/components/posts/PostFeedClient.tsx"
+          >
+            <PreviewPanel title="작성 진입">
+              <div className="relative h-36 rounded-md border border-border bg-background">
+                <div className="absolute inset-x-0 bottom-0 h-14 border-t border-border bg-surface" />
+                <button
+                  type="button"
+                  className="absolute bottom-16 right-4 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_22px_rgba(26,159,212,.36)]"
+                  aria-label="소식 작성"
+                >
+                  <Plus className="h-7 w-7" />
+                </button>
+              </div>
+            </PreviewPanel>
+          </Section>
+
+          <Section
             id="player-summary"
             eyebrow="Service UI"
             title="선수 요약"
@@ -1074,6 +1164,32 @@ export default function DevDesignSystemPage() {
                 <StatusPill><User className="mr-1 h-3 w-3" />유저 생성</StatusPill>
               </div>
             </PreviewPanel>
+          </Section>
+
+          <Section
+            id="season-stats"
+            eyebrow="Service UI"
+            title="시즌 스탯 카드"
+            description="구단 정보의 시즌 대표 기록은 3열 카드로 보여주며 label, 선수 이미지, 이름, 수치, 단위 순서를 유지합니다."
+            source="src/components/club/SeasonStats.tsx"
+          >
+            <PreviewGrid>
+              {[
+                ['최다 출전', 'PP', 'Pope', '34', '경기'],
+                ['최다 득점', 'AI', 'Isak', '21', '골'],
+                ['최다 어시', 'BG', 'Bruno', '11', '어시스트'],
+              ].map(([label, initials, name, count, unit]) => (
+                <div key={label} className="rounded-md border border-border bg-surface px-2.5 py-3 text-center shadow-g200">
+                  <p className="mb-1.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <div className="mx-auto mb-1.5 flex h-16 w-16 items-center justify-center rounded-pill bg-primary-dim text-[13px] font-black text-primary-dark">
+                    {initials}
+                  </div>
+                  <p className="line-clamp-1 text-[12px] font-extrabold text-foreground">{name}</p>
+                  <p className="text-[18px] font-black text-primary">{count}</p>
+                  <p className="mt-0.5 text-[9px] text-muted-foreground">{unit}</p>
+                </div>
+              ))}
+            </PreviewGrid>
           </Section>
 
           <Section
@@ -1142,18 +1258,18 @@ export default function DevDesignSystemPage() {
             source="src/components/club/ClubStatusCard.tsx"
           >
             <PreviewPanel title="구단 현황">
-              <div className="overflow-hidden rounded-lg bg-[#0c2340] p-4 text-white shadow-g200">
+              <div className="overflow-hidden rounded-lg bg-[linear-gradient(135deg,#0c2340_0%,#1a3a60_100%)] p-4 text-white shadow-g200">
                 <div className="mb-3 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-pill bg-primary" />
                   <span className="text-[11px] font-bold uppercase tracking-wide text-primary">구단 현황 · 2025-26 시즌</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-white/10 px-3 py-2.5">
+                  <div className="rounded-lg bg-white/[.08] px-3 py-2.5">
                     <p className="text-[10px] text-white/55">리그 순위</p>
                     <p className="mt-0.5 text-[28px] font-black leading-none">5<span className="text-[16px] font-bold">위</span></p>
                     <p className="mt-1 text-[10px] font-semibold text-primary">PL</p>
                   </div>
-                  <div className="rounded-lg bg-white/10 px-3 py-2.5">
+                  <div className="rounded-lg bg-white/[.08] px-3 py-2.5">
                     <p className="text-[10px] text-white/55">다음 경기</p>
                     <p className="mt-1 text-[15px] font-extrabold">vs Arsenal</p>
                     <p className="mt-1 text-[11px] text-white/70">6월 7일 · 홈</p>
@@ -1167,14 +1283,21 @@ export default function DevDesignSystemPage() {
             id="squad-list"
             eyebrow="Service UI"
             title="스쿼드 목록"
-            description="스쿼드 목록은 segmented tab, 포지션 헤더, 선수 행으로 구성됩니다."
+            description="스쿼드 목록은 소식 피드와 같은 underline tab, 포지션 헤더, 선수 행으로 구성됩니다."
             source="src/components/club/SquadList.tsx"
           >
             <PreviewPanel title="선수 목록">
-              <div className="mb-3 grid grid-cols-3 gap-1.5 rounded-lg bg-disabled p-1">
-                {['1군 25', '임대 7', 'U21 12'].map((tab, index) => (
-                  <div key={tab} className={cn('h-9 rounded-sm text-center text-[12px] font-bold leading-9', index === 0 ? 'bg-white text-primary shadow-g100' : 'text-muted-foreground')}>
+              <div className="mb-3 flex min-w-0 gap-4 overflow-x-auto border-b border-border">
+                {['1군', '임대', 'U21'].map((tab, index) => (
+                  <div
+                    key={tab}
+                    className={cn(
+                      'relative h-11 shrink-0 text-[14px] font-black leading-[44px]',
+                      index === 0 ? 'text-primary-dark' : 'text-muted-foreground'
+                    )}
+                  >
                     {tab}
+                    {index === 0 && <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-full bg-primary" />}
                   </div>
                 ))}
               </div>

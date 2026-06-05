@@ -6,11 +6,13 @@ import { PAGE_SIZE } from '@/lib/constants'
 import { getEffectivePollStatus } from '@/lib/polls/status'
 import type { PollDetail, PollListItem, VoteCountMap } from '@/lib/queries/polls'
 import type { CommentItem } from '@/lib/queries/comments'
+import type { PostListItem } from '@/lib/queries/posts'
 import {
   MOCK_POLL_LIST,
   MOCK_POLL_DETAIL,
   MOCK_VOTE_COUNTS,
   MOCK_COMMENTS,
+  MOCK_POSTS,
 } from './data'
 
 export async function mockGetPollList(page: number): Promise<PollListItem[]> {
@@ -47,4 +49,13 @@ export async function mockGetMyVote(pollId: string, _userId: string): Promise<st
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function mockGetComments(pollId: string, userId: string | null): Promise<CommentItem[]> {
   return (MOCK_COMMENTS[pollId] ?? []) as CommentItem[]
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function mockGetPostList(userId: string | null): Promise<PostListItem[]> {
+  return MOCK_POSTS.map(post => ({
+    ...post,
+    is_mine: userId !== null && post.is_mine,
+    my_reaction: userId !== null ? post.my_reaction : null,
+  }))
 }

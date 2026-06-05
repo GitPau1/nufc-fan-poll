@@ -106,6 +106,63 @@ Measures whether the first value experience creates a reason to come back.
 Return Visit Rate = users with return_visit / activated users
 ```
 
+### 7. Short News Loop
+
+Short news posts are not the primary activation moment. They extend the product after activation by giving fans a lightweight reason to return, react, and create.
+
+#### Exposure
+
+```text
+app_opened
+→ post_feed_viewed
+```
+
+Measures whether the short news feed becomes a visible destination.
+
+```text
+Post Feed Exposure Rate = post_feed_viewed / app_opened
+```
+
+#### Engagement
+
+```text
+post_feed_viewed
+→ post_embed_clicked
+→ post_reacted
+```
+
+Measures whether short posts create emotional response or deeper source engagement. `post_embed_clicked` is useful for diagnosing X and YouTube embeds, but `post_reacted` is the stronger engagement signal.
+
+```text
+Post Reaction Rate = post_reacted / post_feed_viewed
+Embed Click Rate = post_embed_clicked / post_feed_viewed
+```
+
+#### Lightweight Creator Loop
+
+```text
+poll_result_viewed
+→ post_create_clicked
+→ post_published
+```
+
+Measures whether activated users move into lower-friction content creation. This is intentionally lighter than creating a poll.
+
+```text
+Post Creator Intent Rate = post_create_clicked / poll_result_viewed
+Post Publish Rate = post_published / post_create_clicked
+```
+
+#### Return Extension
+
+```text
+activated user
+→ return_visit
+→ post_feed_viewed
+```
+
+Measures whether the short news feed contributes to repeat visits after the user has already reached the poll result value moment.
+
 ## Event Plan
 
 Track only the events needed to validate the MVP loops.
@@ -125,6 +182,11 @@ Track only the events needed to validate the MVP loops.
 | `poll_published` | User-created poll is successfully published. | Did creator activation happen? |
 | `poll_first_vote_received` | A user-created poll receives its first vote. | Did the creator reach their reward moment? |
 | `return_visit` | User returns after a previous session. | Does the loop create repeat visits? |
+| `post_feed_viewed` | Short news feed is visible. | Does short news become a repeatable destination? |
+| `post_create_clicked` | User starts short post creation. | Did the user show lightweight creator intent? |
+| `post_published` | Short post is successfully published. | Did lightweight creator activation happen? |
+| `post_reacted` | User reacts to a short post. | Did short news create emotional response? |
+| `post_embed_clicked` | User opens or plays an embedded source on a short post. | Do X and YouTube embeds create deeper engagement? |
 
 ## Event Properties
 
@@ -134,7 +196,7 @@ Attach these when available:
 
 ```ts
 {
-  source_page: "home" | "polls" | "poll_detail" | "my" | "create" | "direct",
+  source_page: "home" | "polls" | "poll_detail" | "my" | "create" | "posts" | "direct",
   is_first_session: boolean,
   is_logged_in: boolean,
   user_role: "guest" | "user" | "admin"
@@ -192,6 +254,49 @@ Attach to `poll_first_vote_received`:
 }
 ```
 
+### Short News Properties
+
+Attach to `post_feed_viewed`:
+
+```ts
+{
+  post_count: number
+}
+```
+
+Attach to `post_create_clicked` and `post_published`:
+
+```ts
+{
+  post_type: "free" | "info" | "official",
+  embed_kind: "none" | "link" | "x" | "youtube",
+  has_url: boolean
+}
+```
+
+Attach to `post_reacted`:
+
+```ts
+{
+  post_type: "free" | "info" | "official",
+  embed_kind: "none" | "link" | "x" | "youtube",
+  reaction_type: "expecting" | "shocked" | "angry" | "sad" | "curious",
+  changed_existing_reaction: boolean
+}
+```
+
+Attach to `post_embed_clicked`:
+
+```ts
+{
+  post_type: "free" | "info" | "official",
+  embed_kind: "link" | "x" | "youtube",
+  source_domain: string
+}
+```
+
+Do not send post body content or full URLs to Mixpanel. For URL-related analysis, send `embed_kind`, `has_url`, and `source_domain` only.
+
 ## Deferred UX Diagnostic Events
 
 These events can help debug detailed UX drop-off, but they are not required for the portfolio activation dashboard:
@@ -205,5 +310,8 @@ These events can help debug detailed UX drop-off, but they are not required for 
 - `account_deleted`
 - `feedback_opened`
 - `feedback_submitted`
+- `post_card_viewed`
+- `post_edited`
+- `post_deleted`
 
 Add them only when a specific dashboard question needs them.

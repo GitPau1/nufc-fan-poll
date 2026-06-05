@@ -1,27 +1,19 @@
 import Link from 'next/link'
-import { cookies } from 'next/headers'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { PollListClient } from '@/components/polls/PollListClient'
-import { IS_MOCK } from '@/lib/config'
+import { getHeaderAuth } from '@/lib/actions/auth'
 import { getPollList } from '@/lib/queries/polls'
 
 export default async function PollsPage() {
-  const initialPolls = await getPollList(0)
-
-  let isLoggedIn = false
-  if (IS_MOCK) {
-    const cookieStore = await cookies()
-    isLoggedIn = cookieStore.get('mock-auth')?.value === 'true'
-  } else {
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    isLoggedIn = Boolean(user)
-  }
+  const [initialPolls, auth] = await Promise.all([
+    getPollList(0),
+    getHeaderAuth(),
+  ])
+  const isLoggedIn = Boolean(auth)
 
   return (
     <>
-      <AppHeader />
+      <AppHeader auth={auth} />
       <main className="pb-24">
         <PollListClient
           initialPolls={initialPolls}

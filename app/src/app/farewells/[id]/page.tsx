@@ -1,9 +1,9 @@
-import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { FarewellCommentsSection } from '@/components/farewells/FarewellCommentsSection'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
+import { getHeaderAuth } from '@/lib/actions/auth'
 import { getFarewellById, getFarewellComments, getPlayerSeasonStats } from '@/lib/queries/farewells'
 import { IS_MOCK } from '@/lib/config'
 
@@ -44,20 +44,10 @@ function formatYear(date: string | null) {
 export default async function FarewellPage({ params }: FarewellPageProps) {
   const { id } = await params
 
-  let user = null
-  if (IS_MOCK) {
-    const cookieStore = await cookies()
-    if (cookieStore.get('mock-auth')?.value === 'true') {
-      user = { id: 'mock-user' }
-    }
-  } else {
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  }
-
-  const farewell = await getFarewellById(id)
+  const [farewell, auth] = await Promise.all([
+    getFarewellById(id),
+    getHeaderAuth(),
+  ])
   if (!farewell) notFound()
 
   const [comments, seasonStats] = await Promise.all([
@@ -86,7 +76,7 @@ export default async function FarewellPage({ params }: FarewellPageProps) {
 
   return (
     <>
-      <AppHeader />
+      <AppHeader auth={auth} />
       <main className="px-4 pt-4 pb-24 animate-enter">
         <Card className="overflow-hidden">
           <div className="p-4">
@@ -176,7 +166,7 @@ export default async function FarewellPage({ params }: FarewellPageProps) {
           <FarewellCommentsSection
             farewellId={farewell.id}
             initialComments={comments}
-            isAuthenticated={!!user}
+            isAuthenticated={!!auth}
             isMockMode={IS_MOCK}
           />
         </section>

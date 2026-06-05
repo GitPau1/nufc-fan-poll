@@ -1,7 +1,14 @@
 import Link from 'next/link'
+import { getHeaderAuth, type HeaderAuth } from '@/lib/actions/auth'
 import { HeaderAuthStatus } from './HeaderAuthStatus'
 
-export function AppHeader() {
+type AppHeaderProps = {
+  auth?: HeaderAuth | null
+}
+
+export async function AppHeader({ auth: initialAuth }: AppHeaderProps = {}) {
+  const auth = initialAuth === undefined ? await getHeaderAuth() : initialAuth
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
       <div className="flex h-14 items-center justify-between px-4">
@@ -12,7 +19,7 @@ export function AppHeader() {
           </span>
         </Link>
 
-        <HeaderAuthStatus />
+        <HeaderAuthStatus auth={auth} />
       </div>
     </header>
   )

@@ -12,6 +12,8 @@
     "lint": "next lint",
     "test:transfer-groups": "node --no-warnings --experimental-strip-types --test src/lib/transfers/group.test.mjs",
     "test:transfers": "node --no-warnings --experimental-strip-types --test src/lib/transfers/format.test.mjs",
+    "test:transfer-query": "node --test src/lib/queries/transfers.test.mjs",
+    "test:header-auth": "node --test src/components/layout/header-auth-status.test.mjs",
     "test:images": "node --no-warnings --experimental-strip-types --test src/lib/images/optimize.test.mjs",
     "test:posts": "node --test src/lib/posts.test.mjs",
     "test:rating": "node --test src/lib/polls/rating.test.mjs",

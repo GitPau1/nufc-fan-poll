@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { createClient, createPublicClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
 import type { DepartureType, PlayerRow } from '@/types/database'
@@ -102,7 +103,7 @@ const MOCK_FAREWELL: FarewellItem = {
   comment_count: 2,
 }
 
-export async function getLatestFarewells(limit = 3): Promise<FarewellItem[]> {
+async function getLatestFarewellsUncached(limit = 3): Promise<FarewellItem[]> {
   if (IS_MOCK) return [MOCK_FAREWELL].slice(0, limit)
 
   const supabase = createPublicClient()
@@ -143,7 +144,7 @@ export async function getLatestFarewells(limit = 3): Promise<FarewellItem[]> {
   return data.map(mapFarewellRow)
 }
 
-export async function getFarewellById(id: string): Promise<FarewellItem | null> {
+async function getFarewellByIdUncached(id: string): Promise<FarewellItem | null> {
   if (IS_MOCK) return id === MOCK_FAREWELL.id ? MOCK_FAREWELL : null
 
   const supabase = createPublicClient()
@@ -181,6 +182,14 @@ export async function getFarewellById(id: string): Promise<FarewellItem | null> 
   if (error || !data) return null
   return mapFarewellRow(data)
 }
+
+export const getLatestFarewells = unstable_cache(getLatestFarewellsUncached, ['public-latest-farewells'], {
+  revalidate: 60,
+})
+
+export const getFarewellById = unstable_cache(getFarewellByIdUncached, ['public-farewell-detail'], {
+  revalidate: 60,
+})
 
 export async function getFarewellComments(farewellId: string): Promise<FarewellCommentItem[]> {
   if (IS_MOCK) {

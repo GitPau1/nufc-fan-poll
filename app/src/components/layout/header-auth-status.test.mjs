@@ -7,10 +7,12 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname)
 const headerStatusSource = fs.readFileSync(path.join(__dirname, 'HeaderAuthStatus.tsx'), 'utf8')
 const appHeaderSource = fs.readFileSync(path.join(__dirname, 'AppHeader.tsx'), 'utf8')
 
-test('header auth status is rendered from server-provided auth instead of client fetch', () => {
-  assert.doesNotMatch(headerStatusSource, /useEffect|useState|getHeaderAuth/)
-  assert.match(headerStatusSource, /auth\s*:\s*HeaderAuth\s*\|\s*null/)
-  assert.match(appHeaderSource, /async function AppHeader/)
-  assert.match(appHeaderSource, /getHeaderAuth\(\)/)
+test('public header does not block server render on auth lookup', () => {
+  assert.doesNotMatch(appHeaderSource, /async function AppHeader|getHeaderAuth\(\)/)
+  assert.match(appHeaderSource, /auth\?: HeaderAuth\s*\|\s*null/)
   assert.match(appHeaderSource, /<HeaderAuthStatus auth=\{auth\}/)
+  assert.match(headerStatusSource, /useEffect/)
+  assert.match(headerStatusSource, /getHeaderAuth\(\)/)
+  assert.match(headerStatusSource, /auth === undefined/)
+  assert.match(headerStatusSource, /<LoginButton \/>/)
 })

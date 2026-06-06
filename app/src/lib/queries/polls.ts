@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { createClient, createPublicClient } from '@/lib/supabase/server'
 import type { PollType, PollStatus, PlayerRow, PollOptionRow } from '@/types/database'
 import { PAGE_SIZE } from '@/lib/constants'
@@ -181,7 +182,7 @@ export async function getPollFormPlayers(): Promise<PollFormPlayer[]> {
 }
 
 // ── 투표 목록 조회 ────────────────────────────────────────────
-export async function getPollList(page = 0): Promise<PollListItem[]> {
+async function getPollListUncached(page = 0): Promise<PollListItem[]> {
   if (IS_MOCK) return mockGetPollList(page)
   const supabase = createPublicClient()
   const from = page * PAGE_SIZE
@@ -253,6 +254,10 @@ export async function getPollList(page = 0): Promise<PollListItem[]> {
       : (row.vote_count as { count: number }[])?.[0]?.count ?? 0,
   }))
 }
+
+export const getPollList = unstable_cache(getPollListUncached, ['public-poll-list'], {
+  revalidate: 30,
+})
 
 // ── 투표 상세 조회 ────────────────────────────────────────────
 export async function getPollById(id: string): Promise<PollDetail | null> {

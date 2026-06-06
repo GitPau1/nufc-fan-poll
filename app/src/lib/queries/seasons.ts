@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { IS_MOCK } from '@/lib/config'
 import { createPublicClient } from '@/lib/supabase/server'
 import type { SeasonRow } from '@/types/database'
@@ -9,7 +10,7 @@ const MOCK_SEASONS: SeasonOption[] = [
   { id: 'season-2024', name: '2024-25', is_current: false, display_order: 2024 },
 ]
 
-export async function getSeasons(): Promise<SeasonOption[]> {
+async function getSeasonsUncached(): Promise<SeasonOption[]> {
   if (IS_MOCK) return MOCK_SEASONS
 
   const supabase = createPublicClient()
@@ -22,6 +23,10 @@ export async function getSeasons(): Promise<SeasonOption[]> {
   if (error || !data) return []
   return data as SeasonOption[]
 }
+
+export const getSeasons = unstable_cache(getSeasonsUncached, ['public-seasons'], {
+  revalidate: 300,
+})
 
 export function resolveSelectedSeason(
   seasons: SeasonOption[],

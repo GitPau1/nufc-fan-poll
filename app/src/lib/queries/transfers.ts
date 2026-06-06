@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { createPublicClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
 import { getTransferMovementGroup, type TransferMovementGroup } from '@/lib/transfers/group'
@@ -117,7 +118,7 @@ function mapTransferRow(row: AnyRow): TransferItem {
   }
 }
 
-export async function getTransfersBySeason(season: string): Promise<TransferItem[]> {
+async function getTransfersBySeasonUncached(season: string): Promise<TransferItem[]> {
   if (!season.trim()) return []
   if (IS_MOCK) return MOCK_TRANSFERS.filter(transfer => transfer.season === season)
 
@@ -138,7 +139,7 @@ export async function getTransfersBySeason(season: string): Promise<TransferItem
   return data.map(mapTransferRow)
 }
 
-export async function getTransfersBySeasonId(seasonId: string, limit?: number): Promise<TransferItem[]> {
+async function getTransfersBySeasonIdUncached(seasonId: string, limit?: number): Promise<TransferItem[]> {
   if (!seasonId.trim()) return []
   if (IS_MOCK) {
     const transfers = MOCK_TRANSFERS.filter(transfer => transfer.season_id === seasonId || transfer.season_record?.id === seasonId)
@@ -165,6 +166,14 @@ export async function getTransfersBySeasonId(seasonId: string, limit?: number): 
   if (error || !data) return []
   return data.map(mapTransferRow)
 }
+
+export const getTransfersBySeason = unstable_cache(getTransfersBySeasonUncached, ['public-transfers-by-season'], {
+  revalidate: 60,
+})
+
+export const getTransfersBySeasonId = unstable_cache(getTransfersBySeasonIdUncached, ['public-transfers-by-season-id'], {
+  revalidate: 60,
+})
 
 export async function getLatestTransfersBySeasonId(seasonId: string, limit = 5): Promise<TransferItem[]> {
   return getTransfersBySeasonId(seasonId, limit)

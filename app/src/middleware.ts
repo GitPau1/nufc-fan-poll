@@ -4,13 +4,23 @@ import { isAdmin } from '@/lib/admin'
 
 const _url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const IS_MOCK = !_url || !_url.startsWith('http')
+const PROTECTED_PREFIXES = ['/my', '/onboarding']
+const ADMIN_PREFIXES = ['/admin']
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
   if (
     process.env.NODE_ENV === 'production' &&
-    request.nextUrl.pathname.startsWith('/dev/design-system')
+    pathname.startsWith('/dev/design-system')
   ) {
     return new NextResponse(null, { status: 404 })
+  }
+
+  const requiresAuth = PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix))
+  const requiresAdmin = ADMIN_PREFIXES.some(prefix => pathname.startsWith(prefix))
+  if (!requiresAuth && !requiresAdmin) {
+    return NextResponse.next({ request })
   }
 
   if (IS_MOCK) {
@@ -37,15 +47,14 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  const pathname = request.nextUrl.pathname
 
   // 로그인 필수 경로 → 미로그인 시 /login으로 리다이렉트
-  if (!user && (pathname.startsWith('/my') || pathname.startsWith('/onboarding'))) {
+  if (!user && requiresAuth) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // /admin → 관리자만 허용
-  if (pathname.startsWith('/admin')) {
+  if (requiresAdmin) {
     if (!user) return NextResponse.redirect(new URL('/login', request.url))
     if (!isAdmin(user.email)) return NextResponse.redirect(new URL('/', request.url))
   }
@@ -55,10 +64,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Supabase SSR: 세션 갱신을 위해 모든 경로에서 실행.
-     * 정적 파일·이미지·파비콘 제외.
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/my/:path*',
+    '/onboarding/:path*',
+    '/admin/:path*',
+    '/dev/design-system/:path*',
   ],
 }

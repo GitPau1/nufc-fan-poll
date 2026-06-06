@@ -15,6 +15,8 @@
     "test:transfer-query": "node --test src/lib/queries/transfers.test.mjs",
     "test:header-auth": "node --test src/components/layout/header-auth-status.test.mjs",
     "test:prefetch-policy": "node --test src/components/prefetch-policy.test.mjs",
+    "test:middleware-auth": "node --test src/middleware-auth.test.mjs",
+    "test:query-cache": "node --test src/lib/queries/cache-policy.test.mjs",
     "test:images": "node --no-warnings --experimental-strip-types --test src/lib/images/optimize.test.mjs",
     "test:posts": "node --test src/lib/posts.test.mjs",
     "test:rating": "node --test src/lib/polls/rating.test.mjs",

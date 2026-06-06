@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { IS_MOCK } from '@/lib/config'
 import { createPublicClient } from '@/lib/supabase/server'
 import type { ClubStatusWithStats, PlayerRow } from '@/types/database'
@@ -37,7 +38,7 @@ const MOCK_PLAYERS: PlayerRow[] = [
 ]
 
 // ── getClubStatus ─────────────────────────────────────────────
-export async function getClubStatus(): Promise<ClubStatusWithStats | null> {
+async function getClubStatusUncached(): Promise<ClubStatusWithStats | null> {
   if (IS_MOCK) return MOCK_STATUS
 
   const supabase = createPublicClient()
@@ -67,7 +68,7 @@ export async function getClubStatus(): Promise<ClubStatusWithStats | null> {
 }
 
 // ── getSquad ──────────────────────────────────────────────────
-export async function getSquad(): Promise<PlayerRow[]> {
+async function getSquadUncached(): Promise<PlayerRow[]> {
   if (IS_MOCK) return MOCK_PLAYERS
 
   const supabase = createPublicClient()
@@ -98,6 +99,14 @@ export async function getSquad(): Promise<PlayerRow[]> {
     squad_status: player.squad_status ?? 'first_team',
   }))
 }
+
+export const getClubStatus = unstable_cache(getClubStatusUncached, ['public-club-status'], {
+  revalidate: 60,
+})
+
+export const getSquad = unstable_cache(getSquadUncached, ['public-squad'], {
+  revalidate: 300,
+})
 
 export type PlayerCommentItem = {
   id: string

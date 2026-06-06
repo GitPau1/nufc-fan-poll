@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { PostComposer } from '@/components/posts/PostComposer'
 import { PostCard } from '@/components/posts/PostCard'
+import { getPostViewerState, type PostViewerState } from '@/lib/actions/posts'
 import type { PostListItem } from '@/lib/queries/posts'
 import type { PostEmbedKind, PostType } from '@/types/database'
 import { trackEvent } from '@/lib/analytics/mixpanel'
@@ -29,12 +30,11 @@ function getTopEmbedKind(posts: PostListItem[]): PostEmbedKind {
 
 export function PostFeedClient({
   initialPosts,
-  isLoggedIn,
 }: {
   initialPosts: PostListItem[]
-  isLoggedIn: boolean
 }) {
   const [posts, setPosts] = useState(initialPosts)
+  const [viewerState, setViewerState] = useState<PostViewerState | null>(null)
   const [filter, setFilter] = useState<PostFilter>('all')
   const [sort, setSort] = useState<SortMode>('latest')
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -43,6 +43,30 @@ export function PostFeedClient({
   useEffect(() => {
     setPosts(initialPosts)
   }, [initialPosts])
+
+  useEffect(() => {
+    let cancelled = false
+    const postIds = initialPosts.map(post => post.id)
+
+    getPostViewerState(postIds).then(nextState => {
+      if (!cancelled) setViewerState(nextState)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [initialPosts])
+
+  const personalizedPosts = useMemo(() => {
+    const myPostIds = new Set(viewerState?.myPostIds ?? [])
+    const myReactions = viewerState?.myReactions ?? {}
+
+    return posts.map(post => ({
+      ...post,
+      is_mine: myPostIds.has(post.id),
+      my_reaction: myReactions[post.id] ?? null,
+    }))
+  }, [posts, viewerState])
 
   useEffect(() => {
     trackEvent('post_feed_viewed', {
@@ -55,7 +79,7 @@ export function PostFeedClient({
   }, [filter, posts, sort])
 
   const visiblePosts = useMemo(() => {
-    const filtered = filter === 'all' ? posts : posts.filter(post => post.type === filter)
+    const filtered = filter === 'all' ? personalizedPosts : personalizedPosts.filter(post => post.type === filter)
     return [...filtered].sort((a, b) => {
       if (sort === 'popular') {
         const diff = reactionTotal(b) - reactionTotal(a)
@@ -63,7 +87,9 @@ export function PostFeedClient({
       }
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
-  }, [filter, posts, sort])
+  }, [filter, personalizedPosts, sort])
+
+  const isLoggedIn = viewerState?.isLoggedIn ?? false
 
   function openComposer() {
     setSheetOpen(true)

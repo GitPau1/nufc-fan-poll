@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { togglePostReaction } from '@/lib/actions/posts'
 import { POST_REACTIONS } from '@/lib/posts'
 import type { PostListItem, ReactionCountMap } from '@/lib/queries/posts'
@@ -15,6 +15,11 @@ export function PostReactionRow({ post, isLoggedIn }: { post: PostListItem; isLo
   const [selected, setSelected] = useState<PostReactionType | null>(post.my_reaction)
   const [counts, setCounts] = useState<ReactionCountMap>(() => copyCounts(post.reaction_counts))
   const [isPending, start] = useTransition()
+
+  useEffect(() => {
+    setSelected(post.my_reaction)
+    setCounts(copyCounts(post.reaction_counts))
+  }, [post.id, post.my_reaction, post.reaction_counts])
 
   function updateCounts(current: PostReactionType | null, next: PostReactionType) {
     const nextCounts = copyCounts(counts)

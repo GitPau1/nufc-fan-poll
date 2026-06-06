@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { createClient, createPublicClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
 import type { PostEmbedKind, PostReactionType, PostType } from '@/types/database'
@@ -58,7 +59,7 @@ const EMPTY_COUNTS: ReactionCountMap = {
   curious: 0,
 }
 
-export async function getPostList(userId: string | null): Promise<PostListItem[]> {
+async function getPostListUncached(userId: string | null): Promise<PostListItem[]> {
   if (IS_MOCK) return mockGetPostList(userId)
 
   const supabase = userId ? await createClient() : createPublicClient()
@@ -110,4 +111,16 @@ export async function getPostList(userId: string | null): Promise<PostListItem[]
       reaction_counts: reactionCounts,
     }
   })
+}
+
+async function getPublicPostListUncached(): Promise<PostListItem[]> {
+  return getPostListUncached(null)
+}
+
+export const getPublicPostList = unstable_cache(getPublicPostListUncached, ['public-post-list'], {
+  revalidate: 30,
+})
+
+export async function getPostList(userId: string | null): Promise<PostListItem[]> {
+  return getPostListUncached(userId)
 }

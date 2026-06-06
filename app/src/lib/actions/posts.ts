@@ -8,11 +8,54 @@ import type { PostReactionType } from '@/types/database'
 
 type ActionResult = { success: true } | { error: string }
 
+export type PostViewerState = {
+  isLoggedIn: boolean
+  myPostIds: string[]
+  myReactions: Partial<Record<string, PostReactionType>>
+}
+
 async function getCurrentUserId(): Promise<string | null> {
   const { createClient } = await import('@/lib/supabase/server')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user?.id ?? null
+}
+
+export async function getPostViewerState(postIds: string[]): Promise<PostViewerState> {
+  const uniquePostIds = Array.from(new Set(postIds)).slice(0, 50)
+  if (IS_MOCK || uniquePostIds.length === 0) {
+    return { isLoggedIn: false, myPostIds: [], myReactions: {} }
+  }
+
+  const userId = await getCurrentUserId()
+  if (!userId) return { isLoggedIn: false, myPostIds: [], myReactions: {} }
+
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const db = supabase as AnySupabase
+  const [{ data: posts }, { data: reactions }] = await Promise.all([
+    db
+      .from('posts')
+      .select('id')
+      .in('id', uniquePostIds)
+      .eq('user_id', userId),
+    db
+      .from('post_reactions')
+      .select('post_id, reaction_type')
+      .in('post_id', uniquePostIds)
+      .eq('user_id', userId),
+  ])
+
+  return {
+    isLoggedIn: true,
+    myPostIds: (posts ?? []).map((post: { id: string }) => post.id),
+    myReactions: Object.fromEntries(
+      (reactions ?? []).map((reaction: { post_id: string; reaction_type: PostReactionType }) => [
+        reaction.post_id,
+        reaction.reaction_type,
+      ]),
+    ),
+  }
 }
 
 export async function createPost(input: { type: string; content: string; url: string }): Promise<ActionResult> {

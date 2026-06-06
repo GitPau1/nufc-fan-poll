@@ -67,6 +67,7 @@ export function FarewellBanner({ items }: { items: FarewellItem[] }) {
                 slideRefs.current[index] = element
               }}
               href={`/farewells/${farewell.id}`}
+              prefetch={false}
               className="w-full flex-none snap-center"
             >
               <article className="relative aspect-[21/9] overflow-hidden rounded-lg bg-[#07111f] text-white">

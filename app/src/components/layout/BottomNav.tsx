@@ -25,6 +25,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
+              prefetch={false}
               className={`flex flex-1 flex-col items-center gap-0.5 text-[10px] font-semibold transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
             >
               <Icon className="h-5 w-5" />

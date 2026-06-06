@@ -27,6 +27,7 @@ export default async function ClubPage() {
             </h2>
             <Link
               href="/transfers"
+              prefetch={false}
               className="inline-flex h-8 items-center gap-1.5 rounded-pill border border-border bg-surface px-3 text-[12px] font-black text-primary-dark transition-opacity hover:opacity-70 active:opacity-50"
             >
               <History className="h-3.5 w-3.5" />

@@ -36,7 +36,7 @@ export function FarewellCard({ farewell }: { farewell: FarewellItem }) {
   const incoming = isIncoming(farewell.departure_type)
 
   return (
-    <Link href={`/farewells/${farewell.id}`} className="block h-full active:scale-[0.98] transition-transform duration-100">
+    <Link href={`/farewells/${farewell.id}`} prefetch={false} className="block h-full active:scale-[0.98] transition-transform duration-100">
       <Card className={`h-full min-w-[220px] cursor-pointer transition-opacity hover:opacity-70 ${
         incoming
           ? 'border-positive-dim bg-positive-dim'

@@ -37,7 +37,7 @@ export default async function HomePage() {
               <p className="px-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 이적 소식
               </p>
-              <Link href={currentSeason ? `/transfers?season=${encodeURIComponent(currentSeason.name)}` : '/transfers'} className="text-[12px] font-bold text-primary">
+              <Link href={currentSeason ? `/transfers?season=${encodeURIComponent(currentSeason.name)}` : '/transfers'} prefetch={false} className="text-[12px] font-bold text-primary">
                 더보기
               </Link>
             </div>
@@ -58,7 +58,7 @@ export default async function HomePage() {
               <p className="px-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 최근 투표
               </p>
-              <Link href="/polls" className="text-[12px] font-bold text-primary">
+              <Link href="/polls" prefetch={false} className="text-[12px] font-bold text-primary">
                 전체보기
               </Link>
             </div>

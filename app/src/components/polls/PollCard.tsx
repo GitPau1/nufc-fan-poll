@@ -37,6 +37,7 @@ function PollListRow({ poll }: { poll: PollListItem }) {
   return (
     <Link
       href={`/polls/${poll.id}`}
+      prefetch={false}
       onClick={() => trackEvent('poll_card_clicked', {
         source_page: getSourcePage(pathname),
         poll_id: poll.id,

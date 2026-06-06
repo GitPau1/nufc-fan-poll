@@ -98,7 +98,7 @@ export default function SquadList({ players }: Props) {
               return (
                 <div key={player.id}>
                   {idx > 0 && <div className="h-px bg-border mx-3.5" />}
-                  <Link href={`/players/${player.id}`} className="flex items-center gap-2.5 px-3.5 py-2.5 transition-opacity hover:opacity-70 active:opacity-50">
+                  <Link href={`/players/${player.id}`} prefetch={false} className="flex items-center gap-2.5 px-3.5 py-2.5 transition-opacity hover:opacity-70 active:opacity-50">
                     <div className="w-7 flex-shrink-0 text-center">
                       <span className="text-[15px] font-black text-muted-foreground">
                         {player.squad_number ?? '-'}

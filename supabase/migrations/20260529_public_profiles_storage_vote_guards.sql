@@ -55,24 +55,6 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'farewell_comments_public_profiles_user_id_fkey'
-  ) THEN
-    ALTER TABLE public.farewell_comments
-      ADD CONSTRAINT farewell_comments_public_profiles_user_id_fkey
-      FOREIGN KEY (user_id) REFERENCES public.public_profiles(id)
-      ON DELETE CASCADE NOT VALID;
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'player_comments_public_profiles_user_id_fkey'
-  ) THEN
-    ALTER TABLE public.player_comments
-      ADD CONSTRAINT player_comments_public_profiles_user_id_fkey
-      FOREIGN KEY (user_id) REFERENCES public.public_profiles(id)
-      ON DELETE CASCADE NOT VALID;
-  END IF;
-
-  IF NOT EXISTS (
     SELECT 1 FROM pg_constraint WHERE conname = 'votes_option_matches_poll_fkey'
   ) THEN
     CREATE UNIQUE INDEX IF NOT EXISTS poll_options_id_poll_id_idx
@@ -94,4 +76,3 @@ DROP POLICY IF EXISTS "player_photos_public_read" ON storage.objects;
 CREATE POLICY "player_photos_public_read"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'player-photos');
-

@@ -1,38 +1,9 @@
-// DB 스키마 타입 — docs/specs/03-data-model.md 기반
+// DB schema types for the poll-only application.
 
-export type PollType   = 'evaluation' | 'selection' | 'subject_options' | 'question_targets' | 'free_choice' | 'overall_rating'
+export type PollType = 'evaluation' | 'selection' | 'subject_options' | 'question_targets' | 'free_choice'
 export type PollStatus = 'scheduled' | 'active' | 'closed'
-export type Position   = 'GK' | 'DEF' | 'MID' | 'FWD' | 'MGR'
+export type Position = 'GK' | 'DEF' | 'MID' | 'FWD' | 'MGR'
 export type PlayerStatus = 'first_team' | 'loan' | 'u21'
-export type TransferDirection = 'in' | 'out'
-export type TransferType = 'signing' | 'loan_in' | 'promotion' | 'loan_return' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
-export type DepartureType = 'signing' | 'loan_in' | 'promotion' | 'loan_return' | 'transferred' | 'contract_expired' | 'loan_out' | 'released'
-export type PostType = 'free' | 'info' | 'official'
-export type PostEmbedKind = 'none' | 'link' | 'x' | 'youtube'
-export type PostReactionType = 'expecting' | 'shocked' | 'angry' | 'sad' | 'curious'
-export type TransferRow = {
-  id: string
-  player_id: string
-  direction: TransferDirection
-  transfer_type: TransferType
-  season: string
-  season_id: string | null
-  club_name: string | null
-  note: string | null
-  is_published: boolean
-  created_at: string
-  updated_at: string
-}
-export type SeasonRow = {
-  id: string
-  name: string
-  starts_at: string | null
-  ends_at: string | null
-  is_current: boolean
-  display_order: number
-  created_at: string
-  updated_at: string
-}
 
 export interface Database {
   public: {
@@ -49,6 +20,16 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['users']['Row'], 'created_at'>
         Update: Partial<Database['public']['Tables']['users']['Insert']>
       }
+      public_profiles: {
+        Row: {
+          id: string
+          display_name: string | null
+          avatar_url: string | null
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['public_profiles']['Row'], 'updated_at'>
+        Update: Partial<Database['public']['Tables']['public_profiles']['Insert']>
+      }
       players: {
         Row: {
           id: string
@@ -58,10 +39,11 @@ export interface Database {
           photo_url: string | null
           is_active: boolean
           squad_status: PlayerStatus
-          nationality: string | null
-          birth_date: string | null
         }
-        Insert: Omit<Database['public']['Tables']['players']['Row'], 'id' | 'is_active'>
+        Insert: Omit<Database['public']['Tables']['players']['Row'], 'id' | 'is_active' | 'squad_status'> & {
+          is_active?: boolean
+          squad_status?: PlayerStatus
+        }
         Update: Partial<Database['public']['Tables']['players']['Insert']>
       }
       polls: {
@@ -70,7 +52,7 @@ export interface Database {
           type: PollType
           title: string
           description: string | null
-          player_id: string | null     // Type A only
+          player_id: string | null
           created_by: string | null
           status: PollStatus
           thumbnail_url: string | null
@@ -87,11 +69,12 @@ export interface Database {
           poll_id: string
           label: string
           description?: string | null
-          player_id: string | null     // Type B only
+          player_id: string | null
           image_url?: string | null
           display_order: number
+          created_at?: string
         }
-        Insert: Omit<Database['public']['Tables']['poll_options']['Row'], 'id'>
+        Insert: Omit<Database['public']['Tables']['poll_options']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['poll_options']['Insert']>
       }
       votes: {
@@ -103,7 +86,7 @@ export interface Database {
           created_at: string
         }
         Insert: Omit<Database['public']['Tables']['votes']['Row'], 'id' | 'created_at'>
-        Update: never  // votes are immutable
+        Update: never
       }
       comments: {
         Row: {
@@ -127,148 +110,6 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['comment_likes']['Row'], 'id' | 'created_at'>
         Update: never
       }
-      user_feedback: {
-        Row: {
-          id: string
-          user_id: string
-          content: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['user_feedback']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: never
-      }
-      posts: {
-        Row: {
-          id: string
-          user_id: string
-          type: PostType
-          content: string
-          url: string | null
-          embed_kind: PostEmbedKind
-          embed_title: string | null
-          embed_domain: string | null
-          is_hidden: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['posts']['Row'], 'id' | 'is_hidden' | 'created_at' | 'updated_at'>
-        Update: Partial<Pick<Database['public']['Tables']['posts']['Row'], 'type' | 'content' | 'url' | 'embed_kind' | 'embed_title' | 'embed_domain' | 'is_hidden'>>
-      }
-      post_reactions: {
-        Row: {
-          id: string
-          post_id: string
-          user_id: string
-          reaction_type: PostReactionType
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['post_reactions']['Row'], 'id' | 'created_at'>
-        Update: Pick<Database['public']['Tables']['post_reactions']['Row'], 'reaction_type'>
-      }
-      rating_votes: {
-        Row: {
-          id: string
-          poll_id: string
-          user_id: string
-          target_player_id: string
-          score: number
-          comment: string | null
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['rating_votes']['Row'], 'id' | 'created_at'>
-        Update: never
-      }
-      rating_vote_likes: {
-        Row: {
-          id: string
-          rating_vote_id: string
-          user_id: string
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['rating_vote_likes']['Row'], 'id' | 'created_at'>
-        Update: never
-      }
-      public_profiles: {
-        Row: {
-          id: string
-          display_name: string | null
-          avatar_url: string | null
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['public_profiles']['Row'], 'updated_at'>
-        Update: Partial<Database['public']['Tables']['public_profiles']['Insert']>
-      }
-      farewells: {
-        Row: {
-          id: string
-          player_id: string
-          departure_type: DepartureType
-          destination_club: string | null
-          departure_note: string | null
-          banner_image_url: string | null
-          appearances: number | null
-          goals: number | null
-          assists: number | null
-          clean_sheets: number | null
-          joined_at: string | null
-          left_at: string | null
-          is_published: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['farewells']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['farewells']['Insert']>
-      }
-      transfers: {
-        Row: TransferRow
-        Insert: Omit<Database['public']['Tables']['transfers']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['transfers']['Insert']>
-      }
-      seasons: {
-        Row: SeasonRow
-        Insert: Omit<Database['public']['Tables']['seasons']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['seasons']['Insert']>
-      }
-      player_season_stats: {
-        Row: {
-          id: string
-          player_id: string
-          season: string
-          season_id: string | null
-          appearances: number
-          goals: number
-          assists: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['player_season_stats']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['player_season_stats']['Insert']>
-      }
-      farewell_comments: {
-        Row: {
-          id: string
-          farewell_id: string
-          user_id: string
-          content: string
-          is_hidden: boolean
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['farewell_comments']['Row'], 'id' | 'is_hidden' | 'created_at'>
-        Update: Pick<Database['public']['Tables']['farewell_comments']['Row'], 'is_hidden'>
-      }
-      player_comments: {
-        Row: {
-          id: string
-          player_id: string
-          user_id: string
-          content: string
-          is_hidden: boolean
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['player_comments']['Row'], 'id' | 'is_hidden' | 'created_at'>
-        Update: Pick<Database['public']['Tables']['player_comments']['Row'], 'is_hidden'>
-      }
     }
     Views: {
       [_ in never]: never
@@ -277,34 +118,21 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      poll_type:   PollType
+      poll_type: PollType
       poll_status: PollStatus
     }
   }
 }
 
-// ── 편의 타입 (Row shorthand) ──
-export type UserRow         = Database['public']['Tables']['users']['Row']
-export type PlayerRow       = Database['public']['Tables']['players']['Row']
-export type PollRow         = Database['public']['Tables']['polls']['Row']
-export type PollOptionRow   = Database['public']['Tables']['poll_options']['Row']
-export type VoteRow         = Database['public']['Tables']['votes']['Row']
-export type CommentRow      = Database['public']['Tables']['comments']['Row']
-export type CommentLikeRow  = Database['public']['Tables']['comment_likes']['Row']
-export type UserFeedbackRow = Database['public']['Tables']['user_feedback']['Row']
-export type PostRow         = Database['public']['Tables']['posts']['Row']
-export type PostReactionRow = Database['public']['Tables']['post_reactions']['Row']
-export type RatingVoteRow   = Database['public']['Tables']['rating_votes']['Row']
-export type RatingVoteLikeRow = Database['public']['Tables']['rating_vote_likes']['Row']
+export type UserRow = Database['public']['Tables']['users']['Row']
 export type PublicProfileRow = Database['public']['Tables']['public_profiles']['Row']
-export type FarewellRow     = Database['public']['Tables']['farewells']['Row']
-export type TransferTableRow = Database['public']['Tables']['transfers']['Row']
-export type SeasonTableRow  = Database['public']['Tables']['seasons']['Row']
-export type FarewellCommentRow = Database['public']['Tables']['farewell_comments']['Row']
-export type PlayerSeasonStatsRow = Database['public']['Tables']['player_season_stats']['Row']
-export type PlayerCommentRow = Database['public']['Tables']['player_comments']['Row']
+export type PlayerRow = Database['public']['Tables']['players']['Row']
+export type PollRow = Database['public']['Tables']['polls']['Row']
+export type PollOptionRow = Database['public']['Tables']['poll_options']['Row']
+export type VoteRow = Database['public']['Tables']['votes']['Row']
+export type CommentRow = Database['public']['Tables']['comments']['Row']
+export type CommentLikeRow = Database['public']['Tables']['comment_likes']['Row']
 
-// ── 조합 타입 (UI에서 주로 사용) ──
 export type PollWithOptions = PollRow & {
   poll_options: PollOptionRow[]
   player?: PlayerRow | null
@@ -316,30 +144,4 @@ export type CommentWithMeta = CommentRow & {
   user: Pick<PublicProfileRow, 'display_name' | 'avatar_url'>
   like_count: number
   is_liked: boolean
-}
-
-// club_status 테이블
-export type ClubStatusRow = {
-  id: number
-  current_season: string | null
-  current_season_id: string | null
-  league_rank: number | null
-  next_match_opponent: string | null
-  next_match_date: string | null
-  next_match_venue: 'home' | 'away' | null
-  top_appearances_player_id: string | null
-  top_appearances_count: number | null
-  top_goals_player_id: string | null
-  top_goals_count: number | null
-  top_assists_player_id: string | null
-  top_assists_count: number | null
-  updated_at: string
-}
-
-// 구단 정보 페이지용 조합 타입
-export type ClubStatusWithStats = ClubStatusRow & {
-  current_season_record?: Pick<SeasonRow, 'id' | 'name'> | null
-  top_appearances_player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
-  top_goals_player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
-  top_assists_player: Pick<PlayerRow, 'id' | 'name' | 'photo_url'> | null
 }

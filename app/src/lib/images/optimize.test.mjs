@@ -22,7 +22,6 @@ async function pngFile(width, height, name = 'source.png') {
 
 test('normalizes upload preset values', () => {
   assert.equal(getImageUploadPreset('poll-option'), 'poll-option')
-  assert.equal(getImageUploadPreset('transfer-banner'), 'transfer-banner')
   assert.equal(getImageUploadPreset('unknown'), 'general')
   assert.equal(getImageUploadPreset(null), 'general')
 })
@@ -41,15 +40,6 @@ test('converts png uploads to webp with webp content type', async () => {
   assert.equal(result.contentType, 'image/webp')
   assert.equal(metadata.format, 'webp')
   assert.ok((metadata.width ?? 0) <= 1280)
-})
-
-test('outputs transfer banners in a 21:9 frame', async () => {
-  const file = await pngFile(2400, 2400)
-  const result = await optimizeImageForUpload(file, 'transfer-banner')
-  const metadata = await sharp(result.bytes).metadata()
-
-  assert.equal(metadata.width, 1400)
-  assert.equal(metadata.height, 600)
 })
 
 test('preserves cropped poll thumbnail frame', async () => {

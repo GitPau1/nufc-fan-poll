@@ -8,3 +8,7 @@ export const IS_MOCK =
   !url ||
   url.trim() === '' ||
   !url.startsWith('http')
+
+export const ENABLE_DEV_MOCK_AUTH =
+  process.env.NODE_ENV === 'development' &&
+  process.env.NEXT_PUBLIC_ENABLE_DEV_MOCK_AUTH !== 'false'

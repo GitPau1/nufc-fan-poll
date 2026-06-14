@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
 import { getPollList } from '@/lib/queries/polls'
-import { isAdmin } from '@/lib/admin'
 import { datetimeLocalToKoreaIso } from '@/lib/datetime'
 import type { PollType } from '@/types/database'
 
@@ -16,18 +15,12 @@ export async function createUserPoll(formData: FormData): Promise<{ pollId?: str
   const type = (formData.get('type') as PollType) || 'subject_options'
 
   if (IS_MOCK) {
-    if (type === 'overall_rating' && !isAdmin('mock@example.com')) {
-      return { error: '전체 평가는 관리자만 만들 수 있습니다.' }
-    }
     return { pollId: 'poll-1' }
   }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: '로그인이 필요합니다.' }
-  if (type === 'overall_rating' && !isAdmin(user.email)) {
-    return { error: '전체 평가는 관리자만 만들 수 있습니다.' }
-  }
 
   const title = String(formData.get('title') ?? '').trim()
   const closesAtInput = String(formData.get('closes_at') ?? '').trim()
@@ -136,7 +129,7 @@ export async function deleteUserPoll(pollId: string): Promise<{ error?: string }
     if (error) return { error: error.message }
   }
 
-  for (const table of ['comments', 'votes', 'rating_votes', 'poll_options'] as const) {
+  for (const table of ['comments', 'votes', 'poll_options'] as const) {
     const { error } = await serviceSupabase.from(table).delete().eq('poll_id', pollId)
     if (error) return { error: error.message }
   }

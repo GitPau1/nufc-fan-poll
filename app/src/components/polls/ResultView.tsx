@@ -6,7 +6,6 @@ import type { PollDetail, VoteCountMap } from '@/lib/queries/polls'
 import type { CommentItem } from '@/lib/queries/comments'
 import { trackEvent } from '@/lib/analytics/mixpanel'
 import { cn } from '@/lib/utils'
-import { buildPollResultItems } from '@/lib/polls/result-ranking'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { CommentsSection } from './CommentsSection'
@@ -20,12 +19,34 @@ interface ResultViewProps {
   comments: CommentItem[]
 }
 
+function buildResultItems(
+  poll: PollDetail,
+  voteCounts: VoteCountMap,
+  myOptionId: string | null,
+) {
+  const total = poll.poll_options.reduce((sum, option) => sum + (voteCounts[option.id] ?? 0), 0)
+
+  return poll.poll_options
+    .map((option) => {
+      const count = voteCounts[option.id] ?? 0
+      const optionPlayer = option.player_id ? poll.option_players?.[option.player_id] : null
+      return {
+        option,
+        count,
+        percent: total > 0 ? Math.round((count / total) * 100) : 0,
+        isMine: option.id === myOptionId,
+        imageUrl: option.image_url ?? optionPlayer?.photo_url ?? null,
+      }
+    })
+    .sort((a, b) => b.count - a.count || a.option.display_order - b.option.display_order)
+}
+
 export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultViewProps) {
   const options  = poll.poll_options
   const counts   = options.map(o => voteCounts[o.id] ?? 0)
   const total    = counts.reduce((a, b) => a + b, 0)
   const isClosed = poll.status === 'closed'
-  const resultItems = buildPollResultItems(options, voteCounts, myOptionId, poll.option_players)
+  const resultItems = buildResultItems(poll, voteCounts, myOptionId)
   const topItem = resultItems[0]
 
   const [animated, setAnimated] = useState(false)

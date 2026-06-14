@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { IS_MOCK } from '@/lib/config'
+import { ENABLE_DEV_MOCK_AUTH, IS_MOCK } from '@/lib/config'
 import { isAdmin } from '@/lib/admin'
 
 export type HeaderAuth = {
@@ -17,7 +17,7 @@ type HeaderProfile = {
 }
 
 export async function getHeaderAuth(): Promise<HeaderAuth | null> {
-  if (IS_MOCK) {
+  if (IS_MOCK || ENABLE_DEV_MOCK_AUTH) {
     const cookieStore = await cookies()
     if (!cookieStore.get('mock-auth')) return null
 
@@ -51,6 +51,8 @@ export async function getHeaderAuth(): Promise<HeaderAuth | null> {
 }
 
 export async function mockLogin() {
+  if (!IS_MOCK && !ENABLE_DEV_MOCK_AUTH) return
+
   const cookieStore = await cookies()
   cookieStore.set('mock-auth', 'true', {
     path: '/',
@@ -62,6 +64,8 @@ export async function mockLogin() {
 }
 
 export async function mockLogout() {
+  if (!IS_MOCK && !ENABLE_DEV_MOCK_AUTH) return
+
   const cookieStore = await cookies()
   cookieStore.delete('mock-auth')
   revalidatePath('/', 'layout')

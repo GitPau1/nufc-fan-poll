@@ -1,14 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { ChevronRight, Lock, Users } from 'lucide-react'
+import { Clock, Lock, Users } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import type { PollListItem } from '@/lib/queries/polls'
 import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
 import { getEffectivePollStatus } from '@/lib/polls/status'
 import { formatScheduled } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { CountdownTimer } from './CountdownTimer'
 
 interface PollCardProps {
   poll: PollListItem
@@ -23,15 +22,43 @@ function getThumbnailUrl(poll: PollListItem): string {
 }
 
 function getPollTypeLabel(type: PollListItem['type']): string {
-  if (type === 'overall_rating') return '전체 평가'
   if (type === 'free_choice') return '자유 선택'
   if (type === 'subject_options' || type === 'evaluation') return '평가'
   return '선택'
 }
 
-// ── 목록형 투표 아이템 ───────────────────────────────────────
-function PollListRow({ poll }: { poll: PollListItem }) {
+function getStatusLabel(poll: PollListItem): string {
+  if (poll.status === 'scheduled') return poll.scheduled_at ? formatScheduled(poll.scheduled_at) : '공개 예정'
+  if (poll.status === 'closed') return '종료됨'
+  return '진행중'
+}
+
+function formatTimeLeft(closesAt: string): string {
+  const diff = new Date(closesAt).getTime() - Date.now()
+  if (diff <= 0) return '마감 임박'
+  const hours = Math.floor(diff / 3_600_000)
+  const days = Math.floor(hours / 24)
+  if (days > 0) return `${days}일 남음`
+  if (hours > 0) return `${hours}시간 남음`
+  return `${Math.max(1, Math.floor(diff / 60_000))}분 남음`
+}
+
+function getOptionPreview(poll: PollListItem): string {
+  if (poll.poll_options.length === 0) return '후보 공개 전'
+  const preview = poll.poll_options
+    .slice()
+    .sort((a, b) => a.display_order - b.display_order)
+    .slice(0, 3)
+    .map(option => option.label)
+    .join(' · ')
+  const rest = poll.poll_options.length - 3
+  return rest > 0 ? `${preview} 외 ${rest}개` : preview
+}
+
+// ── 피드형 투표 카드 ───────────────────────────────────────
+function PollFeedCard({ poll }: { poll: PollListItem }) {
   const isActive = poll.status === 'active'
+  const isScheduled = poll.status === 'scheduled'
   const pathname = usePathname()
 
   return (
@@ -45,79 +72,63 @@ function PollListRow({ poll }: { poll: PollListItem }) {
         poll_status: poll.status,
         creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
       })}
-      className={`block border-b border-border bg-surface px-4 py-4 active:bg-disabled transition-colors ${!isActive ? 'opacity-70' : ''}`}
+      className={`block overflow-hidden rounded-md border border-border bg-surface shadow-g200 active:bg-disabled transition-colors ${poll.status === 'closed' ? 'opacity-75' : ''}`}
     >
-      <div className="flex items-center gap-4">
-        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-disabled">
+      <div className="px-4 py-3">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          <Badge variant="secondary" className="text-[10px] font-semibold pointer-events-none">
+            {getPollTypeLabel(poll.type)}
+          </Badge>
+          <Badge className="text-[10px] font-semibold bg-primary-dim text-primary-dark border-0 hover:bg-primary-dim pointer-events-none">
+            {getStatusLabel(poll)}
+          </Badge>
+        </div>
+
+        <p className="line-clamp-2 text-[18px] font-black leading-snug tracking-tight text-foreground">{poll.title}</p>
+        {poll.description && (
+          <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">{poll.description}</p>
+        )}
+      </div>
+
+      <div className="px-4 pb-3">
+        <div className="overflow-hidden rounded-md bg-disabled">
           <img
             src={getThumbnailUrl(poll)}
             alt={poll.title}
-            className={`h-full w-full object-cover ${!isActive ? 'grayscale-[.4]' : ''}`}
+            className={`aspect-[16/9] w-full object-cover ${isScheduled ? 'scale-105 blur-sm' : ''} ${poll.status === 'closed' ? 'grayscale-[.35]' : ''}`}
           />
         </div>
+      </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-            <Badge variant="secondary" className="text-[10px] font-semibold pointer-events-none">
-              {getPollTypeLabel(poll.type)}
-            </Badge>
-            {isActive ? (
-              <Badge className="text-[10px] font-semibold bg-primary-dim text-primary-dark border-0 hover:bg-primary-dim pointer-events-none">
-                <CountdownTimer closesAt={poll.closes_at} />
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-[10px] font-medium text-muted-foreground pointer-events-none">
-                종료
-              </Badge>
-            )}
-          </div>
-          <p className="line-clamp-1 text-[15px] font-black leading-snug text-foreground">{poll.title}</p>
-          {poll.description && (
-            <p className="mt-1 line-clamp-1 text-[12px] leading-snug text-muted-foreground">{poll.description}</p>
-          )}
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-none text-muted-foreground">
-            {poll.creator_name && <span>{poll.creator_name}</span>}
-            <span className="inline-flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" />
-              {isActive ? `${poll.vote_count.toLocaleString()}명 참여` : '결과 열람 가능'}
+      <div className="border-t border-border px-4 py-3">
+        <p className="line-clamp-1 text-[12px] font-semibold text-muted-foreground">{getOptionPreview(poll)}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-muted-foreground">
+          {poll.creator_name && <span>{poll.creator_name}</span>}
+          <span className="inline-flex items-center gap-1">
+            <Users className="h-3.5 w-3.5" />
+            {poll.vote_count.toLocaleString()}명 참여
+          </span>
+          {isActive ? (
+            <span className="inline-flex items-center gap-1 text-primary-dark">
+              <Clock className="h-3.5 w-3.5" />
+              {formatTimeLeft(poll.closes_at)}
             </span>
-          </div>
+          ) : poll.status === 'closed' ? (
+            <span>최종 결과 보기</span>
+          ) : (
+            <span className="inline-flex items-center gap-1">
+              <Lock className="h-3.5 w-3.5" />
+              공개 전
+            </span>
+          )}
         </div>
-
-        <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+        {isActive && (
+          <div className="mt-2 inline-flex text-[11px] font-bold text-primary">
+            결과는 참여 후 공개
+          </div>
+        )}
       </div>
     </Link>
-  )
-}
-
-function ScheduledRow({ poll }: { poll: PollListItem }) {
-  return (
-    <div className="border-b border-border bg-surface px-4 py-4">
-      <div className="flex items-center gap-4">
-        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-disabled">
-          <img
-            src={getThumbnailUrl(poll)}
-            alt=""
-            className="h-full w-full scale-105 object-cover blur-sm"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <Badge variant="secondary" className="text-[10px] font-semibold pointer-events-none">
-              {getPollTypeLabel(poll.type)}
-            </Badge>
-            <Badge className="text-[10px] font-semibold bg-primary-dim text-primary-dark border-0 hover:bg-primary-dim pointer-events-none">
-              {poll.scheduled_at ? formatScheduled(poll.scheduled_at) : '공개 예정'}
-            </Badge>
-          </div>
-          <p className="line-clamp-1 text-[15px] font-black text-foreground">{poll.title}</p>
-          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-muted-foreground">
-            {poll.creator_name && <span>{poll.creator_name}</span>}
-            <span className="inline-flex items-center gap-1"><Lock className="h-3.5 w-3.5" /> 공개 전</span>
-          </p>
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -127,6 +138,5 @@ export function PollCard({ poll }: PollCardProps) {
     ...poll,
     status: getEffectivePollStatus(poll),
   }
-  if (effectivePoll.status === 'scheduled') return <ScheduledRow poll={effectivePoll} />
-  return <PollListRow poll={effectivePoll} />
+  return <PollFeedCard poll={effectivePoll} />
 }

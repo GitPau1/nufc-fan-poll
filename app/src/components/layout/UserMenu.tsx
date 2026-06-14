@@ -8,10 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 interface UserMenuProps {
   avatarUrl?: string
   displayName?: string
-  isAdmin: boolean
+  isAdmin?: boolean
 }
 
-export function UserMenu({ avatarUrl, displayName, isAdmin }: UserMenuProps) {
+export function UserMenu({ avatarUrl, displayName }: UserMenuProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -72,16 +72,6 @@ export function UserMenu({ avatarUrl, displayName, isAdmin }: UserMenuProps) {
           >
             마이페이지
           </Link>
-
-          {isAdmin && (
-            <Link
-              href="/admin"
-              onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 text-[13px] font-semibold text-primary border-b border-border hover:bg-primary-dim"
-            >
-              ⚙ 관리자 페이지
-            </Link>
-          )}
 
           <button
             onClick={handleLogout}

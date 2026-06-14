@@ -1,11 +1,9 @@
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
-import { getPollById, getVoteCounts, getMyVote, getMyRatingVoteCount, getRatingResults } from '@/lib/queries/polls'
+import { getPollById, getVoteCounts, getMyVote } from '@/lib/queries/polls'
 import { getComments } from '@/lib/queries/comments'
 import { TypeAPollClient } from '@/components/polls/TypeAPollClient'
 import { TypeBPollClient } from '@/components/polls/TypeBPollClient'
-import { OverallRatingPollClient } from '@/components/polls/OverallRatingPollClient'
-import { OverallRatingResultView } from '@/components/polls/OverallRatingResultView'
 import { ResultView } from '@/components/polls/ResultView'
 import { IS_MOCK } from '@/lib/config'
 
@@ -33,18 +31,6 @@ export default async function PollPage({ params }: PollPageProps) {
   if (!poll) notFound()
 
   const isClosed = poll.status === 'closed'
-
-  if (poll.type === 'overall_rating') {
-    const targetCount = poll.poll_options.filter(option => option.player_id).length
-    const ratingVoteCount = user || IS_MOCK ? await getMyRatingVoteCount(id, user?.id ?? 'mock-user') : 0
-    const hasRated = targetCount > 0 && ratingVoteCount >= targetCount
-    if (isClosed || hasRated) {
-      const results = await getRatingResults(poll, user?.id ?? null)
-      return <OverallRatingResultView poll={poll} results={results} hasVoted={hasRated} />
-    }
-
-    return <OverallRatingPollClient poll={poll} isAuthenticated={!!user} />
-  }
 
   // 내 투표 여부 확인
   // mock 모드: 로그인 여부와 무관하게 쿠키 확인 (투표 후 로그아웃해도 결과 유지)

@@ -18,15 +18,14 @@ import {
 } from '@/components/ui/sheet'
 
 type FreeOption = { label: string; description: string; imageUrl: string }
-type CreatePollType = Extract<PollType, 'subject_options' | 'question_targets' | 'free_choice' | 'overall_rating'>
+type CreatePollType = Extract<PollType, 'subject_options' | 'question_targets' | 'free_choice'>
 type PlayerPickMode = 'single' | 'multiple'
-type PlayerFilter = 'all' | 'first_team' | 'loan' | 'u21' | 'outside'
+type PlayerFilter = 'all' | 'first_team' | 'loan' | 'u21'
 
-const POLL_TYPES: Array<{ type: CreatePollType; label: string; description: string; adminOnly?: boolean }> = [
+const POLL_TYPES: Array<{ type: CreatePollType; label: string; description: string }> = [
   { type: 'subject_options', label: '대상+선택지', description: '한 선수에 대해 여러 선택지를 붙입니다.' },
   { type: 'question_targets', label: '질문+선수', description: '질문 하나에 여러 선수를 후보로 둡니다.' },
   { type: 'free_choice', label: '자유 선택', description: '선수와 무관한 선택지를 직접 만듭니다.' },
-  { type: 'overall_rating', label: '전체 평가', description: '여러 선수를 점수와 코멘트로 평가합니다.', adminOnly: true },
 ]
 
 const POSITION_ORDER: Array<Position | 'ETC'> = ['GK', 'DEF', 'MID', 'FWD', 'MGR', 'ETC']
@@ -44,10 +43,9 @@ const PLAYER_FILTERS: Array<{ id: PlayerFilter; label: string }> = [
   { id: 'first_team', label: '1군' },
   { id: 'loan', label: '임대' },
   { id: 'u21', label: 'U21' },
-  { id: 'outside', label: '구단 외' },
 ]
 
-function isClubInside(player: PollFormPlayer): boolean {
+function isSelectablePlayer(player: PollFormPlayer): boolean {
   return player.is_active
 }
 
@@ -57,10 +55,9 @@ function getPlayerMeta(player: PollFormPlayer): string {
   return `${player.position ?? '기타'} · ${number} · ${status}`
 }
 
-export function UserPollCreateForm({ players, canCreateOverall }: { players: PollFormPlayer[]; canCreateOverall: boolean }) {
+export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
   const router = useRouter()
-  const availableTypes = POLL_TYPES.filter(type => !type.adminOnly || canCreateOverall)
-  const [pollType, setPollType] = useState<CreatePollType>(availableTypes[0]?.type ?? 'subject_options')
+  const [pollType, setPollType] = useState<CreatePollType>(POLL_TYPES[0].type)
   const [textOptions, setTextOptions] = useState(['', ''])
   const [freeOptions, setFreeOptions] = useState<FreeOption[]>([
     { label: '', description: '', imageUrl: '' },
@@ -137,12 +134,7 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
       }))))
       fd.delete('player_id')
     } else {
-      const targetPlayerIds = pollType === 'overall_rating'
-        ? selectedPlayerIds.filter(id => {
-          const player = players.find(item => item.id === id)
-          return ['GK', 'DEF', 'MID', 'FWD'].includes(player?.position ?? '')
-        })
-        : selectedPlayerIds
+      const targetPlayerIds = selectedPlayerIds
 
       if (targetPlayerIds.length < 2) {
         setMessage('선수를 최소 2명 선택해주세요.')
@@ -235,7 +227,7 @@ export function UserPollCreateForm({ players, canCreateOverall }: { players: Pol
         <section className="rounded-md border border-border bg-surface p-4 shadow-g200">
           <p className="text-[13px] font-bold text-foreground">투표 유형</p>
           <div className="mt-3 grid gap-2">
-            {availableTypes.map(item => {
+            {POLL_TYPES.map(item => {
               const selected = item.type === pollType
               return (
                 <button
@@ -438,8 +430,7 @@ function PlayerPickerSheet({
       const haystack = `${player.name} ${player.position ?? ''} ${player.squad_number ?? ''}`.toLowerCase()
       return haystack.includes(normalizedQuery)
     }).filter(player => {
-      if (playerFilter === 'outside') return !isClubInside(player)
-      if (!isClubInside(player)) return false
+      if (!isSelectablePlayer(player)) return false
       if (playerFilter === 'all') return true
       return player.squad_status === playerFilter
     })

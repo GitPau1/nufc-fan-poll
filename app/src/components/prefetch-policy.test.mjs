@@ -18,7 +18,4 @@ function assertLinkDisablesPrefetch(relativePath, hrefPattern) {
 test('expensive public navigation and repeated detail links do not prefetch RSC payloads', () => {
   assertLinkDisablesPrefetch('components/layout/BottomNav.tsx', 'href')
   assertLinkDisablesPrefetch('components/polls/PollCard.tsx', '`/polls/\\$\\{poll\\.id\\}`')
-  assertLinkDisablesPrefetch('components/club/SquadList.tsx', '`/players/\\$\\{player\\.id\\}`')
-  assertLinkDisablesPrefetch('components/home/FarewellBanner.tsx', '`/farewells/\\$\\{farewell\\.id\\}`')
-  assertLinkDisablesPrefetch('components/farewells/FarewellCard.tsx', '`/farewells/\\$\\{farewell\\.id\\}`')
 })

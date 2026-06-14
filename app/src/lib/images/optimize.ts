@@ -5,7 +5,6 @@ export type ImageUploadPreset =
   | 'player-photo'
   | 'poll-thumbnail'
   | 'poll-option'
-  | 'transfer-banner'
 
 type PresetConfig = {
   width: number
@@ -19,7 +18,6 @@ const PRESETS: Record<ImageUploadPreset, PresetConfig> = {
   'player-photo': { width: 720, fit: 'inside', quality: 72 },
   'poll-thumbnail': { width: 1280, fit: 'inside', quality: 72 },
   'poll-option': { width: 720, fit: 'inside', quality: 70 },
-  'transfer-banner': { width: 1400, height: 600, fit: 'cover', quality: 72 },
 }
 
 const PRESET_VALUES = new Set<ImageUploadPreset>([
@@ -27,7 +25,6 @@ const PRESET_VALUES = new Set<ImageUploadPreset>([
   'player-photo',
   'poll-thumbnail',
   'poll-option',
-  'transfer-banner',
 ])
 
 export function getImageUploadPreset(value: FormDataEntryValue | string | null): ImageUploadPreset {

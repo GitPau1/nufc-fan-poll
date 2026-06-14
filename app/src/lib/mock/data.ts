@@ -1,37 +1,30 @@
 import type { PlayerRow, PollOptionRow } from '@/types/database'
 import type { PollDetail, PollListItem, VoteCountMap } from '@/lib/queries/polls'
-import type { PostListItem } from '@/lib/queries/posts'
 
 // ── 선수 ────────────────────────────────────────────────────
 const isak: PlayerRow = {
   id: 'p-isak', name: '알렉산더 이삭', position: 'FWD',
   squad_number: 14, photo_url: null, is_active: true, squad_status: 'first_team',
-  nationality: null, birth_date: null,
 }
 const bruno: PlayerRow = {
   id: 'p-bruno', name: '브루노 기마랑이스', position: 'MID',
   squad_number: 39, photo_url: null, is_active: true, squad_status: 'first_team',
-  nationality: null, birth_date: null,
 }
 const trippier: PlayerRow = {
   id: 'p-trippier', name: '키어런 트리피어', position: 'DEF',
   squad_number: 2, photo_url: null, is_active: true, squad_status: 'first_team',
-  nationality: null, birth_date: null,
 }
 const gordon: PlayerRow = {
   id: 'p-gordon', name: '앤서니 고든', position: 'FWD',
   squad_number: 10, photo_url: null, is_active: true, squad_status: 'first_team',
-  nationality: null, birth_date: null,
 }
 const wilson: PlayerRow = {
   id: 'p-wilson', name: '캘럼 윌슨', position: 'FWD',
   squad_number: 9, photo_url: null, is_active: true, squad_status: 'first_team',
-  nationality: null, birth_date: null,
 }
 const pope: PlayerRow = {
   id: 'p-pope', name: '닉 포프', position: 'GK',
   squad_number: 22, photo_url: null, is_active: true, squad_status: 'first_team',
-  nationality: null, birth_date: null,
 }
 
 export const MOCK_PLAYERS = [isak, bruno, trippier, gordon, wilson, pope]
@@ -267,54 +260,6 @@ export const MOCK_COMMENTS: Record<string, MockComment[]> = {
     },
   ],
 }
-
-export const MOCK_POSTS: PostListItem[] = [
-  {
-    id: 'post-1',
-    type: 'official',
-    content: '뉴캐슬 공식 계정에 프리시즌 일정 관련 공지가 올라왔습니다. 자세한 내용은 원문에서 확인하는 게 좋겠어요.',
-    url: 'https://x.com/NUFC/status/123',
-    embed_kind: 'x',
-    embed_title: 'Pre-season fixtures confirmed. Full schedule and ticket details are now available.',
-    embed_domain: 'x.com',
-    created_at: new Date(Date.now() - 18 * 60_000).toISOString(),
-    updated_at: new Date(Date.now() - 18 * 60_000).toISOString(),
-    user: { display_name: 'Toon Army', avatar_url: null },
-    is_mine: true,
-    my_reaction: 'expecting',
-    reaction_counts: { expecting: 24, shocked: 3, angry: 0, sad: 1, curious: 6 },
-  },
-  {
-    id: 'post-2',
-    type: 'info',
-    content: '이 전술 분석 영상은 후방 빌드업 변화를 꽤 잘 설명해요. 특히 오른쪽 측면 전개 파트가 볼 만합니다.',
-    url: 'https://youtu.be/dQw4w9WgXcQ',
-    embed_kind: 'youtube',
-    embed_title: 'Newcastle tactical analysis: right-side buildup',
-    embed_domain: 'youtu.be',
-    created_at: new Date(Date.now() - 60 * 60_000).toISOString(),
-    updated_at: new Date(Date.now() - 42 * 60_000).toISOString(),
-    user: { display_name: 'Geordie Notes', avatar_url: null },
-    is_mine: false,
-    my_reaction: 'shocked',
-    reaction_counts: { expecting: 8, shocked: 5, angry: 1, sad: 2, curious: 15 },
-  },
-  {
-    id: 'post-3',
-    type: 'free',
-    content: '이번 여름은 루머보다 실제 영입 속도가 더 중요할 것 같아요. 센터백 한 자리만 빨리 정리되면 분위기가 꽤 달라질 듯.',
-    url: 'https://www.nufc.com/',
-    embed_kind: 'link',
-    embed_title: 'Newcastle United summer planning notes',
-    embed_domain: 'nufc.com',
-    created_at: new Date(Date.now() - 3 * 60 * 60_000).toISOString(),
-    updated_at: new Date(Date.now() - 3 * 60 * 60_000).toISOString(),
-    user: { display_name: 'Keegan Mode', avatar_url: null },
-    is_mine: false,
-    my_reaction: 'curious',
-    reaction_counts: { expecting: 11, shocked: 0, angry: 4, sad: 2, curious: 9 },
-  },
-]
 
 // ── 마이페이지용 참여 투표 목록 ─────────────────────────────
 export type ParticipatedPoll = {

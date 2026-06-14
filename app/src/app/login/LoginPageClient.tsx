@@ -1,6 +1,6 @@
 'use client'
 
-import { IS_MOCK } from '@/lib/config'
+import { ENABLE_DEV_MOCK_AUTH, IS_MOCK } from '@/lib/config'
 import { mockLogin } from '@/lib/actions/auth'
 import { useRouter } from 'next/navigation'
 
@@ -8,7 +8,7 @@ export function LoginPageClient() {
   const router = useRouter()
 
   async function handleLogin() {
-    if (IS_MOCK) {
+    if (IS_MOCK || ENABLE_DEV_MOCK_AUTH) {
       await mockLogin()
       router.push('/')
       return
@@ -24,7 +24,7 @@ export function LoginPageClient() {
   }
 
   async function handleSignUp() {
-    if (IS_MOCK) {
+    if (IS_MOCK || ENABLE_DEV_MOCK_AUTH) {
       await mockLogin()
       router.push('/onboarding')
       return

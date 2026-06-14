@@ -88,13 +88,17 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
   return (
     <div className="px-4 pt-4 pb-10 flex flex-col gap-3 animate-enter">
       <PollFeedAnalytics sourcePage="polls" pollCount={effectivePolls.length} />
+      <div className="mb-1">
+        <h1 className="text-[22px] font-black tracking-tight text-foreground">투표</h1>
+        <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">팬들의 반응이 쌓이는 질문입니다.</p>
+      </div>
       <div className="mb-1 flex items-center justify-between gap-3">
         <PollTabs activeTab={activeTab} ongoingCount={ongoing.length} closedCount={closed.length} onChange={setActiveTab} />
         {headerRight}
       </div>
 
       {visiblePolls.length > 0 ? (
-        <div className="overflow-hidden rounded-md border border-border bg-surface shadow-g200">
+        <div className="flex flex-col gap-3">
           {visiblePolls.map(p => <PollCard key={p.id} poll={p} />)}
         </div>
       ) : (

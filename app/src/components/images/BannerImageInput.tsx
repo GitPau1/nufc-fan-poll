@@ -18,9 +18,9 @@ type CropState = {
 }
 
 function setInputFile(input: HTMLInputElement, file: File) {
-  const transfer = new DataTransfer()
-  transfer.items.add(file)
-  input.files = transfer.files
+  const data = new DataTransfer()
+  data.items.add(file)
+  input.files = data.files
 }
 
 export function CroppedImageInput({

@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { IS_MOCK } from '@/lib/config'
 import { MOCK_PARTICIPATED, MOCK_POLL_LIST } from '@/lib/mock/data'
 import { getEffectivePollStatus } from '@/lib/polls/status'
-import { countRatingParticipantsByPoll } from '@/lib/polls/participation'
 import { MyPageClient } from '@/components/my/MyPageClient'
 
 type PollStatusForMy = 'scheduled' | 'active' | 'closed'
@@ -85,36 +84,7 @@ export default async function MyPage() {
       }]
     })
 
-  const { data: ratingVoteRows } = await supabase
-    .from('rating_votes')
-    .select(`
-      created_at,
-      poll:polls(id, title, status, scheduled_at, closes_at)
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  type ParticipatedRatingVoteRow = {
-    created_at: string
-    poll: JoinedOne<{ id: string; title: string; status: PollStatusForMy; scheduled_at: string | null; closes_at: string }>
-  }
-
-  const participationByPoll = new Map<string, (typeof votedPolls)[number]>()
-  for (const item of votedPolls) {
-    participationByPoll.set(item.pollId, item)
-  }
-  for (const row of ((ratingVoteRows ?? []) as ParticipatedRatingVoteRow[])) {
-    const poll = one(row.poll)
-    if (!poll || participationByPoll.has(poll.id)) continue
-    participationByPoll.set(poll.id, {
-      pollId: poll.id,
-      pollTitle: poll.title,
-      optionLabel: '전체 평가 제출',
-      votedAt: row.created_at,
-      pollStatus: getEffectivePollStatus(poll),
-    })
-  }
-  const participatedPolls = Array.from(participationByPoll.values())
+  const participatedPolls = votedPolls
     .sort((a, b) => new Date(b.votedAt).getTime() - new Date(a.votedAt).getTime())
 
   let createdPolls: Array<{
@@ -128,14 +98,13 @@ export default async function MyPage() {
   const createdPollResult = await supabase
     .from('polls')
     .select(`
-      id, type, title, status, scheduled_at, closes_at, created_at,
+      id, title, status, scheduled_at, closes_at, created_at,
       vote_count:votes(count)
     `)
     .eq('created_by', user.id)
     .order('created_at', { ascending: false }) as {
       data: Array<{
         id: string
-        type: string
         title: string
         status: PollStatusForMy
         scheduled_at: string | null
@@ -147,29 +116,12 @@ export default async function MyPage() {
   }
 
   if (!createdPollResult.error) {
-    const createdPollsData = createdPollResult.data ?? []
-    const overallRatingPollIds = createdPollsData
-      .filter(poll => poll.type === 'overall_rating')
-      .map(poll => poll.id)
-    const { data: ratingRows } = overallRatingPollIds.length > 0
-      ? await supabase
-        .from('rating_votes')
-        .select('poll_id, user_id')
-        .in('poll_id', overallRatingPollIds) as {
-          data: Array<{ poll_id: string; user_id: string }> | null
-          error: { message?: string } | null
-        }
-      : { data: [] }
-    const ratingParticipantCounts = countRatingParticipantsByPoll(ratingRows ?? [])
-
-    createdPolls = createdPollsData.map(poll => ({
+    createdPolls = (createdPollResult.data ?? []).map(poll => ({
       pollId: poll.id,
       pollTitle: poll.title,
       createdAt: poll.created_at,
       pollStatus: getEffectivePollStatus(poll),
-      voteCount: poll.type === 'overall_rating'
-        ? ratingParticipantCounts.get(poll.id) ?? 0
-        : poll.vote_count?.[0]?.count ?? 0,
+      voteCount: poll.vote_count?.[0]?.count ?? 0,
     }))
   }
 

@@ -3,23 +3,19 @@ import { redirect } from 'next/navigation'
 import { PollPageHeader } from '@/components/polls/PollPageHeader'
 import { UserPollCreateForm } from '@/components/polls/UserPollCreateForm'
 import { IS_MOCK } from '@/lib/config'
-import { isAdmin } from '@/lib/admin'
 import { getPollFormPlayers } from '@/lib/queries/polls'
 
 export default async function PollCreatePage() {
   let isLoggedIn = false
-  let canCreateOverall = false
 
   if (IS_MOCK) {
     const cookieStore = await cookies()
     isLoggedIn = cookieStore.get('mock-auth')?.value === 'true'
-    canCreateOverall = isAdmin('mock@example.com')
   } else {
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     isLoggedIn = Boolean(user)
-    canCreateOverall = isAdmin(user?.email)
   }
 
   if (!isLoggedIn) redirect('/login')
@@ -34,7 +30,7 @@ export default async function PollCreatePage() {
           <h1 className="text-[20px] font-black tracking-tight text-foreground">투표 만들기</h1>
           <p className="mt-1 text-[13px] text-muted-foreground">투표는 생성 즉시 시작되고 지정한 종료일에 마감됩니다.</p>
         </div>
-        <UserPollCreateForm players={players} canCreateOverall={canCreateOverall} />
+        <UserPollCreateForm players={players} />
       </main>
     </>
   )

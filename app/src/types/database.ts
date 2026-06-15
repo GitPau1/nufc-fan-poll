@@ -37,6 +37,7 @@ export interface Database {
           position: Position
           squad_number: number | null
           photo_url: string | null
+          base_rating: number
           is_active: boolean
           squad_status: PlayerStatus
         }

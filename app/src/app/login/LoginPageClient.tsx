@@ -2,15 +2,17 @@
 
 import { ENABLE_DEV_MOCK_AUTH, IS_MOCK } from '@/lib/config'
 import { mockLogin } from '@/lib/actions/auth'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export function LoginPageClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') ?? '/'
 
   async function handleLogin() {
     if (IS_MOCK || ENABLE_DEV_MOCK_AUTH) {
       await mockLogin()
-      router.push('/')
+      router.push(next)
       return
     }
     const { createClient } = await import('@/lib/supabase/client')
@@ -18,7 +20,7 @@ export function LoginPageClient() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     })
   }
@@ -34,7 +36,7 @@ export function LoginPageClient() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     })
   }

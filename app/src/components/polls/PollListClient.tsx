@@ -1,8 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { PollCard } from './PollCard'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Users } from 'lucide-react'
+import { PollCard, formatTimeLeft, getStatusLabel, getThumbnailUrl } from './PollCard'
 import { PollFeedAnalytics } from '@/components/analytics/AppAnalytics'
+import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
 import { loadMorePolls } from '@/lib/actions/polls'
 import { getEffectivePollStatus } from '@/lib/polls/status'
 import type { PollListItem } from '@/lib/queries/polls'
@@ -68,6 +72,8 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
   const ongoing = effectivePolls.filter(p => p.status !== 'closed')
   const closed  = effectivePolls.filter(p => p.status === 'closed')
   const visiblePolls = activeTab === 'ongoing' ? ongoing : closed
+  const featuredPoll = effectivePolls[0] ?? null
+  const listPolls = featuredPoll ? visiblePolls.filter(poll => poll.id !== featuredPoll.id) : visiblePolls
 
   if (polls.length === 0 && !loading) {
     return (
@@ -86,23 +92,21 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
   }
 
   return (
-    <div className="px-4 pt-4 pb-10 flex flex-col gap-3 animate-enter">
+    <div className="px-4 pt-4 pb-10 animate-enter">
       <PollFeedAnalytics sourcePage="polls" pollCount={effectivePolls.length} />
-      <div className="mb-1">
-        <h1 className="text-[22px] font-black tracking-tight text-foreground">투표</h1>
-        <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">팬들의 반응이 쌓이는 질문입니다.</p>
-      </div>
-      <div className="mb-1 flex items-center justify-between gap-3">
+      {featuredPoll && <PollHeroCard poll={featuredPoll} />}
+      <div className="py-3">
         <PollTabs activeTab={activeTab} ongoingCount={ongoing.length} closedCount={closed.length} onChange={setActiveTab} />
-        {headerRight}
       </div>
 
-      {visiblePolls.length > 0 ? (
-        <div className="flex flex-col gap-3">
-          {visiblePolls.map(p => <PollCard key={p.id} poll={p} />)}
+      {listPolls.length > 0 ? (
+        <div className="overflow-hidden rounded-md border border-border bg-surface">
+          <div className="divide-y divide-border">
+            {listPolls.map(p => <PollCard key={p.id} poll={p} />)}
+          </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 gap-2">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-border bg-surface py-20">
           <p className="text-sm font-semibold text-foreground">
             {activeTab === 'ongoing' ? '진행 중인 투표가 없습니다' : '종료된 투표가 없습니다'}
           </p>
@@ -112,6 +116,43 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
       <div ref={sentinelRef} />
       {loading && <Spinner />}
     </div>
+  )
+}
+
+function PollHeroCard({ poll }: { poll: PollListItem }) {
+  const pathname = usePathname()
+
+  return (
+    <Link
+      href={`/polls/${poll.id}`}
+      prefetch={false}
+      onClick={() => trackEvent('poll_card_clicked', {
+        source_page: getSourcePage(pathname),
+        poll_id: poll.id,
+        poll_type: poll.type,
+        poll_status: poll.status,
+        creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
+      })}
+      className="relative block aspect-[16/9] overflow-hidden rounded-lg bg-disabled"
+    >
+      <img src={getThumbnailUrl(poll)} alt="" className="h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121314]" />
+      <div className="absolute left-4 top-[63%] flex items-center gap-2">
+        <span className="inline-flex h-[21px] items-center rounded-pill bg-primary/55 px-[9px] text-[10px] font-semibold leading-[15px] text-white backdrop-blur-[2px]">
+          {poll.status === 'active' ? formatTimeLeft(poll.closes_at) : getStatusLabel(poll)}
+        </span>
+        <span className="inline-flex items-center gap-1 text-[11px] leading-[14px] text-white">
+          <Users className="h-3.5 w-3.5" />
+          {poll.vote_count.toLocaleString()}명
+        </span>
+      </div>
+      <div className="absolute inset-x-4 bottom-4">
+        <p className="truncate text-[17px] font-bold leading-5 text-white">{poll.title}</p>
+        {poll.description && (
+          <p className="mt-1 truncate text-[12px] leading-[16.5px] text-[#c7c7c7]">{poll.description}</p>
+        )}
+      </div>
+    </Link>
   )
 }
 
@@ -127,12 +168,12 @@ function PollTabs({
   onChange: (tab: PollTab) => void
 }) {
   const tabs = [
-    { id: 'ongoing' as const, label: '진행중인 투표', count: ongoingCount },
-    { id: 'closed' as const, label: '종료된 투표', count: closedCount },
+    { id: 'ongoing' as const, label: '진행중', count: ongoingCount },
+    { id: 'closed' as const, label: '종료', count: closedCount },
   ]
 
   return (
-    <div className="inline-flex rounded-lg border border-border bg-surface p-1">
+    <div className="flex w-full rounded-pill bg-[#eaeaea] p-1">
       {tabs.map(tab => {
         const selected = tab.id === activeTab
         return (
@@ -140,9 +181,9 @@ function PollTabs({
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`h-8 rounded-md px-2.5 text-[12px] font-bold transition-colors ${selected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`h-8 flex-1 rounded-pill px-2.5 text-center text-[12px] leading-[18px] transition-colors ${selected ? 'bg-surface font-semibold text-primary' : 'font-medium text-gray-3 hover:text-gray-2'}`}
           >
-            {tab.label} {tab.count}
+            {tab.label}
           </button>
         )
       })}

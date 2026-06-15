@@ -24,10 +24,21 @@ function loadConfig(env) {
   return cjsModule.exports
 }
 
-test('enables dev mock auth in development even with a real Supabase URL', () => {
+test('does not enable dev mock auth by default when a real Supabase URL exists', () => {
   const config = loadConfig({
     NODE_ENV: 'development',
     NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+  })
+
+  assert.equal(config.IS_MOCK, false)
+  assert.equal(config.ENABLE_DEV_MOCK_AUTH, false)
+})
+
+test('enables dev mock auth only when explicitly requested', () => {
+  const config = loadConfig({
+    NODE_ENV: 'development',
+    NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+    NEXT_PUBLIC_ENABLE_DEV_MOCK_AUTH: 'true',
   })
 
   assert.equal(config.IS_MOCK, false)

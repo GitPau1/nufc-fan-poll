@@ -13,5 +13,6 @@ test('middleware only performs auth lookups for protected routes', () => {
   assert.match(source, /if \(!requiresAuth && !requiresAdmin\)/)
   assert.match(source, /'\/my\/:path\*'/)
   assert.match(source, /'\/admin\/:path\*'/)
+  assert.doesNotMatch(source, /'\/menu\/:path\*'/)
   assert.doesNotMatch(source, /\/\(\(\?!_next\/static/)
 })

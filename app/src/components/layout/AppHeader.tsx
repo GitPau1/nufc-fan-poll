@@ -5,14 +5,15 @@ import { HeaderAuthStatus } from './HeaderAuthStatus'
 type AppHeaderProps = {
   auth?: HeaderAuth | null
   showAuth?: boolean
+  centerLogo?: boolean
 }
 
-export function AppHeader({ auth, showAuth = true }: AppHeaderProps = {}) {
+export function AppHeader({ auth, showAuth = true, centerLogo = false }: AppHeaderProps = {}) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-surface">
-      <div className="flex h-14 items-center justify-between px-4">
+    <header className={`sticky top-0 z-50 w-full bg-surface ${centerLogo ? '' : 'border-b border-border'}`}>
+      <div className={`flex items-center px-4 ${centerLogo ? 'h-[62px] justify-center' : 'h-14 justify-between'}`}>
         <Link href="/" className="flex items-center">
-          <span className="text-[20px] font-black leading-[22px] text-foreground">
+          <span className={`${centerLogo ? 'text-[24px] leading-[22.5px] text-[#2b2b2b]' : 'text-[20px] leading-[22px] text-foreground'} font-black`}>
             NUFCVOTE
           </span>
         </Link>

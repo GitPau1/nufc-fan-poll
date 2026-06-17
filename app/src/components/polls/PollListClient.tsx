@@ -17,7 +17,7 @@ interface PollListClientProps {
   headerRight?: React.ReactNode
 }
 
-type PollTab = 'ongoing' | 'closed'
+type PollTab = 'all' | 'ongoing' | 'closed'
 
 function Spinner() {
   return (
@@ -32,7 +32,7 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
   const [page, setPage]       = useState(1)
   const [hasMore, setHasMore] = useState(initialPolls.length === PAGE_SIZE)
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<PollTab>('ongoing')
+  const [activeTab, setActiveTab] = useState<PollTab>('all')
   const [now, setNow] = useState(() => Date.now())
   const sentinelRef           = useRef<HTMLDivElement>(null)
 
@@ -71,7 +71,7 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
   }))
   const ongoing = effectivePolls.filter(p => p.status !== 'closed')
   const closed  = effectivePolls.filter(p => p.status === 'closed')
-  const visiblePolls = activeTab === 'ongoing' ? ongoing : closed
+  const visiblePolls = activeTab === 'all' ? effectivePolls : activeTab === 'ongoing' ? ongoing : closed
   const featuredPoll = effectivePolls[0] ?? null
   const listPolls = featuredPoll ? visiblePolls.filter(poll => poll.id !== featuredPoll.id) : visiblePolls
 
@@ -95,21 +95,26 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
     <div className="px-4 pt-4 pb-10 animate-enter">
       <PollFeedAnalytics sourcePage="polls" pollCount={effectivePolls.length} />
       {featuredPoll && <PollHeroCard poll={featuredPoll} />}
-      <div className="py-3">
-        <PollTabs activeTab={activeTab} ongoingCount={ongoing.length} closedCount={closed.length} onChange={setActiveTab} />
-      </div>
 
       {listPolls.length > 0 ? (
-        <div className="overflow-hidden rounded-md border border-border bg-surface">
+        <div className="mt-3 overflow-hidden rounded-lg border border-border bg-surface p-px">
+          <div className="px-3 pt-4">
+            <PollTabs activeTab={activeTab} ongoingCount={ongoing.length} closedCount={closed.length} onChange={setActiveTab} />
+          </div>
           <div className="divide-y divide-border">
             {listPolls.map(p => <PollCard key={p.id} poll={p} />)}
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-border bg-surface py-20">
-          <p className="text-sm font-semibold text-foreground">
-            {activeTab === 'ongoing' ? '진행 중인 투표가 없습니다' : '종료된 투표가 없습니다'}
-          </p>
+        <div className="mt-3 overflow-hidden rounded-lg border border-border bg-surface p-px">
+          <div className="px-3 pt-4">
+            <PollTabs activeTab={activeTab} ongoingCount={ongoing.length} closedCount={closed.length} onChange={setActiveTab} />
+          </div>
+          <div className="flex flex-col items-center justify-center gap-2 py-20">
+            <p className="text-sm font-semibold text-foreground">
+              {activeTab === 'all' ? '투표가 없습니다' : activeTab === 'ongoing' ? '진행 중인 투표가 없습니다' : '종료된 투표가 없습니다'}
+            </p>
+          </div>
         </div>
       )}
 
@@ -133,11 +138,11 @@ function PollHeroCard({ poll }: { poll: PollListItem }) {
         poll_status: poll.status,
         creator_type: poll.created_by && poll.creator_name ? 'user' : 'admin',
       })}
-      className="relative block aspect-[16/9] overflow-hidden rounded-lg bg-disabled"
+      className="relative block h-[252px] overflow-hidden rounded-lg bg-disabled"
     >
       <img src={getThumbnailUrl(poll)} alt="" className="h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121314]" />
-      <div className="absolute left-4 top-[63%] flex items-center gap-2">
+      <div className="absolute left-4 bottom-[52px] flex items-center gap-2">
         <span className="inline-flex h-[21px] items-center rounded-pill bg-primary/55 px-[9px] text-[10px] font-semibold leading-[15px] text-white backdrop-blur-[2px]">
           {poll.status === 'active' ? formatTimeLeft(poll.closes_at) : getStatusLabel(poll)}
         </span>
@@ -168,12 +173,13 @@ function PollTabs({
   onChange: (tab: PollTab) => void
 }) {
   const tabs = [
+    { id: 'all' as const, label: '전체' },
     { id: 'ongoing' as const, label: '진행중', count: ongoingCount },
     { id: 'closed' as const, label: '종료', count: closedCount },
   ]
 
   return (
-    <div className="flex w-full rounded-pill bg-[#eaeaea] p-1">
+    <div className="flex w-full">
       {tabs.map(tab => {
         const selected = tab.id === activeTab
         return (
@@ -181,7 +187,7 @@ function PollTabs({
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`h-8 flex-1 rounded-pill px-2.5 text-center text-[12px] leading-[18px] transition-colors ${selected ? 'bg-surface font-semibold text-primary' : 'font-medium text-gray-3 hover:text-gray-2'}`}
+            className={`h-8 flex-1 border-b px-2.5 pb-[13px] text-center text-[13px] font-bold leading-4 transition-colors ${selected ? 'border-primary text-primary' : 'border-border text-gray-3 hover:text-gray-2'}`}
           >
             {tab.label}
           </button>

@@ -7,8 +7,8 @@ export default async function PollsPage() {
 
   return (
     <>
-      <AppHeader showAuth={false} />
-      <main className="pb-24">
+      <AppHeader showAuth={false} centerLogo />
+      <main className="min-h-[calc(100vh-62px)] bg-[#f4f4f5] pb-24">
         <PollListClient initialPolls={initialPolls} />
       </main>
     </>

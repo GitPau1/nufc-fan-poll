@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { Search } from 'lucide-react'
 import { submitPickOneChoice } from '@/lib/actions/player-pick-one'
+import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
 
 export type PlayerListItem = {
   id: string
@@ -31,6 +33,7 @@ const positionTone: Record<string, string> = {
 export function PlayersPageClient({ players }: PlayersPageClientProps) {
   const [query, setQuery] = useState('')
   const normalizedQuery = query.trim().toLowerCase()
+  const pathname = usePathname()
 
   const filteredPlayers = useMemo(() => {
     if (!normalizedQuery) return players
@@ -38,6 +41,14 @@ export function PlayersPageClient({ players }: PlayersPageClientProps) {
       `${player.name} ${player.position} ${player.meta} ${player.seasons}`.toLowerCase().includes(normalizedQuery)
     )
   }, [normalizedQuery, players])
+
+  useEffect(() => {
+    trackEvent('players_viewed', {
+      source_page: getSourcePage(pathname),
+      player_count: players.length,
+      has_pick_one: players.length >= 2,
+    })
+  }, [pathname, players.length])
 
   return (
     <div className="px-4 pt-4 pb-10 animate-enter">
@@ -121,6 +132,13 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
     })
     setSelectedCardKey(null)
     setPhase('idle')
+    trackEvent('pick_one_viewed', {
+      source_page: 'players',
+      left_player_id: weightedPlayers[0].id,
+      right_player_id: weightedPlayers[1].id,
+      left_overall: weightedPlayers[0].overall,
+      right_overall: weightedPlayers[1].overall,
+    })
   }, [])
 
   function proceedSelection(
@@ -164,12 +182,32 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
     startTransition(async () => {
       const result = await submitPickOneChoice(winner.id, loser.id)
       if ('success' in result) {
+        trackEvent('pick_one_submitted', {
+          source_page: 'players',
+          winner_player_id: winner.id,
+          loser_player_id: loser.id,
+          winner_overall: winner.overall,
+          loser_overall: loser.overall,
+          result_state: 'saved',
+        })
         setFeedback('이번 주 선택에 저장됐습니다. 한 번 더 누르면 다음 선택으로 넘어갑니다.')
         proceedSelection(cardKey, winner, loser, winnerSlot, loserSlot)
       } else if ('duplicate' in result) {
+        trackEvent('pick_one_submitted', {
+          source_page: 'players',
+          winner_player_id: winner.id,
+          loser_player_id: loser.id,
+          winner_overall: winner.overall,
+          loser_overall: loser.overall,
+          result_state: 'duplicate',
+        })
         setFeedback('이번 주 이미 반영된 매치업입니다. 한 번 더 누르면 다음 선택으로 넘어갑니다.')
         proceedSelection(cardKey, winner, loser, winnerSlot, loserSlot)
       } else if (result.error === 'unauthenticated') {
+        trackEvent('player_pick_one_auth_required', {
+          source_page: 'players',
+          trigger_action: 'player_pick_one',
+        })
         setFeedback('로그인 후 선택을 기록할 수 있습니다.')
         setSelectedCardKey(null)
         setPhase('idle')
@@ -188,6 +226,18 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
     const otherKey: PickOneCardKey = selectedCardKey === 'leftCard' ? 'rightCard' : 'leftCard'
     const nextOpponent = getNextOpponent(players, winner, cards[otherKey].player)
 
+    trackEvent('pick_one_next_clicked', {
+      source_page: 'players',
+      winner_player_id: winner.id,
+      next_opponent_player_id: nextOpponent.id,
+    })
+    trackEvent('pick_one_viewed', {
+      source_page: 'players',
+      left_player_id: winner.id,
+      right_player_id: nextOpponent.id,
+      left_overall: winner.overall,
+      right_overall: nextOpponent.overall,
+    })
     setFeedback('')
     setSelectedCardKey(null)
     setPhase('idle')
@@ -242,6 +292,7 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
       </p>
       <Link
         href="/players/changes"
+        onClick={() => trackEvent('player_rating_changes_clicked', { source_page: 'players' })}
         className="mx-4 mb-4 flex h-10 items-center justify-center rounded-md bg-[#f4f4f5] text-[13px] font-bold text-gray-1 active:bg-disabled"
       >
         이번주 변경 내역

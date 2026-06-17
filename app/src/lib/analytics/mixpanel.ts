@@ -54,6 +54,10 @@ export function getSourcePage(pathname: string): string {
   if (pathname === '/polls') return 'polls'
   if (pathname.startsWith('/polls/create')) return 'create'
   if (pathname.startsWith('/polls/')) return 'poll_detail'
+  if (pathname.startsWith('/players/changes')) return 'player_changes'
+  if (pathname.startsWith('/players')) return 'players'
+  if (pathname.startsWith('/my/feedback')) return 'feedback'
   if (pathname.startsWith('/my')) return 'my'
+  if (pathname.startsWith('/menu')) return 'menu'
   return 'direct'
 }

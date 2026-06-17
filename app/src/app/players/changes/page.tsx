@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { AppHeader } from '@/components/layout/AppHeader'
+import { PlayerRatingChangesAnalytics } from '@/components/players/PlayerRatingChangesAnalytics'
 import { getLatestPickOneRatingChanges } from '@/lib/queries/player-pick-one'
 
 function formatDate(dateStr: string): string {
@@ -20,6 +21,10 @@ export default async function PlayerRatingChangesPage() {
 
   return (
     <>
+      <PlayerRatingChangesAnalytics
+        hasAppliedWeek={Boolean(week)}
+        changedPlayerCount={week?.changes.length ?? 0}
+      />
       <AppHeader showAuth={false} />
       <main className="min-h-[calc(100vh-62px)] bg-[#f4f4f5] px-4 pb-24 pt-4">
         <div className="mb-3">

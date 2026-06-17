@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
+import { trackEvent } from '@/lib/analytics/mixpanel'
 
 export function MyFeedbackForm() {
   const [content, setContent] = useState('')
@@ -19,6 +20,10 @@ export function MyFeedbackForm() {
         setMessage(result.error)
         return
       }
+      trackEvent('feedback_submitted', {
+        source_page: 'feedback',
+        content_length: content.trim().length,
+      })
       setContent('')
       setMessage('피드백을 남겨주셔서 감사합니다.')
     })

@@ -1,7 +1,9 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { Search } from 'lucide-react'
+import { submitPickOneChoice } from '@/lib/actions/player-pick-one'
 
 export type PlayerListItem = {
   id: string
@@ -94,35 +96,89 @@ const slotClass: Record<PickOneSlot, string> = {
   'enter-right': 'translate-x-[480px] opacity-0',
 }
 
+const PICK_ONE_TARGET_OVERALL = 80
+const PICK_ONE_PREFERRED_MIN = 78
+const PICK_ONE_PREFERRED_MAX = 83
+
 function PickOneSection({ players }: { players: PlayerListItem[] }) {
   const initialPlayers = useMemo(() => getInitialMatchup(players), [players])
   const [phase, setPhase] = useState<PickOnePhase>('idle')
   const [selectedCardKey, setSelectedCardKey] = useState<PickOneCardKey | null>(null)
+  const [feedback, setFeedback] = useState('')
+  const [isPending, startTransition] = useTransition()
   const [cards, setCards] = useState<Record<PickOneCardKey, PickOneCardState>>(() => ({
     leftCard: { player: initialPlayers[0], slot: 'left' },
     rightCard: { player: initialPlayers[1], slot: 'right' },
   }))
+  const initialMatchupPlayersRef = useRef(players)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function selectCard(cardKey: PickOneCardKey) {
-    if (phase !== 'idle') return
+  useEffect(() => {
+    const weightedPlayers = getWeightedInitialMatchup(initialMatchupPlayersRef.current)
+    setCards({
+      leftCard: { player: weightedPlayers[0], slot: 'left' },
+      rightCard: { player: weightedPlayers[1], slot: 'right' },
+    })
+    setSelectedCardKey(null)
+    setPhase('idle')
+  }, [])
 
+  function proceedSelection(
+    cardKey: PickOneCardKey,
+    winner: PlayerListItem,
+    loser: PlayerListItem,
+    winnerSlot: PickOneSlot,
+    loserSlot: PickOneSlot
+  ) {
     const otherKey: PickOneCardKey = cardKey === 'leftCard' ? 'rightCard' : 'leftCard'
+
     setSelectedCardKey(cardKey)
     setPhase('confirming')
+    setCards({
+      [cardKey]: { player: winner, slot: winnerSlot },
+      [otherKey]: { player: loser, slot: loserSlot },
+    } as Record<PickOneCardKey, PickOneCardState>)
 
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      setCards(current => ({
-        ...current,
-        [cardKey]: { ...current[cardKey], slot: 'center' },
-        [otherKey]: {
-          ...current[otherKey],
-          slot: current[otherKey].slot === 'left' ? 'out-left' : 'out-right',
-        },
-      }))
+      setCards({
+        [cardKey]: { player: winner, slot: 'center' },
+        [otherKey]: { player: loser, slot: loserSlot === 'left' ? 'out-left' : 'out-right' },
+      } as Record<PickOneCardKey, PickOneCardState>)
       setPhase('centered')
     }, 1000)
+  }
+
+  function selectCard(cardKey: PickOneCardKey) {
+    if (phase !== 'idle' || isPending) return
+
+    const otherKey: PickOneCardKey = cardKey === 'leftCard' ? 'rightCard' : 'leftCard'
+    const winner = cards[cardKey].player
+    const loser = cards[otherKey].player
+    const winnerSlot = cards[cardKey].slot
+    const loserSlot = cards[otherKey].slot
+    setFeedback('')
+    setSelectedCardKey(cardKey)
+    setPhase('confirming')
+
+    startTransition(async () => {
+      const result = await submitPickOneChoice(winner.id, loser.id)
+      if ('success' in result) {
+        setFeedback('이번 주 선택에 저장됐습니다. 한 번 더 누르면 다음 선택으로 넘어갑니다.')
+        proceedSelection(cardKey, winner, loser, winnerSlot, loserSlot)
+      } else if ('duplicate' in result) {
+        setFeedback('이번 주 이미 반영된 매치업입니다. 한 번 더 누르면 다음 선택으로 넘어갑니다.')
+        proceedSelection(cardKey, winner, loser, winnerSlot, loserSlot)
+      } else if (result.error === 'unauthenticated') {
+        setFeedback('로그인 후 선택을 기록할 수 있습니다.')
+        setSelectedCardKey(null)
+        setPhase('idle')
+      } else {
+        setFeedback('선택을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.')
+        setSelectedCardKey(null)
+        setPhase('idle')
+      }
+    })
   }
 
   function showNextMatchup() {
@@ -132,6 +188,7 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
     const otherKey: PickOneCardKey = selectedCardKey === 'leftCard' ? 'rightCard' : 'leftCard'
     const nextOpponent = getNextOpponent(players, winner, cards[otherKey].player)
 
+    setFeedback('')
     setSelectedCardKey(null)
     setPhase('idle')
     setCards({
@@ -162,7 +219,7 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
           key={cards.leftCard.player.id}
           card={cards.leftCard}
           isPicked={selectedCardKey === 'leftCard'}
-          isDimmed={phase === 'confirming' && selectedCardKey === 'rightCard'}
+          isDimmed={(phase === 'confirming' && selectedCardKey === 'rightCard') || isPending}
           onClick={() => phase === 'centered' ? showNextMatchup() : selectCard('leftCard')}
         />
         <div className={`absolute left-[211px] top-[72px] flex h-6 w-6 items-center justify-center rounded-pill bg-[#f5f5f6] text-[14px] font-medium leading-[23px] tracking-[-0.4px] text-[#ababab] transition-opacity duration-300 ${phase === 'centered' ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
@@ -172,23 +229,65 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
           key={cards.rightCard.player.id}
           card={cards.rightCard}
           isPicked={selectedCardKey === 'rightCard'}
-          isDimmed={phase === 'confirming' && selectedCardKey === 'leftCard'}
+          isDimmed={(phase === 'confirming' && selectedCardKey === 'leftCard') || isPending}
           onClick={() => phase === 'centered' ? showNextMatchup() : selectCard('rightCard')}
         />
       </div>
 
       <p className="px-4 pb-4 pt-2 text-center text-[12px] leading-[16.5px] text-gray-2">
-        {phase === 'centered'
+        {feedback ||
+          (phase === 'centered'
           ? '한 번 더 누르면 다음 선택으로 넘어갑니다.'
-          : '여러분의 선택이 이번주 오버롤에 반영됩니다.'}
+          : '여러분의 선택이 이번주 오버롤에 반영됩니다.')}
       </p>
+      <Link
+        href="/players/changes"
+        className="mx-4 mb-4 flex h-10 items-center justify-center rounded-md bg-[#f4f4f5] text-[13px] font-bold text-gray-1 active:bg-disabled"
+      >
+        이번주 변경 내역
+      </Link>
     </section>
   )
 }
 
 function getInitialMatchup(players: PlayerListItem[]): [PlayerListItem, PlayerListItem] {
-  const left = players[0]!
-  return [left, getNextOpponent(players, left)]
+  const sortedPlayers = players.slice().sort((a, b) => getPickOneWeight(b) - getPickOneWeight(a))
+  return [sortedPlayers[0]!, sortedPlayers[1] ?? getNextOpponent(players, sortedPlayers[0]!)]
+}
+
+function getWeightedInitialMatchup(players: PlayerListItem[]): [PlayerListItem, PlayerListItem] {
+  const left = weightedRandomPlayer(players)
+  const right = weightedRandomPlayer(players.filter(player => player.id !== left.id))
+  return [left, right]
+}
+
+function getPickOneWeight(player: PlayerListItem): number {
+  if (player.overall >= PICK_ONE_PREFERRED_MIN && player.overall <= PICK_ONE_PREFERRED_MAX) {
+    return 8
+  }
+
+  const distance = Math.min(
+    Math.abs(player.overall - PICK_ONE_PREFERRED_MIN),
+    Math.abs(player.overall - PICK_ONE_PREFERRED_MAX),
+    Math.abs(player.overall - PICK_ONE_TARGET_OVERALL)
+  )
+  return 1 / (distance + 1)
+}
+
+function weightedRandomPlayer(players: PlayerListItem[]): PlayerListItem {
+  const weightedPlayers = players.map(player => ({
+    player,
+    weight: getPickOneWeight(player),
+  }))
+  const totalWeight = weightedPlayers.reduce((sum, item) => sum + item.weight, 0)
+  let cursor = Math.random() * totalWeight
+
+  for (const item of weightedPlayers) {
+    cursor -= item.weight
+    if (cursor <= 0) return item.player
+  }
+
+  return players[0]!
 }
 
 function getNextOpponent(players: PlayerListItem[], basePlayer: PlayerListItem, currentOpponent?: PlayerListItem): PlayerListItem {

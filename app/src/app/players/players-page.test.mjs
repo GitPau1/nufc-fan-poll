@@ -9,13 +9,14 @@ function source(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8')
 }
 
-test('players page maps Supabase base_rating to overall and ranking', () => {
+test('players page maps applied Pick One rating to overall and falls back to base rating', () => {
   const file = source('app/players/page.tsx')
 
   assert.match(file, /unstable_cache/)
   assert.match(file, /createPublicClient/)
   assert.match(file, /base_rating/)
-  assert.match(file, /overall: player\.base_rating/)
+  assert.match(file, /player_pick_one_ratings/)
+  assert.match(file, /overall: Math\.round\(player\.pick_one_rating \?\? player\.base_rating\)/)
   assert.match(file, /rank: index \+ 1/)
   assert.match(file, /\.eq\('is_active', true\)/)
   assert.match(file, /\.order\('base_rating', \{ ascending: false/)

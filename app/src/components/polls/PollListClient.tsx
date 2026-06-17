@@ -19,6 +19,8 @@ interface PollListClientProps {
 
 type PollTab = 'all' | 'ongoing' | 'closed'
 
+const CLOSING_SOON_MS = 86_400_000
+
 function Spinner() {
   return (
     <div className="flex justify-center py-6">
@@ -27,12 +29,26 @@ function Spinner() {
   )
 }
 
+function getFeaturedPollCandidates(polls: PollListItem[], now: number): PollListItem[] {
+  const activePolls = polls.filter(p => p.status === 'active')
+  const closingSoon = activePolls.filter(p => {
+    const timeLeft = new Date(p.closes_at).getTime() - now
+    return timeLeft > 0 && timeLeft <= CLOSING_SOON_MS
+  })
+  const closedPolls = polls.filter(p => p.status === 'closed')
+
+  if (closingSoon.length > 0) return closingSoon
+  if (activePolls.length > 0) return activePolls
+  return closedPolls
+}
+
 export function PollListClient({ initialPolls, headerRight }: PollListClientProps) {
   const [polls, setPolls]     = useState<PollListItem[]>(initialPolls)
   const [page, setPage]       = useState(1)
   const [hasMore, setHasMore] = useState(initialPolls.length === PAGE_SIZE)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<PollTab>('all')
+  const [selectedFeaturedPollId, setSelectedFeaturedPollId] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const sentinelRef           = useRef<HTMLDivElement>(null)
 
@@ -72,8 +88,30 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
   const ongoing = effectivePolls.filter(p => p.status !== 'closed')
   const closed  = effectivePolls.filter(p => p.status === 'closed')
   const visiblePolls = activeTab === 'all' ? effectivePolls : activeTab === 'ongoing' ? ongoing : closed
-  const featuredPoll = effectivePolls[0] ?? null
-  const listPolls = featuredPoll ? visiblePolls.filter(poll => poll.id !== featuredPoll.id) : visiblePolls
+  const featuredPollCandidates = getFeaturedPollCandidates(effectivePolls, now)
+  const featuredPollCandidateIds = featuredPollCandidates.map(poll => poll.id).join('|')
+  const selectedFeaturedPoll = featuredPollCandidates.find(poll => poll.id === selectedFeaturedPollId) ?? null
+  const fallbackFeaturedPoll = featuredPollCandidates[0] ?? null
+  const featuredPoll = selectedFeaturedPoll ?? fallbackFeaturedPoll
+  const listPolls = visiblePolls
+
+  useEffect(() => {
+    const candidates = getFeaturedPollCandidates(
+      polls.map(poll => ({
+        ...poll,
+        status: getEffectivePollStatus(poll, new Date(now)),
+      })),
+      now
+    )
+    if (candidates.length === 0) {
+      setSelectedFeaturedPollId(null)
+      return
+    }
+    if (selectedFeaturedPollId && candidates.some(poll => poll.id === selectedFeaturedPollId)) return
+
+    const next = candidates[Math.floor(Math.random() * candidates.length)]
+    setSelectedFeaturedPollId(next.id)
+  }, [featuredPollCandidateIds, now, polls, selectedFeaturedPollId])
 
   if (polls.length === 0 && !loading) {
     return (

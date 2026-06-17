@@ -111,6 +111,64 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['comment_likes']['Row'], 'id' | 'created_at'>
         Update: never
       }
+      player_pick_one_choices: {
+        Row: {
+          id: string
+          user_id: string
+          winner_player_id: string
+          loser_player_id: string
+          player_a_id: string
+          player_b_id: string
+          week_start_at: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['player_pick_one_choices']['Row'], 'id' | 'created_at'>
+        Update: never
+      }
+      player_pick_one_ratings: {
+        Row: {
+          player_id: string
+          rating: number
+          wins: number
+          losses: number
+          choice_count: number
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['player_pick_one_ratings']['Row'], 'updated_at'> & {
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['player_pick_one_ratings']['Insert']>
+      }
+      player_pick_one_weekly_runs: {
+        Row: {
+          id: string
+          week_start_at: string
+          week_end_at: string
+          status: string
+          applied_at: string | null
+          error_message: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['player_pick_one_weekly_runs']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['player_pick_one_weekly_runs']['Insert']>
+      }
+      player_pick_one_rating_changes: {
+        Row: {
+          id: string
+          run_id: string
+          player_id: string
+          previous_rating: number
+          new_rating: number
+          previous_overall: number
+          new_overall: number
+          delta: number
+          wins: number
+          losses: number
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['player_pick_one_rating_changes']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['player_pick_one_rating_changes']['Insert']>
+      }
       user_feedback: {
         Row: {
           id: string
@@ -143,6 +201,10 @@ export type PollOptionRow = Database['public']['Tables']['poll_options']['Row']
 export type VoteRow = Database['public']['Tables']['votes']['Row']
 export type CommentRow = Database['public']['Tables']['comments']['Row']
 export type CommentLikeRow = Database['public']['Tables']['comment_likes']['Row']
+export type PlayerPickOneChoiceRow = Database['public']['Tables']['player_pick_one_choices']['Row']
+export type PlayerPickOneRatingRow = Database['public']['Tables']['player_pick_one_ratings']['Row']
+export type PlayerPickOneWeeklyRunRow = Database['public']['Tables']['player_pick_one_weekly_runs']['Row']
+export type PlayerPickOneRatingChangeRow = Database['public']['Tables']['player_pick_one_rating_changes']['Row']
 export type UserFeedbackRow = Database['public']['Tables']['user_feedback']['Row']
 
 export type PollWithOptions = PollRow & {

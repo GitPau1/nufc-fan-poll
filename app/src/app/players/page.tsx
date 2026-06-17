@@ -11,6 +11,7 @@ export const revalidate = 60
 
 type PlayerWithRating = PlayerRow & {
   base_rating: number
+  pick_one_rating?: number | null
 }
 
 function formatPlayedSeasons(seasons: Array<string | null | undefined>): string {
@@ -79,7 +80,7 @@ function toPlayerListItem(
     position: player.position,
     meta: player.squad_number ? `#${player.squad_number} · ${squadLabel}` : squadLabel,
     rank: index + 1,
-    overall: player.base_rating,
+    overall: Math.round(player.pick_one_rating ?? player.base_rating),
     photoUrl: player.photo_url,
     seasons: formatPlayedSeasons(seasonsByPlayerId.get(player.id) ?? getPlayerSeasonsFromSquadCsv(player.name)),
   }
@@ -102,9 +103,26 @@ async function getPlayersUncached(): Promise<PlayerListItem[]> {
     .order('name', { ascending: true })
 
   const players = (data ?? []) as PlayerWithRating[]
+  const playerIds = players.map(player => player.id)
+  const { data: pickOneRatings } = playerIds.length > 0
+    ? await supabase
+      .from('player_pick_one_ratings')
+      .select('player_id, rating')
+      .in('player_id', playerIds)
+    : { data: [] }
+  const ratingsByPlayerId = new Map(
+    ((pickOneRatings ?? []) as Array<{ player_id: string; rating: number }>)
+      .map(rating => [rating.player_id, rating.rating])
+  )
   const seasonsByPlayerId = new Map<string, Array<string | null | undefined>>()
 
-  return players.map((player, index) => toPlayerListItem(player, index, seasonsByPlayerId))
+  return players
+    .map(player => ({
+      ...player,
+      pick_one_rating: ratingsByPlayerId.get(player.id) ?? null,
+    }))
+    .sort((a, b) => (b.pick_one_rating ?? b.base_rating) - (a.pick_one_rating ?? a.base_rating) || a.name.localeCompare(b.name))
+    .map((player, index) => toPlayerListItem(player, index, seasonsByPlayerId))
 }
 
 const getPlayers = unstable_cache(getPlayersUncached, ['players-ranking-v2'], {

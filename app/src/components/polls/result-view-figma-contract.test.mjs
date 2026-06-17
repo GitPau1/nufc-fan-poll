@@ -22,3 +22,15 @@ test('comments use the Figma thumbs-up reaction treatment', () => {
   assert.match(commentsSection, /ThumbsUp/)
   assert.doesNotMatch(commentsSection, /Heart/)
 })
+
+test('result page renders all options as Figma-style percentage bars', () => {
+  assert.match(resultView, /resultItems\.map/)
+  assert.match(resultView, /width: `\$\{item\.percent\}%`/)
+  assert.doesNotMatch(resultView, /slice\(1\)/)
+  assert.doesNotMatch(resultView, /text-\[40px\]/)
+})
+
+test('comment composer keeps the Figma input proportions', () => {
+  assert.match(commentsSection, /h-\[62px\]/)
+  assert.match(commentsSection, /rounded-\[16px\]/)
+})

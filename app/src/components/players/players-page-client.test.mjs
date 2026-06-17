@@ -47,3 +47,44 @@ test('players list shows seasons instead of squad status metadata', () => {
   assert.match(playerRow, /\{player\.seasons\}/)
   assert.doesNotMatch(playerRow, /\{player\.meta\}/)
 })
+
+test('players Pick One starts from a weighted overall band around high-70s and low-80s', () => {
+  const file = source('components/players/PlayersPageClient.tsx')
+
+  assert.match(file, /PICK_ONE_TARGET_OVERALL = 80/)
+  assert.match(file, /PICK_ONE_PREFERRED_MIN = 78/)
+  assert.match(file, /PICK_ONE_PREFERRED_MAX = 83/)
+  assert.match(file, /function getPickOneWeight/)
+  assert.match(file, /function getWeightedInitialMatchup/)
+  assert.match(file, /weightedRandomPlayer/)
+  assert.match(file, /useState<Record<PickOneCardKey, PickOneCardState>>\(\(\) => \(\{\s*leftCard: \{ player: initialPlayers\[0\], slot: 'left' \}/s)
+  assert.match(file, /useEffect\(\(\) => \{\s*const weightedPlayers = getWeightedInitialMatchup\(initialMatchupPlayersRef\.current\)/s)
+})
+
+test('players Pick One keeps the clicked matchup while the choice is saved', () => {
+  const file = source('components/players/PlayersPageClient.tsx')
+
+  assert.match(file, /proceedSelection\(cardKey, winner, loser, winnerSlot, loserSlot\)/)
+  assert.match(file, /function proceedSelection\(\s*cardKey: PickOneCardKey,\s*winner: PlayerListItem,\s*loser: PlayerListItem/s)
+  assert.match(file, /\[cardKey\]: \{ player: winner, slot:/)
+  assert.match(file, /\[otherKey\]: \{ player: loser, slot:/)
+  assert.match(file, /const initialMatchupPlayersRef = useRef\(players\)/)
+  assert.match(file, /useEffect\(\(\) => \{\s*const weightedPlayers = getWeightedInitialMatchup\(initialMatchupPlayersRef\.current\)[\s\S]*\}, \[\]\)/)
+})
+
+test('players Pick One uses the current visual slots when the winner stays on screen', () => {
+  const file = source('components/players/PlayersPageClient.tsx')
+
+  assert.match(file, /const winnerSlot = cards\[cardKey\]\.slot/)
+  assert.match(file, /const loserSlot = cards\[otherKey\]\.slot/)
+  assert.doesNotMatch(file, /const selectedSlot: PickOneSlot = cardKey === 'leftCard' \? 'left' : 'right'/)
+  assert.match(file, /\[cardKey\]: \{ player: winner, slot: winnerSlot \}/)
+  assert.match(file, /\[otherKey\]: \{ player: loser, slot: loserSlot \}/)
+})
+
+test('players Pick One success feedback tells users to tap again', () => {
+  const file = source('components/players/PlayersPageClient.tsx')
+
+  assert.match(file, /이번 주 선택에 저장됐습니다\. 한 번 더 누르면 다음 선택으로 넘어갑니다\./)
+  assert.match(file, /이번 주 이미 반영된 매치업입니다\. 한 번 더 누르면 다음 선택으로 넘어갑니다\./)
+})

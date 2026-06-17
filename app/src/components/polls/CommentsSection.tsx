@@ -144,13 +144,13 @@ export function CommentsSection({
     <div className="flex flex-col gap-3">
       {/* 댓글 입력 */}
       <div className="flex flex-col gap-2">
-        <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-2">
           <textarea
             value={text}
             onChange={e => setText(e.target.value.slice(0, 300))}
             placeholder="이번 투표에 대한 생각을 남겨주세요…"
             rows={2}
-            className="h-[46px] flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-3
+            className="h-[62px] flex-1 resize-none rounded-[16px] border border-border bg-surface px-[13px] py-[11px]
                        text-sm text-foreground placeholder:text-muted-foreground
                        focus:border-primary focus:outline-none"
           />
@@ -182,7 +182,7 @@ export function CommentsSection({
       </div>
 
       {/* 댓글 목록 */}
-      <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-g200">
+      <div className="overflow-hidden rounded-[16px] border border-border bg-surface shadow-g200">
         <div className="px-4 pb-3 pt-5">
           <p className="text-[13px] font-bold leading-4 tracking-[0.04em] text-gray-1">
             댓글

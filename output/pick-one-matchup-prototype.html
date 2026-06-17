@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pick One Prototype</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      display: grid;
+      min-height: 100vh;
+      margin: 0;
+      place-items: start center;
+      background: #fafafa;
+      color: #2f2f2f;
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .page {
+      width: min(100%, 448px);
+      padding: 24px 0;
+    }
+
+    .pick-one {
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid #e1e7ef;
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .title-bar {
+      display: flex;
+      justify-content: center;
+      padding: 12px 14px 13px;
+      border-bottom: 1px solid #e1e7ef;
+    }
+
+    .title-bar h1 {
+      margin: 0;
+      color: #2f2f2f;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      line-height: 24px;
+      white-space: nowrap;
+    }
+
+    .match-area {
+      position: relative;
+      height: 168px;
+      overflow: hidden;
+    }
+
+    .player-card {
+      position: absolute;
+      left: 0;
+      top: 20px;
+      display: flex;
+      width: 178.5px;
+      height: 128px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px;
+      border: 0 solid transparent;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 90% -34%, rgba(207, 217, 230, .22), rgba(25, 34, 50, .22) 70%),
+        radial-gradient(circle at 25% -95%, #191a1b 0%, #2e2d2d 50%, #434040 100%);
+      opacity: 1;
+      filter: saturate(1);
+      transform: translateX(12.5px);
+      transition:
+        transform .68s cubic-bezier(.42, 0, .18, 1),
+        opacity 1s ease,
+        filter 1s ease,
+        box-shadow .18s ease;
+      will-change: transform, opacity, filter;
+    }
+
+    .player-card.is-picked {
+      box-shadow: inset 0 0 0 3px #32c2ff;
+    }
+
+    .player-card.is-dimmed {
+      opacity: .34;
+      filter: saturate(.35);
+    }
+
+    .player-card.slot-left {
+      transform: translateX(12.5px);
+    }
+
+    .player-card.slot-right {
+      transform: translateX(255px);
+    }
+
+    .player-card.slot-center {
+      transform: translateX(134.75px);
+    }
+
+    .player-card.slot-out-left {
+      opacity: 0;
+      transform: translateX(-210px);
+    }
+
+    .player-card.slot-out-right {
+      opacity: 0;
+      transform: translateX(480px);
+    }
+
+    .player-card.slot-enter-right {
+      opacity: 0;
+      transform: translateX(480px);
+    }
+
+    .player-photo {
+      width: 56px;
+      height: 56px;
+      overflow: hidden;
+      border: 1px solid #e1e7ef;
+      border-radius: 9999px;
+      background: #fafafa;
+    }
+
+    .player-photo img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .player-copy {
+      width: 100%;
+      text-align: center;
+    }
+
+    .player-name {
+      overflow: hidden;
+      margin: 0;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 21px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .player-meta {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 0;
+      color: #ebebeb;
+      font-size: 11px;
+      font-weight: 400;
+      line-height: 16.5px;
+      white-space: nowrap;
+    }
+
+    .vs {
+      position: absolute;
+      left: 211px;
+      top: 72px;
+      display: flex;
+      width: 24px;
+      height: 24px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 100px;
+      background: #f5f5f6;
+      color: #ababab;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: -0.4px;
+      line-height: 23px;
+      opacity: 1;
+      transition: opacity .3s ease;
+    }
+
+    .vs.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .helper {
+      display: flex;
+      justify-content: center;
+      padding: 8px 16px 16px;
+    }
+
+    .helper p {
+      margin: 0;
+      color: #666;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 16.5px;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="pick-one" aria-label="Pick One">
+      <div class="title-bar">
+        <h1>여러분의 선택은?</h1>
+      </div>
+
+      <div id="match-area" class="match-area">
+        <button id="left-card" class="player-card" type="button"></button>
+        <div id="vs" class="vs">vs</div>
+        <button id="right-card" class="player-card" type="button"></button>
+      </div>
+
+      <div class="helper">
+        <p id="helper-text">여러분의 선택이 이번주 오버롤에 반영됩니다.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const players = [
+      {
+        id: "shearer",
+        name: "앨런 시어러",
+        position: "FWD",
+        seasons: "1996-2006",
+        photo: "https://www.figma.com/api/mcp/asset/df3b5cad-9899-4f91-af67-5f1f4df4bc13"
+      },
+      {
+        id: "bruno",
+        name: "브루노 기마랑이스",
+        position: "MID",
+        seasons: "2022-2026",
+        photo: "https://www.figma.com/api/mcp/asset/bd29b837-eb56-484a-bea9-8bf86757431b"
+      },
+      {
+        id: "targett",
+        name: "맷 타겟",
+        position: "DEF",
+        seasons: "2022-2026",
+        photo: "https://www.figma.com/api/mcp/asset/f9014e0d-d673-4926-9c60-2e911f218837"
+      }
+    ];
+
+    const opponentQueue = ["bruno", "targett", "shearer"];
+
+    const state = {
+      cards: {
+        leftCard: { playerId: "shearer", slot: "left" },
+        rightCard: { playerId: "bruno", slot: "right" }
+      },
+      selectedCardKey: null,
+      phase: "idle",
+      opponentIndex: 1,
+      timer: null,
+      enterTimer: null
+    };
+
+    const byId = new Map(players.map(player => [player.id, player]));
+    const $ = selector => document.querySelector(selector);
+
+    const els = {
+      matchArea: $("#match-area"),
+      leftCard: $("#left-card"),
+      rightCard: $("#right-card"),
+      vs: $("#vs"),
+      helperText: $("#helper-text")
+    };
+
+    function cardState(cardKey) {
+      return state.cards[cardKey];
+    }
+
+    function cardHtml(player) {
+      return `
+        <div class="player-photo">
+          <img src="${player.photo}" alt="" />
+        </div>
+        <div class="player-copy">
+          <p class="player-name">${player.name}</p>
+          <div class="player-meta">
+            <span>${player.position}</span>
+            <span>${player.seasons}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function setCardClasses(card, classes) {
+      card.className = `player-card ${classes.join(" ")}`;
+    }
+
+    function getNextOpponentId(winnerId) {
+      for (let i = 0; i < opponentQueue.length; i += 1) {
+        state.opponentIndex = (state.opponentIndex + 1) % opponentQueue.length;
+        const nextId = opponentQueue[state.opponentIndex];
+        if (nextId !== winnerId) return nextId;
+      }
+      return opponentQueue.find(id => id !== winnerId);
+    }
+
+    function slotClass(slot) {
+      return `slot-${slot}`;
+    }
+
+    function renderCard(cardKey, element) {
+      const info = cardState(cardKey);
+      const player = byId.get(info.playerId);
+      const isPicked = state.selectedCardKey === cardKey;
+      const isUnpicked = state.selectedCardKey && !isPicked;
+      const classes = [slotClass(info.slot)];
+
+      if (isPicked) classes.push("is-picked");
+      if (state.phase === "confirming" && isUnpicked) classes.push("is-dimmed");
+
+      element.innerHTML = cardHtml(player);
+      element.dataset.cardKey = cardKey;
+      element.setAttribute("aria-label", `${player.name} 선택`);
+      setCardClasses(element, classes);
+    }
+
+    function render() {
+      if (state.phase === "centered") {
+        Object.entries(state.cards).forEach(([cardKey, info]) => {
+          const isPicked = state.selectedCardKey === cardKey;
+          info.slot = isPicked ? "center" : `out-${info.slot}`;
+        });
+      }
+
+      renderCard("leftCard", els.leftCard);
+      renderCard("rightCard", els.rightCard);
+
+      if (state.phase === "centered") {
+        els.vs.classList.add("is-hidden");
+        els.helperText.textContent = "한 번 더 누르면 다음 선택으로 넘어갑니다.";
+        return;
+      }
+
+      els.vs.classList.remove("is-hidden");
+      els.helperText.textContent = "여러분의 선택이 이번주 오버롤에 반영됩니다.";
+    }
+
+    function selectCard(cardKey) {
+      if (state.phase !== "idle") return;
+
+      state.selectedCardKey = cardKey;
+      state.phase = "confirming";
+      render();
+
+      clearTimeout(state.timer);
+      state.timer = setTimeout(() => {
+        state.phase = "centered";
+        render();
+      }, 1000);
+    }
+
+    function nextMatchup() {
+      if (state.phase !== "centered" || !state.selectedCardKey) return;
+
+      const selectedKey = state.selectedCardKey;
+      const otherKey = selectedKey === "leftCard" ? "rightCard" : "leftCard";
+      const winnerId = state.cards[selectedKey].playerId;
+
+      state.cards[selectedKey] = { playerId: winnerId, slot: "left" };
+      state.cards[otherKey] = { playerId: getNextOpponentId(winnerId), slot: "enter-right" };
+      state.selectedCardKey = null;
+      state.phase = "idle";
+      render();
+
+      clearTimeout(state.enterTimer);
+      state.enterTimer = setTimeout(() => {
+        state.cards[otherKey].slot = "right";
+        render();
+      }, 40);
+    }
+
+    els.leftCard.addEventListener("click", () => {
+      if (state.phase === "centered") return nextMatchup();
+      selectCard("leftCard");
+    });
+
+    els.rightCard.addEventListener("click", () => {
+      if (state.phase === "centered") return nextMatchup();
+      selectCard("rightCard");
+    });
+
+    render();
+  </script>
+</body>
+</html>

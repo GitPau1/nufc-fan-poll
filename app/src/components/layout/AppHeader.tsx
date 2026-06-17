@@ -8,17 +8,21 @@ type AppHeaderProps = {
   centerLogo?: boolean
 }
 
-export function AppHeader({ auth, showAuth = true, centerLogo = false }: AppHeaderProps = {}) {
+export function AppHeader({ auth, showAuth = true }: AppHeaderProps = {}) {
   return (
-    <header className={`sticky top-0 z-50 w-full bg-surface ${centerLogo ? '' : 'border-b border-border'}`}>
-      <div className={`flex items-center px-4 ${centerLogo ? 'h-[62px] justify-center' : 'h-14 justify-between'}`}>
+    <header className="sticky top-0 z-50 w-full border-b border-[#e1e7ef] bg-gradient-to-b from-white to-white/75 backdrop-blur">
+      <div className="relative flex h-[62px] items-center justify-center px-4">
         <Link href="/" className="flex items-center">
-          <span className={`${centerLogo ? 'text-[24px] leading-[22.5px] text-[#2b2b2b]' : 'text-[20px] leading-[22px] text-foreground'} font-black`}>
+          <span className="text-[24px] font-black leading-[22.5px] text-[#2b2b2b]">
             NUFCVOTE
           </span>
         </Link>
 
-        {showAuth && <HeaderAuthStatus auth={auth} />}
+        {showAuth && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <HeaderAuthStatus auth={auth} />
+          </div>
+        )}
       </div>
     </header>
   )

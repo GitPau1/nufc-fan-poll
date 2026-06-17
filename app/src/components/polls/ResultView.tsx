@@ -75,8 +75,8 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
   return (
     <div className="flex min-h-screen flex-col bg-[#f4f4f5]">
       <div className="flex-1 overflow-y-auto hide-scrollbar animate-enter">
-        <div className="bg-[radial-gradient(circle_at_85%_0%,rgba(101,175,244,0.28),rgba(255,255,255,0.92)_28%,#ffffff_58%)] pb-4 shadow-g200">
-          <header className="flex h-[62px] items-center px-4">
+        <div className="bg-white pb-4 shadow-g200">
+          <header className="flex h-[62px] items-center border-b border-[#e1e7ef] bg-gradient-to-b from-white to-white/75 px-4 backdrop-blur">
             <button
               type="button"
               onClick={() => router.back()}

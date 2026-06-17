@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Lock } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { IS_MOCK } from '@/lib/config'
@@ -18,11 +19,13 @@ import { Button } from '@/components/ui/button'
 interface LoginModalProps {
   open: boolean
   onClose: () => void
-  triggerAction?: 'vote' | 'comment' | 'create_poll'
+  intent?: 'prompt' | 'direct'
+  triggerAction?: 'vote' | 'comment' | 'create_poll' | 'login'
 }
 
-export function LoginModal({ open, onClose, triggerAction = 'vote' }: LoginModalProps) {
+export function LoginModal({ open, onClose, intent = 'prompt', triggerAction = 'vote' }: LoginModalProps) {
   const pathname = usePathname()
+  const isDirect = intent === 'direct'
 
   useEffect(() => {
     if (!open) return
@@ -52,23 +55,73 @@ export function LoginModal({ open, onClose, triggerAction = 'vote' }: LoginModal
     })
   }
 
+  if (isDirect) {
+    return (
+      <DialogPrimitive.Root open={open} onOpenChange={o => { if (!o) onClose() }}>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/45" />
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-32px)] max-w-[448px] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface p-5 shadow-w300 focus:outline-none">
+            <DialogPrimitive.Title className="text-center text-base font-bold text-foreground">
+              NUFCVOTE 로그인
+            </DialogPrimitive.Title>
+            <DialogPrimitive.Description className="sr-only">
+              Google 계정으로 로그인합니다
+            </DialogPrimitive.Description>
+
+            <Button
+              variant="outline"
+              className="mt-5 w-full h-12 font-semibold gap-2"
+              onClick={handleLogin}
+            >
+              {IS_MOCK ? (
+                <>
+                  <span className="text-lg">⚡</span>
+                  데모로 바로 로그인
+                </>
+              ) : (
+                <>
+                  <GoogleIcon />
+                  Google로 로그인
+                </>
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="mt-2 w-full text-muted-foreground"
+              onClick={onClose}
+            >
+              닫기
+            </Button>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
+    )
+  }
+
   return (
     <Sheet open={open} onOpenChange={o => { if (!o) onClose() }}>
       <SheetContent
         side="bottom"
-        className="rounded-t-lg border-t-0 pb-10 [&>button]:hidden"
+        className="left-1/2 right-auto w-full max-w-[480px] -translate-x-1/2 rounded-t-lg border-t-0 pb-10 [&>button]:hidden"
       >
         {/* 드래그 핸들 */}
         <div className="mx-auto w-10 h-1.5 rounded-full bg-muted mb-6" />
 
-        <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-full bg-primary-dim flex items-center justify-center mx-auto mb-4">
-            <Lock className="h-6 w-6 text-primary" />
-          </div>
+        <div className={`text-center ${isDirect ? 'mb-4' : 'mb-6'}`}>
+          {!isDirect && (
+            <div className="w-14 h-14 rounded-full bg-primary-dim flex items-center justify-center mx-auto mb-4">
+              <Lock className="h-6 w-6 text-primary" />
+            </div>
+          )}
           <SheetHeader>
-            <SheetTitle className="text-base">로그인이 필요해요</SheetTitle>
-            <SheetDescription>
-              {IS_MOCK ? '데모 로그인으로 바로 참여할 수 있어요' : '투표에 참여하려면 로그인이 필요합니다'}
+            <SheetTitle className="text-base">
+              {isDirect ? 'NUFCVOTE 로그인' : '로그인이 필요해요'}
+            </SheetTitle>
+            <SheetDescription className={isDirect ? 'sr-only' : undefined}>
+              {isDirect
+                ? 'Google 계정으로 로그인합니다'
+                : IS_MOCK ? '데모 로그인으로 바로 참여할 수 있어요' : '투표에 참여하려면 로그인이 필요합니다'}
             </SheetDescription>
           </SheetHeader>
         </div>

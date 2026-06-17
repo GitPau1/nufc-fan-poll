@@ -13,6 +13,7 @@ export function LoginPageClient() {
     if (IS_MOCK || ENABLE_DEV_MOCK_AUTH) {
       await mockLogin()
       router.push(next)
+      router.refresh()
       return
     }
     const { createClient } = await import('@/lib/supabase/client')
@@ -29,6 +30,7 @@ export function LoginPageClient() {
     if (IS_MOCK || ENABLE_DEV_MOCK_AUTH) {
       await mockLogin()
       router.push('/onboarding')
+      router.refresh()
       return
     }
     const { createClient } = await import('@/lib/supabase/client')

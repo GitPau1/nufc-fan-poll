@@ -16,3 +16,12 @@ test('public header does not block server render on auth lookup', () => {
   assert.match(headerStatusSource, /auth === undefined/)
   assert.match(headerStatusSource, /<LoginButton \/>/)
 })
+
+test('app header uses the home header treatment by default', () => {
+  assert.match(appHeaderSource, /h-\[62px\]/)
+  assert.match(appHeaderSource, /backdrop-blur/)
+  assert.match(appHeaderSource, /from-white/)
+  assert.match(appHeaderSource, /justify-center/)
+  assert.match(appHeaderSource, /text-\[24px\]/)
+  assert.match(appHeaderSource, /NUFCVOTE/)
+})

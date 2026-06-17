@@ -6,8 +6,8 @@ import { ChevronLeft } from 'lucide-react'
 export function PollPageHeader() {
   const router = useRouter()
   return (
-    <header className="w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
-      <div className="flex h-14 items-center px-4">
+    <header className="w-full border-b border-[#e1e7ef] bg-gradient-to-b from-white to-white/75 backdrop-blur">
+      <div className="flex h-[62px] items-center px-4">
         <button
           onClick={() => router.back()}
           className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground

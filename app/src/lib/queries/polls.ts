@@ -38,6 +38,7 @@ export type PollDetail = {
   description: string | null
   status: PollStatus
   thumbnail_url?: string | null
+  created_at?: string | null
   scheduled_at?: string | null
   closes_at: string
   player_id: string | null
@@ -205,7 +206,7 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
   let { data, error } = await supabase
     .from('polls')
     .select(`
-      id, type, title, description, status, thumbnail_url, scheduled_at, closes_at, player_id, created_by,
+      id, type, title, description, status, thumbnail_url, created_at, scheduled_at, closes_at, player_id, created_by,
       player:players(id, name, position, squad_number, photo_url, is_active, squad_status),
       poll_options(id, poll_id, label, description, player_id, image_url, display_order, created_at,
         option_player:players(id, name, position, squad_number, photo_url, is_active, squad_status))
@@ -217,7 +218,7 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
     const fallback = await supabase
       .from('polls')
       .select(`
-        id, type, title, description, status, scheduled_at, closes_at, player_id, created_by,
+        id, type, title, description, status, created_at, scheduled_at, closes_at, player_id, created_by,
         player:players(id, name, position, squad_number, photo_url, is_active),
         poll_options(id, poll_id, label, player_id, display_order, created_at,
           option_player:players(id, name, position, squad_number, photo_url, is_active))
@@ -254,6 +255,7 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
       closes_at: data.closes_at as string,
     }),
     thumbnail_url: data.thumbnail_url as string | null,
+    created_at: data.created_at as string | null,
     scheduled_at: data.scheduled_at as string | null,
     closes_at: data.closes_at as string,
     player_id: data.player_id as string | null,

@@ -100,11 +100,11 @@ type PickOneCardState = {
 
 const slotClass: Record<PickOneSlot, string> = {
   left: 'translate-x-[12.5px]',
-  right: 'translate-x-[255px]',
-  center: 'translate-x-[134.75px]',
-  'out-left': '-translate-x-[210px] opacity-0',
-  'out-right': 'translate-x-[480px] opacity-0',
-  'enter-right': 'translate-x-[480px] opacity-0',
+  right: 'translate-x-[calc(100%_+_36.5px)]',
+  center: 'translate-x-[calc(50%_+_24.5px)]',
+  'out-left': '-translate-x-[calc(100%_+_32px)] opacity-0',
+  'out-right': 'translate-x-[calc(200%_+_75px)] opacity-0',
+  'enter-right': 'translate-x-[calc(200%_+_75px)] opacity-0',
 }
 
 const PICK_ONE_TARGET_OVERALL = 80
@@ -272,7 +272,7 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
           isDimmed={(phase === 'confirming' && selectedCardKey === 'rightCard') || isPending}
           onClick={() => phase === 'centered' ? showNextMatchup() : selectCard('leftCard')}
         />
-        <div className={`absolute left-[211px] top-[72px] flex h-6 w-6 items-center justify-center rounded-pill bg-[#f5f5f6] text-[14px] font-medium leading-[23px] tracking-[-0.4px] text-[#ababab] transition-opacity duration-300 ${phase === 'centered' ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+        <div className={`absolute left-1/2 top-[72px] flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-pill bg-[#f5f5f6] text-[14px] font-medium leading-[23px] tracking-[-0.4px] text-[#ababab] transition-opacity duration-300 ${phase === 'centered' ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           vs
         </div>
         <PickOneCard
@@ -373,7 +373,7 @@ function PickOneCard({
     <button
       type="button"
       onClick={onClick}
-      className={`absolute left-0 top-5 flex h-32 w-[178.5px] flex-col items-center justify-center gap-2.5 rounded-lg bg-[radial-gradient(circle_at_90%_-34%,rgba(207,217,230,0.22),rgba(25,34,50,0.22)_70%),radial-gradient(circle_at_25%_-95%,#191a1b_0%,#2e2d2d_50%,#434040_100%)] p-3 text-left transition-[transform,opacity,filter,box-shadow] duration-700 ease-in-out will-change-transform ${slotClass[card.slot]} ${isPicked ? 'shadow-[inset_0_0_0_3px_#32c2ff]' : ''} ${isDimmed ? 'opacity-[0.34] saturate-[0.35] duration-1000' : ''}`}
+      className={`absolute left-0 top-5 flex h-32 w-[calc((100%_-_49px)/2)] flex-col items-center justify-center gap-2.5 rounded-lg bg-[radial-gradient(circle_at_90%_-34%,rgba(207,217,230,0.22),rgba(25,34,50,0.22)_70%),radial-gradient(circle_at_25%_-95%,#191a1b_0%,#2e2d2d_50%,#434040_100%)] p-3 text-left transition-[transform,opacity,filter,box-shadow] duration-700 ease-in-out will-change-transform ${slotClass[card.slot]} ${isPicked ? 'shadow-[inset_0_0_0_3px_#32c2ff]' : ''} ${isDimmed ? 'opacity-[0.34] saturate-[0.35] duration-1000' : ''}`}
       aria-label={`${player.name} 선택`}
     >
       <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-pill border border-border bg-background">

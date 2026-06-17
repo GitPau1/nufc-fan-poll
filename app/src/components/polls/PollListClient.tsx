@@ -180,16 +180,16 @@ function PollHeroCard({ poll }: { poll: PollListItem }) {
     >
       <img src={getThumbnailUrl(poll)} alt="" className="h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121314]" />
-      <div className="absolute left-4 bottom-[52px] flex items-center gap-2">
-        <span className="inline-flex h-[21px] items-center rounded-pill bg-primary/55 px-[9px] text-[10px] font-semibold leading-[15px] text-white backdrop-blur-[2px]">
-          {poll.status === 'active' ? formatTimeLeft(poll.closes_at) : getStatusLabel(poll)}
-        </span>
-        <span className="inline-flex items-center gap-1 text-[11px] leading-[14px] text-white">
-          <Users className="h-3.5 w-3.5" />
-          {poll.vote_count.toLocaleString()}명
-        </span>
-      </div>
-      <div className="absolute inset-x-4 bottom-4">
+      <div className="absolute inset-x-4 bottom-4 flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-[21px] items-center rounded-pill bg-primary/55 px-[9px] text-[10px] font-semibold leading-[15px] text-white backdrop-blur-[2px]">
+            {poll.status === 'active' ? formatTimeLeft(poll.closes_at) : getStatusLabel(poll)}
+          </span>
+          <span className="inline-flex items-center gap-1 text-[11px] leading-[14px] text-white">
+            <Users className="h-3.5 w-3.5" />
+            {poll.vote_count.toLocaleString()}명
+          </span>
+        </div>
         <p className="truncate text-[17px] font-bold leading-5 text-white">{poll.title}</p>
         {poll.description && (
           <p className="mt-1 truncate text-[12px] leading-[16.5px] text-[#c7c7c7]">{poll.description}</p>

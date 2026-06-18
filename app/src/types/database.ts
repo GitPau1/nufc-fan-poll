@@ -1,6 +1,6 @@
 // DB schema types for the poll-only application.
 
-export type PollType = 'evaluation' | 'selection' | 'subject_options' | 'question_targets' | 'free_choice'
+export type PollType = 'evaluation' | 'selection' | 'subject_options' | 'question_targets' | 'free_choice' | 'overall_rating'
 export type PollStatus = 'scheduled' | 'active' | 'closed'
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD' | 'MGR'
 export type PlayerStatus = 'first_team' | 'loan' | 'u21'
@@ -111,6 +111,29 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['comment_likes']['Row'], 'id' | 'created_at'>
         Update: never
       }
+      rating_votes: {
+        Row: {
+          id: string
+          poll_id: string
+          user_id: string
+          target_player_id: string
+          score: number
+          comment: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['rating_votes']['Row'], 'id' | 'created_at'>
+        Update: never
+      }
+      rating_vote_likes: {
+        Row: {
+          id: string
+          rating_vote_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['rating_vote_likes']['Row'], 'id' | 'created_at'>
+        Update: never
+      }
       player_pick_one_choices: {
         Row: {
           id: string
@@ -201,6 +224,8 @@ export type PollOptionRow = Database['public']['Tables']['poll_options']['Row']
 export type VoteRow = Database['public']['Tables']['votes']['Row']
 export type CommentRow = Database['public']['Tables']['comments']['Row']
 export type CommentLikeRow = Database['public']['Tables']['comment_likes']['Row']
+export type RatingVoteRow = Database['public']['Tables']['rating_votes']['Row']
+export type RatingVoteLikeRow = Database['public']['Tables']['rating_vote_likes']['Row']
 export type PlayerPickOneChoiceRow = Database['public']['Tables']['player_pick_one_choices']['Row']
 export type PlayerPickOneRatingRow = Database['public']['Tables']['player_pick_one_ratings']['Row']
 export type PlayerPickOneWeeklyRunRow = Database['public']['Tables']['player_pick_one_weekly_runs']['Row']

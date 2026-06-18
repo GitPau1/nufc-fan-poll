@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/sheet'
 
 type FreeOption = { label: string; description: string; imageUrl: string }
-type CreatePollType = Extract<PollType, 'subject_options' | 'question_targets' | 'free_choice'>
+type CreatePollType = Extract<PollType, 'subject_options' | 'question_targets' | 'free_choice' | 'overall_rating'>
 type PlayerPickMode = 'single' | 'multiple'
 type PlayerFilter = 'all' | 'first_team' | 'loan' | 'u21'
 
@@ -26,6 +26,7 @@ const POLL_TYPES: Array<{ type: CreatePollType; label: string; description: stri
   { type: 'subject_options', label: '대상+선택지', description: '한 선수에 대해 여러 선택지를 붙입니다.' },
   { type: 'question_targets', label: '질문+선수', description: '질문 하나에 여러 선수를 후보로 둡니다.' },
   { type: 'free_choice', label: '자유 선택', description: '선수와 무관한 선택지를 직접 만듭니다.' },
+  { type: 'overall_rating', label: '전체 평점', description: '여러 선수에게 각각 등급과 코멘트를 받습니다.' },
 ]
 
 const POSITION_ORDER: Array<Position | 'ETC'> = ['GK', 'DEF', 'MID', 'FWD', 'MGR', 'ETC']
@@ -336,7 +337,7 @@ export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
           <section className="space-y-2.5 rounded-md border border-border bg-surface p-4 shadow-g200">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[13px] font-bold text-foreground">후보 선수</p>
+                <p className="text-[13px] font-bold text-foreground">{pollType === 'overall_rating' ? '평가 대상 선수' : '후보 선수'}</p>
                 <p className="mt-0.5 text-[12px] text-muted-foreground">{selectedPlayers.length}명 선택됨</p>
               </div>
               <button type="button" onClick={() => openPlayerPicker('multiple')} className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-disabled px-2.5 text-[12px] font-bold text-foreground">

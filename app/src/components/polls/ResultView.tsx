@@ -9,6 +9,7 @@ import { trackEvent } from '@/lib/analytics/mixpanel'
 import { CommentsSection } from './CommentsSection'
 import { IS_MOCK } from '@/lib/config'
 import { cn } from '@/lib/utils'
+import type { PlayerRow, PollOptionRow } from '@/types/database'
 
 interface ResultViewProps {
   poll: PollDetail
@@ -39,6 +40,17 @@ function formatPollDate(dateStr?: string | null): string | null {
     month: 'long',
     day: 'numeric',
   }).format(new Date(dateStr))
+}
+
+function getOptionThumb(option: PollOptionRow, optionPlayers?: Record<string, PlayerRow>) {
+  const player = option.player_id ? optionPlayers?.[option.player_id] ?? null : null
+  if (option.image_url) {
+    return { url: option.image_url, label: option.label, fallback: option.label.slice(0, 1) }
+  }
+  if (player) {
+    return { url: player.photo_url, label: player.name, fallback: player.name.slice(0, 1) }
+  }
+  return null
 }
 
 export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultViewProps) {
@@ -120,38 +132,62 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                 </div>
               ) : (
                 <div className="flex w-full flex-col gap-2 px-4">
-                  {resultItems.map((item, index) => (
-                    <div
-                      key={item.option.id}
-                      className="relative min-h-[49px] overflow-hidden rounded-[100px] border border-border bg-surface"
-                    >
+                  {resultItems.map((item, index) => {
+                    const thumb = getOptionThumb(item.option, poll.option_players)
+
+                    return (
                       <div
-                        className={cn(
-                          'absolute inset-y-0 left-0 rounded-l-[100px]',
-                          index === 0 ? 'bg-[#ccf0ff]' : 'bg-[#f4f4f5]'
-                        )}
-                        style={{ width: `${item.percent}%` }}
-                      />
-                      <div className="relative flex min-h-[47px] items-center justify-between gap-3 px-[17px] py-[13px]">
-                        <p
+                        key={item.option.id}
+                        className="relative min-h-[50px] overflow-hidden rounded-[100px] border border-border bg-surface"
+                      >
+                        <div
                           className={cn(
-                            'min-w-0 break-keep text-[12px] leading-[22.5px]',
-                            index === 0 ? 'font-semibold text-primary-dark' : 'font-medium text-muted-foreground'
+                            'absolute inset-y-0 left-0 rounded-l-[100px]',
+                            index === 0 ? 'bg-[#ccf0ff]' : 'bg-[#f4f4f5]'
+                          )}
+                          style={{ width: `${item.percent}%` }}
+                        />
+                        <div
+                          className={cn(
+                            'relative flex min-h-[48px] items-center justify-between gap-3 py-[4px] pr-[17px]',
+                            thumb ? 'pl-[5px]' : 'pl-[17px]'
                           )}
                         >
-                          {item.option.label}
-                        </p>
-                        <span
-                          className={cn(
-                            'flex-shrink-0 text-[12px] leading-[22.5px] tabular-nums',
-                            index === 0 ? 'font-semibold text-primary-dark' : 'font-medium text-muted-foreground'
-                          )}
-                        >
-                          {item.percent}%
-                        </span>
+                          <div className="flex min-w-0 items-center gap-2">
+                            {thumb ? (
+                              <div className="flex size-[40px] flex-shrink-0 items-center justify-center overflow-hidden rounded-[100px] bg-[#0c2340] text-[12px] font-bold text-white">
+                                {thumb.url ? (
+                                  <img
+                                    src={thumb.url}
+                                    alt={thumb.label}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <span>{thumb.fallback}</span>
+                                )}
+                              </div>
+                            ) : null}
+                            <p
+                              className={cn(
+                                'min-w-0 truncate break-keep text-[12px] leading-[22.5px]',
+                                index === 0 ? 'font-semibold text-primary-dark' : 'font-medium text-muted-foreground'
+                              )}
+                            >
+                              {item.option.label}
+                            </p>
+                          </div>
+                          <span
+                            className={cn(
+                              'flex-shrink-0 text-[12px] leading-[22.5px] tabular-nums',
+                              index === 0 ? 'font-semibold text-primary-dark' : 'font-medium text-muted-foreground'
+                            )}
+                          >
+                            {item.percent}%
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
 

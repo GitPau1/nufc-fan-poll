@@ -30,6 +30,15 @@ test('result page renders all options as Figma-style percentage bars', () => {
   assert.doesNotMatch(resultView, /text-\[40px\]/)
 })
 
+test('result page adds Figma-style option thumbnails only for image or player options', () => {
+  assert.match(resultView, /getOptionThumb/)
+  assert.match(resultView, /option\.image_url/)
+  assert.match(resultView, /poll\.option_players/)
+  assert.match(resultView, /size-\[40px\]/)
+  assert.match(resultView, /thumb \?/ )
+  assert.doesNotMatch(resultView, /placehold\.co\/40x40/)
+})
+
 test('comment composer keeps the Figma input proportions', () => {
   assert.match(commentsSection, /h-\[62px\]/)
   assert.match(commentsSection, /rounded-\[16px\]/)

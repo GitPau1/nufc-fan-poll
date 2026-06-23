@@ -8,7 +8,7 @@ The product now has two participation modes:
 
 ```text
 Poll participation = vote_submitted + poll_result_viewed
-Lightweight repeated participation = pick_one_submitted + rating_changes_viewed
+Lightweight repeated participation = pick_one_submitted + player_rating_changes_viewed
 ```
 
 For operations, the main question is:
@@ -20,10 +20,18 @@ For operations, the main question is:
 ### 1. Visit
 
 ```text
-app_opened
+session_started
 ```
 
-Use `app_opened` unique users for DAU and MAU. Do not interpret raw `app_opened` event count as app launches, because the current implementation fires on route changes.
+Use `session_started` unique users for DAU and WAU after the tracking change on 2026-06-24. The previous `app_opened` event is legacy data and should not be compared directly with `session_started`.
+
+Use `screen_viewed` for route-level screen analysis:
+
+```text
+screen_viewed
+```
+
+Do not use raw `screen_viewed` counts as DAU/WAU, because one user can view many screens in one session.
 
 ### 2. Poll Participation Loop
 
@@ -40,7 +48,7 @@ This measures whether a user moves from poll exposure to a first opinion and the
 
 ```text
 poll_result_viewed
-rating_changes_viewed
+player_rating_changes_viewed
 ```
 
 Community reward is the moment a user sees their action reflected in a group outcome. Polls deliver this through result views. Pick One delivers this through weekly rating changes.
@@ -62,7 +70,7 @@ players_viewed
 → pick_one_viewed
 → pick_one_submitted
 → pick_one_next_clicked
-→ rating_changes_viewed
+→ player_rating_changes_viewed
 ```
 
 Pick One is the lightweight repeat loop. It should answer whether player comparisons become a small fan habit, not just a one-time action.
@@ -78,10 +86,10 @@ Useful operating questions:
 
 ```text
 return_visit
-→ vote_submitted | pick_one_submitted | comment_submitted | rating_changes_viewed
+→ vote_submitted | pick_one_submitted | comment_submitted | player_rating_changes_viewed
 ```
 
-The current `return_visit` event means the user came back after at least 30 minutes, not necessarily the next day. Treat it as a session return signal. For community health, pair it with follow-up actions instead of reading it alone.
+The current `return_visit` event means the user came back after at least 30 minutes, not necessarily the next day. It is sent when a new session starts after that window. Treat it as a session return signal. For community health, pair it with follow-up actions instead of reading it alone.
 
 ### 7. High-Intent Users
 
@@ -99,9 +107,10 @@ Track only events that support operating decisions.
 
 | Event | Trigger | Product Question |
 |---|---|---|
-| `app_opened` | User lands on or navigates within the service. | How many unique users entered the product? |
+| `session_started` | A new browser session starts, or the previous activity was more than 30 minutes ago. | How many unique users entered the product? |
+| `screen_viewed` | Route changes to a visible screen. | Which screens do users visit? |
 | `return_visit` | User returns after the session window. | Did users come back after leaving? |
-| `poll_feed_viewed` | Poll feed is visible. | Did the user see poll content? |
+| `poll_feed_viewed` | Poll feed is visible for the first time in the browser session. | Did the user see poll content? |
 | `poll_card_clicked` | User opens a poll from a card. | Did a poll topic create interest? |
 | `vote_submitted` | Vote is successfully saved. | Did the user submit an opinion? |
 | `poll_result_viewed` | Poll result screen is viewed. | Did the user reach the poll reward moment? |
@@ -121,13 +130,27 @@ Track only events that support operating decisions.
 | `poll_first_vote_received` | A user-created poll receives its first vote. | Did the creator reach their reward moment? |
 | `feedback_submitted` | Feedback is successfully submitted. | Did a high-intent user give operational feedback? |
 
+## Tracking Change History
+
+### 2026-06-24
+
+The visit model changed:
+
+- `app_opened` stopped being the active visit event.
+- `session_started` became the DAU/WAU source event.
+- `screen_viewed` became the route-level screen event.
+- `poll_feed_viewed` was deduped per browser session and source page.
+
+Do not join pre-change `app_opened` trends and post-change `session_started` trends into a single continuous chart without an annotation.
+
 ## Current Ambiguities
 
 These events are useful, but their interpretation must stay narrow:
 
 | Event | Do Not Read As | Current Meaning |
 |---|---|---|
-| `app_opened` | Exact app launch count. | Unique-user DAU/MAU source; raw count includes route changes. |
+| `app_opened` | Current active visit metric. | Legacy pre-2026-06-24 route/session entry event. |
+| `screen_viewed` | Session count or app launch count. | Route-level screen view. |
 | `return_visit` | Calendar-day retention. | Session return after 30+ minutes. |
 | `vote_submitted` | All community participation. | Poll-specific participation only. |
 | `poll_result_viewed` | All value moments. | Poll reward moment only. |

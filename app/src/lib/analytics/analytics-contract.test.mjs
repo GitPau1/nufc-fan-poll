@@ -18,6 +18,24 @@ test('analytics source page taxonomy includes current community routes', () => {
   assert.match(file, /pathname\.startsWith\('\/menu'\)[\s\S]{0,60}return 'menu'/)
 })
 
+test('app analytics separates session starts from route screen views', () => {
+  const file = source('components/analytics/AppAnalytics.tsx')
+
+  assert.match(file, /sessionKey = 'nufc_vote_analytics_session_started'/)
+  assert.match(file, /trackEvent\('session_started'/)
+  assert.match(file, /trackEvent\('screen_viewed'/)
+  assert.doesNotMatch(file, /trackEvent\('app_opened'/)
+})
+
+test('poll feed analytics dedupes feed exposure within a browser session', () => {
+  const file = source('components/analytics/AppAnalytics.tsx')
+
+  assert.match(file, /feedSeenKey = `nufc_vote_analytics_feed_seen:\$\{sourcePage\}`/)
+  assert.match(file, /sessionStorage\.getItem\(feedSeenKey\)/)
+  assert.match(file, /sessionStorage\.setItem\(feedSeenKey, 'true'\)/)
+  assert.doesNotMatch(file, /\}, \[sourcePage, pollCount\]\)/)
+})
+
 test('players page tracks the Pick One participation and reward loop', () => {
   const file = source('components/players/PlayersPageClient.tsx')
 

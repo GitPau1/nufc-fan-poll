@@ -13,23 +13,27 @@ interface PollPageProps {
   params: Promise<{ id: string }>
 }
 
-export default async function PollPage({ params }: PollPageProps) {
-  const { id } = await params
-
-  let user = null
+async function getCurrentUser() {
   if (IS_MOCK) {
     const cookieStore = await cookies()
     if (cookieStore.get('mock-auth')?.value === 'true') {
-      user = { id: 'mock-user', user_metadata: { name: '뉴캐슬 팬', avatar_url: null } }
+      return { id: 'mock-user', user_metadata: { name: '뉴캐슬 팬', avatar_url: null } }
     }
-  } else {
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase.auth.getUser()
-    user = data.user
+    return null
   }
 
-  const poll = await getPollById(id)
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data } = await supabase.auth.getUser()
+  return data.user
+}
+
+export default async function PollPage({ params }: PollPageProps) {
+  const { id } = await params
+  const pollPromise = getPollById(id)
+  const userPromise = getCurrentUser()
+  const [user, poll] = await Promise.all([userPromise, pollPromise])
+
   if (!poll) notFound()
 
   const isClosed = poll.status === 'closed'

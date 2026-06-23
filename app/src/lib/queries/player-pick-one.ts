@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { createPublicClient } from '@/lib/supabase/server'
 import { IS_MOCK } from '@/lib/config'
 
@@ -20,7 +21,7 @@ export type PickOneRatingChangeWeek = {
   changes: PickOneRatingChangeItem[]
 }
 
-export async function getLatestPickOneRatingChanges(): Promise<PickOneRatingChangeWeek | null> {
+async function getLatestPickOneRatingChangesUncached(): Promise<PickOneRatingChangeWeek | null> {
   if (IS_MOCK) return null
 
   const supabase = createPublicClient()
@@ -76,3 +77,12 @@ export async function getLatestPickOneRatingChanges(): Promise<PickOneRatingChan
     })),
   }
 }
+
+export const getLatestPickOneRatingChanges = unstable_cache(
+  getLatestPickOneRatingChangesUncached,
+  ['public-player-pick-one-rating-changes'],
+  {
+    revalidate: 300,
+    tags: ['player-pick-one-rating-changes'],
+  },
+)

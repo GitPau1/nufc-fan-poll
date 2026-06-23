@@ -1,4 +1,4 @@
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -11,6 +11,7 @@ export async function POST(request: Request) {
 
   revalidatePath('/players')
   revalidatePath('/players/changes')
+  revalidateTag('player-pick-one-rating-changes')
 
   return NextResponse.json({ revalidated: true })
 }

@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Navigation Loading Preview</title>
+  <style>
+    :root {
+      --c-primary: #41b6e6;
+      --c-primary-dim: rgba(65, 182, 230, 0.12);
+      --c-bg: #fafafa;
+      --c-surface: #ffffff;
+      --c-foreground: #111111;
+      --c-muted: #666666;
+      --c-border: #e1e7ef;
+      --c-disabled: #ebebeb;
+      --shadow: 0 1px 6px rgba(0, 0, 0, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #e8eef4;
+      color: var(--c-foreground);
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", sans-serif;
+    }
+
+    .phone {
+      position: relative;
+      width: min(100vw, 480px);
+      min-height: 100vh;
+      margin: 0 auto;
+      overflow: hidden;
+      background: var(--c-bg);
+    }
+
+    .content {
+      padding: 18px 16px 96px;
+    }
+
+    .hero {
+      height: 252px;
+      overflow: hidden;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0c2340, #41b6e6);
+      box-shadow: var(--shadow);
+      color: white;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 20%, rgba(0, 0, 0, .75));
+    }
+
+    .hero-text {
+      position: absolute;
+      z-index: 1;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+    }
+
+    .chip {
+      display: inline-flex;
+      height: 22px;
+      align-items: center;
+      border-radius: 999px;
+      background: rgba(65, 182, 230, .55);
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 10px 0 0;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .list {
+      margin-top: 14px;
+      overflow: hidden;
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      background: var(--c-surface);
+    }
+
+    .row {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .row:last-child {
+      border-bottom: 0;
+    }
+
+    .thumb {
+      width: 72px;
+      height: 72px;
+      flex: 0 0 auto;
+      border-radius: 8px;
+      background: var(--c-disabled);
+    }
+
+    .line {
+      height: 12px;
+      margin-top: 10px;
+      border-radius: 999px;
+      background: var(--c-disabled);
+    }
+
+    .line.title {
+      width: 78%;
+      height: 16px;
+      margin-top: 8px;
+      background: #d8e3eb;
+    }
+
+    .line.short {
+      width: 46%;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      border-top: 1px solid var(--c-border);
+      background: var(--c-surface);
+      padding: 8px 0 16px;
+      z-index: 3;
+    }
+
+    .nav-item {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      color: var(--c-muted);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      color: var(--c-primary);
+    }
+
+    .demo-button {
+      width: 100%;
+      height: 48px;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--c-primary);
+      color: white;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+    }
+
+    .loading {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: none;
+      flex-direction: column;
+      background: rgba(250, 250, 250, .95);
+      backdrop-filter: blur(8px);
+    }
+
+    .loading.is-visible {
+      display: flex;
+    }
+
+    .loading-bar-track {
+      height: 4px;
+      overflow: hidden;
+      background: var(--c-disabled);
+    }
+
+    .loading-bar {
+      width: 50%;
+      height: 100%;
+      border-radius: 0 999px 999px 0;
+      background: var(--c-primary);
+      animation: loading-bar 1s ease-in-out infinite;
+    }
+
+    .skeleton-screen {
+      flex: 1;
+      padding: 16px 16px 96px;
+    }
+
+    .skeleton-hero {
+      height: 252px;
+      overflow: hidden;
+      border-radius: 8px;
+      background: var(--c-surface);
+      box-shadow: var(--shadow);
+    }
+
+    .skeleton-list {
+      margin-top: 12px;
+      overflow: hidden;
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      background: var(--c-surface);
+    }
+
+    .skeleton-tabs {
+      display: flex;
+      padding: 16px 12px 0;
+    }
+
+    .skeleton-tab {
+      height: 32px;
+      flex: 1;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .skeleton-tab:first-child {
+      border-bottom-color: var(--c-primary);
+    }
+
+    .skeleton-row {
+      display: flex;
+      height: 128px;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px 16px 12px;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .skeleton-row:last-child {
+      border-bottom: 0;
+    }
+
+    .skeleton-thumb {
+      width: 96px;
+      height: 96px;
+      flex: 0 0 auto;
+      overflow: hidden;
+      border-radius: 8px;
+      background: var(--c-disabled);
+    }
+
+    .skeleton-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .skeleton-pill,
+    .skeleton-line {
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--c-disabled);
+    }
+
+    .skeleton-pill {
+      width: 64px;
+      height: 20px;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      margin-top: 12px;
+    }
+
+    .skeleton-line.title {
+      width: 82%;
+      height: 16px;
+    }
+
+    .skeleton-line.short {
+      width: 56%;
+      height: 12px;
+    }
+
+    .shimmer {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--c-disabled) 0%, #f7f7f7 45%, var(--c-disabled) 100%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.15s ease-in-out infinite;
+    }
+
+    @keyframes loading-bar {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(50%); }
+      100% { transform: translateX(200%); }
+    }
+
+    @keyframes skeleton-shimmer {
+      0% { background-position: 120% 0; }
+      100% { background-position: -120% 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <section class="content">
+      <div class="hero">
+        <div class="hero-text">
+          <span class="chip">D-2 마감</span>
+          <h1>오늘의 뉴캐슬 팬 투표</h1>
+        </div>
+      </div>
+
+      <button class="demo-button" type="button" data-show-loading>
+        로딩 모션 보기
+      </button>
+
+      <div class="list">
+        <div class="row">
+          <div class="thumb"></div>
+          <div style="flex: 1">
+            <div class="line title"></div>
+            <div class="line"></div>
+            <div class="line short"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="thumb"></div>
+          <div style="flex: 1">
+            <div class="line title"></div>
+            <div class="line"></div>
+            <div class="line short"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="bottom-nav" aria-label="하단 메뉴">
+      <button class="nav-item active" type="button" data-show-loading>투표</button>
+      <button class="nav-item" type="button" data-show-loading>역대 선수</button>
+      <button class="nav-item" type="button" data-show-loading>메뉴</button>
+    </nav>
+
+    <div class="loading" role="status" aria-label="페이지를 불러오는 중">
+      <div class="loading-bar-track">
+        <div class="loading-bar"></div>
+      </div>
+      <div class="skeleton-screen" aria-hidden="true">
+        <div class="skeleton-hero">
+          <div class="shimmer"></div>
+        </div>
+
+        <div class="skeleton-list">
+          <div class="skeleton-tabs">
+            <div class="skeleton-tab"></div>
+            <div class="skeleton-tab"></div>
+            <div class="skeleton-tab"></div>
+          </div>
+
+          <div class="skeleton-row">
+            <div class="skeleton-thumb"><div class="shimmer"></div></div>
+            <div class="skeleton-copy">
+              <div class="skeleton-pill"><div class="shimmer"></div></div>
+              <div class="skeleton-line title"><div class="shimmer"></div></div>
+              <div class="skeleton-line short"><div class="shimmer"></div></div>
+            </div>
+          </div>
+          <div class="skeleton-row">
+            <div class="skeleton-thumb"><div class="shimmer"></div></div>
+            <div class="skeleton-copy">
+              <div class="skeleton-pill"><div class="shimmer"></div></div>
+              <div class="skeleton-line title"><div class="shimmer"></div></div>
+              <div class="skeleton-line short"><div class="shimmer"></div></div>
+            </div>
+          </div>
+          <div class="skeleton-row">
+            <div class="skeleton-thumb"><div class="shimmer"></div></div>
+            <div class="skeleton-copy">
+              <div class="skeleton-pill"><div class="shimmer"></div></div>
+              <div class="skeleton-line title"><div class="shimmer"></div></div>
+              <div class="skeleton-line short"><div class="shimmer"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">페이지를 불러오는 중</span>
+    </div>
+  </main>
+
+  <script>
+    const loading = document.querySelector('.loading')
+    const triggers = document.querySelectorAll('[data-show-loading]')
+
+    triggers.forEach(trigger => {
+      trigger.addEventListener('click', () => {
+        loading.classList.add('is-visible')
+        window.setTimeout(() => {
+          loading.classList.remove('is-visible')
+        }, 1800)
+      })
+    })
+  </script>
+</body>
+</html>

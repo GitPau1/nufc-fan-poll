@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import './globals.css'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { NavigationLoading } from '@/components/layout/NavigationLoading'
 import { AuthCodeHandler } from '@/components/auth/AuthCodeHandler'
 import { AppAnalytics } from '@/components/analytics/AppAnalytics'
 
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-background min-h-screen">
         <div className="max-w-[480px] mx-auto min-h-screen bg-background relative">
           <AppAnalytics />
+          <NavigationLoading />
           {children}
           <BottomNav />
           {/* OAuth 코드가 어느 페이지에 붙어 오든 세션 교환 처리 */}

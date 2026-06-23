@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { Search } from 'lucide-react'
-import { submitPickOneChoice } from '@/lib/actions/player-pick-one'
+import { getPickOneDailyChoiceStatus, submitPickOneChoice } from '@/lib/actions/player-pick-one'
 import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
 
 export type PlayerListItem = {
@@ -92,7 +92,7 @@ export function PlayersPageClient({ players }: PlayersPageClientProps) {
 
 type PickOnePhase = 'idle' | 'confirming' | 'centered'
 type PickOneCardKey = 'leftCard' | 'rightCard'
-type PickOneSlot = 'left' | 'right' | 'center' | 'out-left' | 'out-right' | 'enter-right'
+type PickOneSlot = 'left' | 'right' | 'center' | 'out-left' | 'out-right' | 'out-down' | 'enter-left' | 'enter-right'
 type PickOneCardState = {
   player: PlayerListItem
   slot: PickOneSlot
@@ -104,6 +104,8 @@ const slotClass: Record<PickOneSlot, string> = {
   center: 'translate-x-[calc(50%_+_24.5px)]',
   'out-left': '-translate-x-[calc(100%_+_32px)] opacity-0',
   'out-right': 'translate-x-[calc(200%_+_75px)] opacity-0',
+  'out-down': 'translate-x-[calc(50%_+_24.5px)] translate-y-[180px] opacity-0',
+  'enter-left': '-translate-x-[calc(100%_+_32px)] opacity-0',
   'enter-right': 'translate-x-[calc(200%_+_75px)] opacity-0',
 }
 
@@ -116,11 +118,14 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
   const [phase, setPhase] = useState<PickOnePhase>('idle')
   const [selectedCardKey, setSelectedCardKey] = useState<PickOneCardKey | null>(null)
   const [feedback, setFeedback] = useState('')
+  const [remainingChoices, setRemainingChoices] = useState<number | null>(null)
+  const [choiceStatusLoaded, setChoiceStatusLoaded] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [cards, setCards] = useState<Record<PickOneCardKey, PickOneCardState>>(() => ({
     leftCard: { player: initialPlayers[0], slot: 'left' },
     rightCard: { player: initialPlayers[1], slot: 'right' },
   }))
+  const [exitingCard, setExitingCard] = useState<PickOneCardState | null>(null)
   const initialMatchupPlayersRef = useRef(players)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -138,6 +143,13 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
       right_player_id: weightedPlayers[1].id,
       left_overall: weightedPlayers[0].overall,
       right_overall: weightedPlayers[1].overall,
+    })
+  }, [])
+
+  useEffect(() => {
+    getPickOneDailyChoiceStatus().then(status => {
+      setRemainingChoices(status.remaining)
+      setChoiceStatusLoaded(true)
     })
   }, [])
 
@@ -182,6 +194,7 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
     startTransition(async () => {
       const result = await submitPickOneChoice(winner.id, loser.id)
       if ('success' in result) {
+        setRemainingChoices(result.remaining)
         trackEvent('pick_one_submitted', {
           source_page: 'players',
           winner_player_id: winner.id,
@@ -193,6 +206,7 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
         setFeedback('이번 주 선택에 저장됐습니다. 한 번 더 누르면 다음 선택으로 넘어갑니다.')
         proceedSelection(cardKey, winner, loser, winnerSlot, loserSlot)
       } else if ('duplicate' in result) {
+        setRemainingChoices(result.remaining)
         trackEvent('pick_one_submitted', {
           source_page: 'players',
           winner_player_id: winner.id,
@@ -211,6 +225,11 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
         setFeedback('로그인 후 선택을 기록할 수 있습니다.')
         setSelectedCardKey(null)
         setPhase('idle')
+      } else if (result.error === 'daily_limit') {
+        setRemainingChoices(result.remaining ?? 0)
+        setFeedback('오늘 가능한 선택 5회를 모두 사용했습니다.')
+        setSelectedCardKey(null)
+        setPhase('idle')
       } else {
         setFeedback('선택을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.')
         setSelectedCardKey(null)
@@ -224,34 +243,38 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
 
     const winner = cards[selectedCardKey].player
     const otherKey: PickOneCardKey = selectedCardKey === 'leftCard' ? 'rightCard' : 'leftCard'
-    const nextOpponent = getNextOpponent(players, winner, cards[otherKey].player)
+    const nextPlayers = getNextMatchup(players, [winner.id, cards[otherKey].player.id])
+    setExitingCard({ player: winner, slot: 'center' })
 
     trackEvent('pick_one_next_clicked', {
       source_page: 'players',
       winner_player_id: winner.id,
-      next_opponent_player_id: nextOpponent.id,
+      next_opponent_player_id: nextPlayers[1].id,
     })
     trackEvent('pick_one_viewed', {
       source_page: 'players',
-      left_player_id: winner.id,
-      right_player_id: nextOpponent.id,
-      left_overall: winner.overall,
-      right_overall: nextOpponent.overall,
+      left_player_id: nextPlayers[0].id,
+      right_player_id: nextPlayers[1].id,
+      left_overall: nextPlayers[0].overall,
+      right_overall: nextPlayers[1].overall,
     })
     setFeedback('')
     setSelectedCardKey(null)
     setPhase('idle')
     setCards({
-      [selectedCardKey]: { player: winner, slot: 'left' },
-      [otherKey]: { player: nextOpponent, slot: 'enter-right' },
+      [selectedCardKey]: { player: nextPlayers[0], slot: 'enter-left' },
+      [otherKey]: { player: nextPlayers[1], slot: 'enter-right' },
     } as Record<PickOneCardKey, PickOneCardState>)
 
     requestAnimationFrame(() => {
       window.setTimeout(() => {
+        setExitingCard({ player: winner, slot: 'out-down' })
         setCards(current => ({
           ...current,
+          [selectedCardKey]: { ...current[selectedCardKey], slot: 'left' },
           [otherKey]: { ...current[otherKey], slot: 'right' },
         }))
+        window.setTimeout(() => setExitingCard(null), 700)
       }, 120)
     })
   }
@@ -263,8 +286,20 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
           여러분의 선택은?
         </p>
       </div>
+      <div className="flex items-center justify-center px-4 pt-3 text-[12px] font-semibold leading-[16.5px] text-gray-2">
+        {getRemainingChoiceLabel(choiceStatusLoaded, remainingChoices)}
+      </div>
 
       <div className="relative h-[168px] overflow-hidden">
+        {exitingCard && (
+          <PickOneCard
+            key={`exiting-${exitingCard.player.id}`}
+            card={exitingCard}
+            isPicked={false}
+            isDimmed={false}
+            onClick={() => {}}
+          />
+        )}
         <PickOneCard
           key={cards.leftCard.player.id}
           card={cards.leftCard}
@@ -301,6 +336,12 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
   )
 }
 
+function getRemainingChoiceLabel(loaded: boolean, remainingChoices: number | null): string {
+  if (!loaded) return '오늘 남은 선택 확인 중'
+  if (remainingChoices === null) return '로그인 후 참여 가능'
+  return `오늘 남은 선택 ${remainingChoices}/5`
+}
+
 function getInitialMatchup(players: PlayerListItem[]): [PlayerListItem, PlayerListItem] {
   const sortedPlayers = players.slice().sort((a, b) => getPickOneWeight(b) - getPickOneWeight(a))
   return [sortedPlayers[0]!, sortedPlayers[1] ?? getNextOpponent(players, sortedPlayers[0]!)]
@@ -310,6 +351,13 @@ function getWeightedInitialMatchup(players: PlayerListItem[]): [PlayerListItem, 
   const left = weightedRandomPlayer(players)
   const right = weightedRandomPlayer(players.filter(player => player.id !== left.id))
   return [left, right]
+}
+
+function getNextMatchup(players: PlayerListItem[], excludedPlayerIds: string[]): [PlayerListItem, PlayerListItem] {
+  const availablePlayers = players.filter(player => !excludedPlayerIds.includes(player.id))
+  const pool = availablePlayers.length >= 2 ? availablePlayers : players
+
+  return getWeightedInitialMatchup(pool)
 }
 
 function getPickOneWeight(player: PlayerListItem): number {

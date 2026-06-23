@@ -4,6 +4,8 @@ import { AppHeader } from '@/components/layout/AppHeader'
 import { PlayerRatingChangesAnalytics } from '@/components/players/PlayerRatingChangesAnalytics'
 import { getLatestPickOneRatingChanges } from '@/lib/queries/player-pick-one'
 
+export const revalidate = 3600
+
 function formatDate(dateStr: string): string {
   return new Intl.DateTimeFormat('ko-KR', {
     month: 'long',

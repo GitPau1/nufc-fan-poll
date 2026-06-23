@@ -88,3 +88,25 @@ test('players Pick One success feedback tells users to tap again', () => {
   assert.match(file, /이번 주 선택에 저장됐습니다\. 한 번 더 누르면 다음 선택으로 넘어갑니다\./)
   assert.match(file, /이번 주 이미 반영된 매치업입니다\. 한 번 더 누르면 다음 선택으로 넘어갑니다\./)
 })
+
+test('players Pick One starts a fresh matchup after each completed choice', () => {
+  const file = source('components/players/PlayersPageClient.tsx')
+
+  assert.match(file, /const nextPlayers = getNextMatchup\(players, \[winner\.id, cards\[otherKey\]\.player\.id\]\)/)
+  assert.match(file, /setExitingCard\(\{ player: winner, slot: 'out-down' \}\)/)
+  assert.match(file, /\[selectedCardKey\]: \{ player: nextPlayers\[0\], slot: 'enter-left' \}/)
+  assert.match(file, /\[otherKey\]: \{ player: nextPlayers\[1\], slot: 'enter-right' \}/)
+  assert.doesNotMatch(file, /\[selectedCardKey\]: \{ player: winner, slot: 'left' \}/)
+})
+
+test('players Pick One shows remaining daily participation count', () => {
+  const file = source('components/players/PlayersPageClient.tsx')
+
+  assert.match(file, /getPickOneDailyChoiceStatus/)
+  assert.match(file, /remainingChoices/)
+  assert.match(file, /오늘 남은 선택/)
+  assert.match(file, /setRemainingChoices\(result\.remaining\)/)
+  assert.match(file, /확인 중/)
+  assert.match(file, /로그인 후 참여 가능/)
+  assert.doesNotMatch(file, /remainingChoices \?\? 5/)
+})

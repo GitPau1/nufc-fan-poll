@@ -25,13 +25,13 @@ session_started
 
 Use `session_started` unique users for DAU and WAU after the tracking change on 2026-06-24. The previous `app_opened` event is legacy data and should not be compared directly with `session_started`.
 
-Use `screen_viewed` for route-level screen analysis:
+Use `tab_viewed` for primary tab analysis:
 
 ```text
-screen_viewed
+tab_viewed
 ```
 
-Do not use raw `screen_viewed` counts as DAU/WAU, because one user can view many screens in one session.
+This event is intentionally limited to the three primary tabs: poll, players, and menu. Poll detail pages, rating changes, feedback, and account pages are excluded.
 
 ### 2. Poll Participation Loop
 
@@ -108,7 +108,7 @@ Track only events that support operating decisions.
 | Event | Trigger | Product Question |
 |---|---|---|
 | `session_started` | A new browser session starts, or the previous activity was more than 30 minutes ago. | How many unique users entered the product? |
-| `screen_viewed` | Route changes to a visible screen. | Which screens do users visit? |
+| `tab_viewed` | User views one of the three primary tabs: poll, players, or menu. | Which primary tab gets the most traffic? |
 | `return_visit` | User returns after the session window. | Did users come back after leaving? |
 | `poll_feed_viewed` | Poll feed is visible for the first time in the browser session. | Did the user see poll content? |
 | `poll_card_clicked` | User opens a poll from a card. | Did a poll topic create interest? |
@@ -138,7 +138,7 @@ The visit model changed:
 
 - `app_opened` stopped being the active visit event.
 - `session_started` became the DAU/WAU source event.
-- `screen_viewed` became the route-level screen event.
+- `tab_viewed` became the primary tab comparison event.
 - `poll_feed_viewed` was deduped per browser session and source page.
 
 Do not join pre-change `app_opened` trends and post-change `session_started` trends into a single continuous chart without an annotation.
@@ -150,7 +150,7 @@ These events are useful, but their interpretation must stay narrow:
 | Event | Do Not Read As | Current Meaning |
 |---|---|---|
 | `app_opened` | Current active visit metric. | Legacy pre-2026-06-24 route/session entry event. |
-| `screen_viewed` | Session count or app launch count. | Route-level screen view. |
+| `tab_viewed` | All page views. | Primary tab view for poll, players, or menu only. |
 | `return_visit` | Calendar-day retention. | Session return after 30+ minutes. |
 | `vote_submitted` | All community participation. | Poll-specific participation only. |
 | `poll_result_viewed` | All value moments. | Poll reward moment only. |
@@ -209,6 +209,18 @@ Attach to poll-related events:
   is_first_vote: boolean
 }
 ```
+
+### Primary Tab Properties
+
+Attach to `tab_viewed`:
+
+```ts
+{
+  tab: "poll" | "players" | "menu"
+}
+```
+
+Use `tab_viewed by tab` in Mixpanel to compare the three primary navigation areas. `/polls/[id]`, `/players/changes`, `/my`, and `/my/feedback` are intentionally excluded.
 
 ### Poll Creation Properties
 

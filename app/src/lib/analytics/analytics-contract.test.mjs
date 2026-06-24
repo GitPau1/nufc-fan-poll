@@ -18,13 +18,18 @@ test('analytics source page taxonomy includes current community routes', () => {
   assert.match(file, /pathname\.startsWith\('\/menu'\)[\s\S]{0,60}return 'menu'/)
 })
 
-test('app analytics separates session starts from route screen views', () => {
+test('app analytics separates session starts from primary tab views', () => {
   const file = source('components/analytics/AppAnalytics.tsx')
 
   assert.match(file, /sessionKey = 'nufc_vote_analytics_session_started'/)
   assert.match(file, /trackEvent\('session_started'/)
-  assert.match(file, /trackEvent\('screen_viewed'/)
+  assert.match(file, /trackEvent\('tab_viewed'/)
+  assert.match(file, /tab: primaryTab/)
+  assert.match(file, /pathname === '\/' \|\| pathname === '\/polls'/)
+  assert.match(file, /pathname === '\/players'/)
+  assert.match(file, /pathname === '\/menu'/)
   assert.doesNotMatch(file, /trackEvent\('app_opened'/)
+  assert.doesNotMatch(file, /trackEvent\('screen_viewed'/)
 })
 
 test('poll feed analytics dedupes feed exposure within a browser session', () => {

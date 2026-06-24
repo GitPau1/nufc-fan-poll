@@ -5,6 +5,14 @@ import { usePathname } from 'next/navigation'
 import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
 
 const RETURN_WINDOW_MS = 30 * 60 * 1000
+type PrimaryTab = 'poll' | 'players' | 'menu'
+
+function getPrimaryTab(pathname: string): PrimaryTab | null {
+  if (pathname === '/' || pathname === '/polls') return 'poll'
+  if (pathname === '/players') return 'players'
+  if (pathname === '/menu') return 'menu'
+  return null
+}
 
 export function AppAnalytics() {
   const pathname = usePathname()
@@ -22,10 +30,14 @@ export function AppAnalytics() {
       trackEvent('session_started', { source_page: sourcePage })
       sessionStorage.setItem(sessionKey, String(now))
     }
-    trackEvent('screen_viewed', {
-      source_page: sourcePage,
-      pathname,
-    })
+
+    const primaryTab = getPrimaryTab(pathname)
+    if (primaryTab) {
+      trackEvent('tab_viewed', {
+        source_page: sourcePage,
+        tab: primaryTab,
+      })
+    }
 
     if (isReturningSession) {
       trackEvent('return_visit', {

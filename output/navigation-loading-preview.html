@@ -196,10 +196,23 @@
       display: flex;
     }
 
+    .loading[data-variant="top"] {
+      bottom: auto;
+      min-height: 0;
+      height: 4px;
+      background: transparent;
+      backdrop-filter: none;
+    }
+
     .loading-bar-track {
+      display: none;
       height: 4px;
       overflow: hidden;
       background: var(--c-disabled);
+    }
+
+    .loading[data-variant="top"] .loading-bar-track {
+      display: block;
     }
 
     .loading-bar {
@@ -508,14 +521,19 @@
   <script>
     const loading = document.querySelector('.loading')
     const triggers = document.querySelectorAll('[data-show-loading]')
+    let showTimer
 
     triggers.forEach(trigger => {
       trigger.addEventListener('click', () => {
+        window.clearTimeout(showTimer)
+        loading.classList.remove('is-visible')
         loading.dataset.variant = trigger.dataset.showLoading || 'top'
-        loading.classList.add('is-visible')
-        window.setTimeout(() => {
-          loading.classList.remove('is-visible')
-        }, 1800)
+        showTimer = window.setTimeout(() => {
+          loading.classList.add('is-visible')
+          window.setTimeout(() => {
+            loading.classList.remove('is-visible')
+          }, 1800)
+        }, 220)
       })
     })
   </script>

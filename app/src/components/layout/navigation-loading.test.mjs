@@ -12,10 +12,14 @@ test('root layout includes a client-side navigation loading indicator', () => {
 
 test('navigation loading indicator reacts to internal link clicks', () => {
   assert.match(componentFile, /'use client'/)
+  assert.match(componentFile, /const SHOW_DELAY_MS = 220/)
   assert.match(componentFile, /document\.addEventListener\('click'/)
   assert.match(componentFile, /closest\('a\[href\]'\)/)
   assert.match(componentFile, /setIsLoading\(true\)/)
   assert.match(componentFile, /setLoadingVariant\(getLoadingVariant\(nextUrl\.pathname\)\)/)
+  assert.match(componentFile, /showTimerRef/)
+  assert.match(componentFile, /window\.setTimeout\(\(\) => \{/)
+  assert.match(componentFile, /clearShowTimer\(\)/)
   assert.match(componentFile, /usePathname\(\)/)
   assert.match(componentFile, /role="status"/)
   assert.match(componentFile, /페이지를 불러오는 중/)
@@ -34,7 +38,16 @@ test('navigation loading indicator reacts to internal link clicks', () => {
 test('navigation loading indicator maps primary routes to matching skeletons', () => {
   assert.match(componentFile, /function getLoadingVariant\(pathname: string\)/)
   assert.match(componentFile, /pathname === '\/' \|\| pathname === '\/polls'/)
-  assert.match(componentFile, /pathname\.startsWith\('\/players'\)/)
+  assert.match(componentFile, /pathname === '\/players'/)
   assert.match(componentFile, /pathname === '\/menu'/)
   assert.match(componentFile, /return 'top'/)
+  assert.doesNotMatch(componentFile, /pathname\.startsWith\('\/players'\)/)
+})
+
+test('skeleton routes do not render the top progress bar', () => {
+  assert.match(componentFile, /function LoadingShell/)
+  assert.match(componentFile, /if \(loadingVariant === 'top'\)/)
+  assert.match(componentFile, /return <TopBarOnly \/>/)
+  assert.match(componentFile, /return \(/)
+  assert.match(componentFile, /renderLoadingBody\(loadingVariant\)/)
 })

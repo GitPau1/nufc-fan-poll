@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 
 const MIN_VISIBLE_MS = 350
+const SHOW_DELAY_MS = 220
 const FALLBACK_HIDE_MS = 4000
 type LoadingVariant = 'polls' | 'players' | 'menu' | 'top'
 
@@ -13,7 +14,7 @@ function isModifiedClick(event: MouseEvent) {
 
 function getLoadingVariant(pathname: string): LoadingVariant {
   if (pathname === '/' || pathname === '/polls') return 'polls'
-  if (pathname.startsWith('/players')) return 'players'
+  if (pathname === '/players') return 'players'
   if (pathname === '/menu') return 'menu'
   return 'top'
 }
@@ -22,7 +23,14 @@ export function NavigationLoading() {
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(false)
   const [loadingVariant, setLoadingVariant] = useState<LoadingVariant>('top')
-  const startedAtRef = useRef(0)
+  const visibleAtRef = useRef(0)
+  const showTimerRef = useRef<number | null>(null)
+
+  function clearShowTimer() {
+    if (!showTimerRef.current) return
+    window.clearTimeout(showTimerRef.current)
+    showTimerRef.current = null
+  }
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -41,19 +49,27 @@ export function NavigationLoading() {
       if (next === current) return
       if (nextUrl.hash && nextUrl.pathname === window.location.pathname && nextUrl.search === window.location.search) return
 
-      startedAtRef.current = Date.now()
       setLoadingVariant(getLoadingVariant(nextUrl.pathname))
-      setIsLoading(true)
+      clearShowTimer()
+      showTimerRef.current = window.setTimeout(() => {
+        visibleAtRef.current = Date.now()
+        setIsLoading(true)
+        showTimerRef.current = null
+      }, SHOW_DELAY_MS)
     }
 
     document.addEventListener('click', handleClick, true)
-    return () => document.removeEventListener('click', handleClick, true)
+    return () => {
+      clearShowTimer()
+      document.removeEventListener('click', handleClick, true)
+    }
   }, [])
 
   useEffect(() => {
+    clearShowTimer()
     if (!isLoading) return
 
-    const elapsed = Date.now() - startedAtRef.current
+    const elapsed = Date.now() - visibleAtRef.current
     const hideDelay = Math.max(MIN_VISIBLE_MS - elapsed, 0)
     const hideTimer = window.setTimeout(() => setIsLoading(false), hideDelay)
     return () => window.clearTimeout(hideTimer)
@@ -69,17 +85,22 @@ export function NavigationLoading() {
   if (!isLoading) return null
 
   return (
+    <LoadingShell loadingVariant={loadingVariant} />
+  )
+}
+
+function LoadingShell({ loadingVariant }: { loadingVariant: LoadingVariant }) {
+  if (loadingVariant === 'top') {
+    return <TopBarOnly />
+  }
+
+  return (
     <div
       role="status"
       aria-label="페이지를 불러오는 중"
       className="fixed inset-x-0 top-0 z-50 mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-background/95 backdrop-blur-sm"
     >
-      <div className="h-1 w-full overflow-hidden bg-disabled">
-        <div className="h-full w-1/2 animate-[loading-bar_1s_ease-in-out_infinite] rounded-r-pill bg-primary" />
-      </div>
-
       {renderLoadingBody(loadingVariant)}
-
       <span className="sr-only">페이지를 불러오는 중</span>
     </div>
   )
@@ -211,5 +232,13 @@ function MenuSkeleton() {
 }
 
 function TopBarOnly() {
-  return <div aria-hidden="true" className="flex-1" />
+  return (
+    <div
+      role="status"
+      aria-label="페이지를 불러오는 중"
+      className="fixed inset-x-0 top-0 z-50 mx-auto h-1 w-full max-w-[480px] overflow-hidden bg-disabled"
+    >
+      <div className="h-full w-1/2 animate-[loading-bar_1s_ease-in-out_infinite] rounded-r-pill bg-primary" />
+    </div>
+  )
 }

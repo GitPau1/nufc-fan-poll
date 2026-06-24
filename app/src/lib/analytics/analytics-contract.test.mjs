@@ -32,19 +32,19 @@ test('app analytics separates session starts from primary tab views', () => {
   assert.doesNotMatch(file, /trackEvent\('screen_viewed'/)
 })
 
-test('poll feed analytics dedupes feed exposure within a browser session', () => {
+test('poll tab analytics does not duplicate tab_viewed with poll_feed_viewed', () => {
   const file = source('components/analytics/AppAnalytics.tsx')
+  const pollList = source('components/polls/PollListClient.tsx')
 
-  assert.match(file, /feedSeenKey = `nufc_vote_analytics_feed_seen:\$\{sourcePage\}`/)
-  assert.match(file, /sessionStorage\.getItem\(feedSeenKey\)/)
-  assert.match(file, /sessionStorage\.setItem\(feedSeenKey, 'true'\)/)
-  assert.doesNotMatch(file, /\}, \[sourcePage, pollCount\]\)/)
+  assert.doesNotMatch(file, /PollFeedAnalytics/)
+  assert.doesNotMatch(file, /trackEvent\('poll_feed_viewed'/)
+  assert.doesNotMatch(pollList, /PollFeedAnalytics/)
 })
 
 test('players page tracks the Pick One participation and reward loop', () => {
   const file = source('components/players/PlayersPageClient.tsx')
 
-  assert.match(file, /trackEvent\('players_viewed'/)
+  assert.doesNotMatch(file, /trackEvent\('players_viewed'/)
   assert.match(file, /trackEvent\('pick_one_viewed'/)
   assert.match(file, /trackEvent\('pick_one_submitted'/)
   assert.match(file, /trackEvent\('pick_one_next_clicked'/)

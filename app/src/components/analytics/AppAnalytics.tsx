@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
 
@@ -48,29 +48,6 @@ export function AppAnalytics() {
 
     localStorage.setItem(lastSeenKey, String(now))
   }, [pathname])
-
-  return null
-}
-
-export function PollFeedAnalytics({
-  sourcePage,
-  pollCount,
-}: {
-  sourcePage: string
-  pollCount: number
-}) {
-  const initialPollCountRef = useRef(pollCount)
-
-  useEffect(() => {
-    const feedSeenKey = `nufc_vote_analytics_feed_seen:${sourcePage}`
-    if (sessionStorage.getItem(feedSeenKey)) return
-
-    sessionStorage.setItem(feedSeenKey, 'true')
-    trackEvent('poll_feed_viewed', {
-      source_page: sourcePage,
-      poll_count: initialPollCountRef.current,
-    })
-  }, [sourcePage])
 
   return null
 }

@@ -36,7 +36,7 @@ This event is intentionally limited to the three primary tabs: poll, players, an
 ### 2. Poll Participation Loop
 
 ```text
-poll_feed_viewed
+tab_viewed { tab: "poll" }
 → poll_card_clicked
 → vote_submitted
 → poll_result_viewed
@@ -66,7 +66,7 @@ This measures whether group results create emotional response. `comment_submitte
 ### 5. Pick One Habit Loop
 
 ```text
-players_viewed
+tab_viewed { tab: "players" }
 → pick_one_viewed
 → pick_one_submitted
 → pick_one_next_clicked
@@ -110,13 +110,11 @@ Track only events that support operating decisions.
 | `session_started` | A new browser session starts, or the previous activity was more than 30 minutes ago. | How many unique users entered the product? |
 | `tab_viewed` | User views one of the three primary tabs: poll, players, or menu. | Which primary tab gets the most traffic? |
 | `return_visit` | User returns after the session window. | Did users come back after leaving? |
-| `poll_feed_viewed` | Poll feed is visible for the first time in the browser session. | Did the user see poll content? |
 | `poll_card_clicked` | User opens a poll from a card. | Did a poll topic create interest? |
 | `vote_submitted` | Vote is successfully saved. | Did the user submit an opinion? |
 | `poll_result_viewed` | Poll result screen is viewed. | Did the user reach the poll reward moment? |
 | `comment_submitted` | Comment is successfully created. | Did a result make the user want to speak? |
 | `comment_liked` | User likes a comment. | Did users react to other fans? |
-| `players_viewed` | Players page is visible. | Did users enter the player community surface? |
 | `pick_one_viewed` | Pick One matchup is visible. | Did users see the lightweight participation prompt? |
 | `pick_one_submitted` | Pick One choice is saved or already counted. | Did users participate in the lightweight habit loop? |
 | `pick_one_next_clicked` | User advances after a Pick One choice. | Did one choice lead to another choice? |
@@ -139,7 +137,7 @@ The visit model changed:
 - `app_opened` stopped being the active visit event.
 - `session_started` became the DAU/WAU source event.
 - `tab_viewed` became the primary tab comparison event.
-- `poll_feed_viewed` was deduped per browser session and source page.
+- `poll_feed_viewed` and `players_viewed` stopped being active events because they duplicated `tab_viewed`.
 
 Do not join pre-change `app_opened` trends and post-change `session_started` trends into a single continuous chart without an annotation.
 

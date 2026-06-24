@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Users } from 'lucide-react'
 import { PollCard, formatTimeLeft, getStatusLabel, getThumbnailUrl } from './PollCard'
-import { PollFeedAnalytics } from '@/components/analytics/AppAnalytics'
 import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
 import { loadMorePolls } from '@/lib/actions/polls'
 import { getEffectivePollStatus } from '@/lib/polls/status'
@@ -116,7 +115,6 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
   if (polls.length === 0 && !loading) {
     return (
       <div className="px-4 pt-4 animate-enter">
-        <PollFeedAnalytics sourcePage="polls" pollCount={0} />
         <div className="mb-4 flex items-center justify-between gap-3">
           <PollTabs activeTab={activeTab} ongoingCount={0} closedCount={0} onChange={setActiveTab} />
           {headerRight}
@@ -131,7 +129,6 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
 
   return (
     <div className="px-4 pt-4 pb-10 animate-enter">
-      <PollFeedAnalytics sourcePage="polls" pollCount={effectivePolls.length} />
       {featuredPoll && <PollHeroCard poll={featuredPoll} />}
 
       {listPolls.length > 0 ? (

@@ -1,11 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { Search } from 'lucide-react'
 import { getPickOneDailyChoiceStatus, submitPickOneChoice } from '@/lib/actions/player-pick-one'
-import { getSourcePage, trackEvent } from '@/lib/analytics/mixpanel'
+import { trackEvent } from '@/lib/analytics/mixpanel'
 
 export type PlayerListItem = {
   id: string
@@ -33,7 +32,6 @@ const positionTone: Record<string, string> = {
 export function PlayersPageClient({ players }: PlayersPageClientProps) {
   const [query, setQuery] = useState('')
   const normalizedQuery = query.trim().toLowerCase()
-  const pathname = usePathname()
 
   const filteredPlayers = useMemo(() => {
     if (!normalizedQuery) return players
@@ -41,14 +39,6 @@ export function PlayersPageClient({ players }: PlayersPageClientProps) {
       `${player.name} ${player.position} ${player.meta} ${player.seasons}`.toLowerCase().includes(normalizedQuery)
     )
   }, [normalizedQuery, players])
-
-  useEffect(() => {
-    trackEvent('players_viewed', {
-      source_page: getSourcePage(pathname),
-      player_count: players.length,
-      has_pick_one: players.length >= 2,
-    })
-  }, [pathname, players.length])
 
   return (
     <div className="px-4 pt-4 pb-10 animate-enter">

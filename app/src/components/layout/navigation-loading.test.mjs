@@ -12,11 +12,13 @@ test('root layout includes a client-side navigation loading indicator', () => {
 
 test('navigation loading indicator reacts to internal link clicks', () => {
   assert.match(componentFile, /'use client'/)
-  assert.match(componentFile, /const SHOW_DELAY_MS = 220/)
+  assert.match(componentFile, /const SHOW_DELAY_MS = 120/)
+  assert.match(componentFile, /const ROUTE_SETTLE_MS = 450/)
   assert.match(componentFile, /document\.addEventListener\('click'/)
   assert.match(componentFile, /closest\('a\[href\]'\)/)
   assert.match(componentFile, /setIsLoading\(true\)/)
   assert.match(componentFile, /setLoadingVariant\(getLoadingVariant\(nextUrl\.pathname\)\)/)
+  assert.match(componentFile, /targetPathRef/)
   assert.match(componentFile, /showTimerRef/)
   assert.match(componentFile, /window\.setTimeout\(\(\) => \{/)
   assert.match(componentFile, /clearShowTimer\(\)/)
@@ -50,4 +52,9 @@ test('skeleton routes do not render the top progress bar', () => {
   assert.match(componentFile, /return <TopBarOnly \/>/)
   assert.match(componentFile, /return \(/)
   assert.match(componentFile, /renderLoadingBody\(loadingVariant\)/)
+})
+
+test('navigation loading remains covered briefly after the target path arrives', () => {
+  assert.match(componentFile, /if \(targetPathRef\.current !== pathname\) return/)
+  assert.match(componentFile, /Math\.max\(MIN_VISIBLE_MS - elapsed, ROUTE_SETTLE_MS\)/)
 })

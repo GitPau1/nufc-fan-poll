@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 
 const MIN_VISIBLE_MS = 350
-const SHOW_DELAY_MS = 220
+const SHOW_DELAY_MS = 120
+const ROUTE_SETTLE_MS = 450
 const FALLBACK_HIDE_MS = 4000
 type LoadingVariant = 'polls' | 'players' | 'menu' | 'top'
 
@@ -24,6 +25,7 @@ export function NavigationLoading() {
   const [isLoading, setIsLoading] = useState(false)
   const [loadingVariant, setLoadingVariant] = useState<LoadingVariant>('top')
   const visibleAtRef = useRef(0)
+  const targetPathRef = useRef<string | null>(null)
   const showTimerRef = useRef<number | null>(null)
 
   function clearShowTimer() {
@@ -50,6 +52,7 @@ export function NavigationLoading() {
       if (nextUrl.hash && nextUrl.pathname === window.location.pathname && nextUrl.search === window.location.search) return
 
       setLoadingVariant(getLoadingVariant(nextUrl.pathname))
+      targetPathRef.current = nextUrl.pathname
       clearShowTimer()
       showTimerRef.current = window.setTimeout(() => {
         visibleAtRef.current = Date.now()
@@ -68,9 +71,10 @@ export function NavigationLoading() {
   useEffect(() => {
     clearShowTimer()
     if (!isLoading) return
+    if (targetPathRef.current !== pathname) return
 
     const elapsed = Date.now() - visibleAtRef.current
-    const hideDelay = Math.max(MIN_VISIBLE_MS - elapsed, 0)
+    const hideDelay = Math.max(MIN_VISIBLE_MS - elapsed, ROUTE_SETTLE_MS)
     const hideTimer = window.setTimeout(() => setIsLoading(false), hideDelay)
     return () => window.clearTimeout(hideTimer)
   }, [pathname, isLoading])

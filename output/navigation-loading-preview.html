@@ -170,6 +170,18 @@
       cursor: pointer;
     }
 
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .demo-grid .demo-button {
+      margin-top: 0;
+      font-size: 13px;
+    }
+
     .loading {
       position: absolute;
       inset: 0;
@@ -203,6 +215,20 @@
       padding: 16px 16px 96px;
     }
 
+    .loading[data-variant="top"] .skeleton-screen {
+      display: none;
+    }
+
+    .skeleton-variant {
+      display: none;
+    }
+
+    .loading[data-variant="polls"] .polls-skeleton,
+    .loading[data-variant="players"] .players-skeleton,
+    .loading[data-variant="menu"] .menu-skeleton {
+      display: block;
+    }
+
     .skeleton-hero {
       height: 252px;
       overflow: hidden;
@@ -217,6 +243,54 @@
       border: 1px solid var(--c-border);
       border-radius: 8px;
       background: var(--c-surface);
+    }
+
+    .players-pick {
+      overflow: hidden;
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      background: var(--c-surface);
+    }
+
+    .players-pick-head {
+      display: flex;
+      justify-content: center;
+      border-bottom: 1px solid var(--c-border);
+      padding: 12px 14px 13px;
+    }
+
+    .players-duel {
+      display: flex;
+      gap: 49px;
+      padding: 20px 16px;
+    }
+
+    .players-card {
+      display: flex;
+      height: 128px;
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-radius: 8px;
+      background: rgba(235, 235, 235, .7);
+    }
+
+    .search-skeleton {
+      display: flex;
+      height: 40px;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      background: var(--c-surface);
+      padding: 0 12px;
+    }
+
+    .menu-title {
+      margin: 8px 0 20px;
     }
 
     .skeleton-tabs {
@@ -318,9 +392,12 @@
         </div>
       </div>
 
-      <button class="demo-button" type="button" data-show-loading>
-        로딩 모션 보기
-      </button>
+      <div class="demo-grid">
+        <button class="demo-button" type="button" data-show-loading="polls">투표 로딩</button>
+        <button class="demo-button" type="button" data-show-loading="players">역대 선수</button>
+        <button class="demo-button" type="button" data-show-loading="menu">메뉴</button>
+        <button class="demo-button" type="button" data-show-loading="top">기타 상단바</button>
+      </div>
 
       <div class="list">
         <div class="row">
@@ -343,50 +420,84 @@
     </section>
 
     <nav class="bottom-nav" aria-label="하단 메뉴">
-      <button class="nav-item active" type="button" data-show-loading>투표</button>
-      <button class="nav-item" type="button" data-show-loading>역대 선수</button>
-      <button class="nav-item" type="button" data-show-loading>메뉴</button>
+      <button class="nav-item active" type="button" data-show-loading="polls">투표</button>
+      <button class="nav-item" type="button" data-show-loading="players">역대 선수</button>
+      <button class="nav-item" type="button" data-show-loading="menu">메뉴</button>
     </nav>
 
-    <div class="loading" role="status" aria-label="페이지를 불러오는 중">
+    <div class="loading" role="status" aria-label="페이지를 불러오는 중" data-variant="polls">
       <div class="loading-bar-track">
         <div class="loading-bar"></div>
       </div>
       <div class="skeleton-screen" aria-hidden="true">
-        <div class="skeleton-hero">
-          <div class="shimmer"></div>
+        <div class="skeleton-variant polls-skeleton">
+          <div class="skeleton-hero">
+            <div class="shimmer"></div>
+          </div>
+
+          <div class="skeleton-list">
+            <div class="skeleton-tabs">
+              <div class="skeleton-tab"></div>
+              <div class="skeleton-tab"></div>
+              <div class="skeleton-tab"></div>
+            </div>
+
+            <div class="skeleton-row">
+              <div class="skeleton-thumb"><div class="shimmer"></div></div>
+              <div class="skeleton-copy">
+                <div class="skeleton-pill"><div class="shimmer"></div></div>
+                <div class="skeleton-line title"><div class="shimmer"></div></div>
+                <div class="skeleton-line short"><div class="shimmer"></div></div>
+              </div>
+            </div>
+            <div class="skeleton-row">
+              <div class="skeleton-thumb"><div class="shimmer"></div></div>
+              <div class="skeleton-copy">
+                <div class="skeleton-pill"><div class="shimmer"></div></div>
+                <div class="skeleton-line title"><div class="shimmer"></div></div>
+                <div class="skeleton-line short"><div class="shimmer"></div></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="skeleton-list">
-          <div class="skeleton-tabs">
-            <div class="skeleton-tab"></div>
-            <div class="skeleton-tab"></div>
-            <div class="skeleton-tab"></div>
+        <div class="skeleton-variant players-skeleton">
+          <div class="players-pick">
+            <div class="players-pick-head"><div class="skeleton-line title" style="width: 128px"><div class="shimmer"></div></div></div>
+            <div class="players-duel">
+              <div class="players-card">
+                <div class="skeleton-pill" style="width: 56px; height: 56px"><div class="shimmer"></div></div>
+                <div class="skeleton-line" style="width: 80px"><div class="shimmer"></div></div>
+                <div class="skeleton-line short"><div class="shimmer"></div></div>
+              </div>
+              <div class="players-card">
+                <div class="skeleton-pill" style="width: 56px; height: 56px"><div class="shimmer"></div></div>
+                <div class="skeleton-line" style="width: 80px"><div class="shimmer"></div></div>
+                <div class="skeleton-line short"><div class="shimmer"></div></div>
+              </div>
+            </div>
           </div>
+          <div class="search-skeleton">
+            <div class="skeleton-pill" style="width: 16px; height: 16px"><div class="shimmer"></div></div>
+            <div class="skeleton-line" style="flex: 1; margin-top: 0"><div class="shimmer"></div></div>
+          </div>
+          <div class="skeleton-list">
+            <div class="skeleton-row"><div class="skeleton-thumb" style="width:42px;height:42px;border-radius:999px"><div class="shimmer"></div></div><div class="skeleton-copy"><div class="skeleton-line title"><div class="shimmer"></div></div><div class="skeleton-line short"><div class="shimmer"></div></div></div></div>
+            <div class="skeleton-row"><div class="skeleton-thumb" style="width:42px;height:42px;border-radius:999px"><div class="shimmer"></div></div><div class="skeleton-copy"><div class="skeleton-line title"><div class="shimmer"></div></div><div class="skeleton-line short"><div class="shimmer"></div></div></div></div>
+            <div class="skeleton-row"><div class="skeleton-thumb" style="width:42px;height:42px;border-radius:999px"><div class="shimmer"></div></div><div class="skeleton-copy"><div class="skeleton-line title"><div class="shimmer"></div></div><div class="skeleton-line short"><div class="shimmer"></div></div></div></div>
+          </div>
+        </div>
 
-          <div class="skeleton-row">
-            <div class="skeleton-thumb"><div class="shimmer"></div></div>
-            <div class="skeleton-copy">
-              <div class="skeleton-pill"><div class="shimmer"></div></div>
-              <div class="skeleton-line title"><div class="shimmer"></div></div>
-              <div class="skeleton-line short"><div class="shimmer"></div></div>
-            </div>
+        <div class="skeleton-variant menu-skeleton">
+          <div class="menu-title">
+            <div class="skeleton-line title" style="width: 64px"><div class="shimmer"></div></div>
+            <div class="skeleton-line" style="width: 260px; max-width: 100%"><div class="shimmer"></div></div>
           </div>
-          <div class="skeleton-row">
-            <div class="skeleton-thumb"><div class="shimmer"></div></div>
-            <div class="skeleton-copy">
-              <div class="skeleton-pill"><div class="shimmer"></div></div>
-              <div class="skeleton-line title"><div class="shimmer"></div></div>
-              <div class="skeleton-line short"><div class="shimmer"></div></div>
-            </div>
-          </div>
-          <div class="skeleton-row">
-            <div class="skeleton-thumb"><div class="shimmer"></div></div>
-            <div class="skeleton-copy">
-              <div class="skeleton-pill"><div class="shimmer"></div></div>
-              <div class="skeleton-line title"><div class="shimmer"></div></div>
-              <div class="skeleton-line short"><div class="shimmer"></div></div>
-            </div>
+          <div class="skeleton-list">
+            <div class="skeleton-row" style="height:56px"><div class="skeleton-thumb" style="width:32px;height:32px"><div class="shimmer"></div></div><div class="skeleton-copy"><div class="skeleton-line title"><div class="shimmer"></div></div></div></div>
+            <div class="skeleton-row" style="height:56px"><div class="skeleton-thumb" style="width:32px;height:32px"><div class="shimmer"></div></div><div class="skeleton-copy"><div class="skeleton-line title"><div class="shimmer"></div></div></div></div>
+            <div class="skeleton-row" style="height:56px"><div class="skeleton-thumb" style="width:32px;height:32px"><div class="shimmer"></div></div><div class="skeleton-copy"><div class="skeleton-line title"><div class="shimmer"></div></div></div></div>
+            <div class="skeleton-row" style="height:56px"><div class="skeleton-thumb" style="width:32px;height:32px"><div class="shimmer"></div></div><div class="skeleton-copy"><div class="skeleton-line title"><div class="shimmer"></div></div></div></div>
           </div>
         </div>
       </div>
@@ -400,6 +511,7 @@
 
     triggers.forEach(trigger => {
       trigger.addEventListener('click', () => {
+        loading.dataset.variant = trigger.dataset.showLoading || 'top'
         loading.classList.add('is-visible')
         window.setTimeout(() => {
           loading.classList.remove('is-visible')

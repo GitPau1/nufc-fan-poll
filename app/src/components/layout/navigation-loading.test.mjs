@@ -24,6 +24,8 @@ test('navigation loading indicator reacts to internal link clicks', () => {
   assert.match(componentFile, /clearShowTimer\(\)/)
   assert.match(componentFile, /usePathname\(\)/)
   assert.match(componentFile, /role="status"/)
+  assert.match(componentFile, /z-\[100\]/)
+  assert.match(componentFile, /bottom-\[64px\]/)
   assert.match(componentFile, /페이지를 불러오는 중/)
   assert.match(componentFile, /aria-hidden="true"/)
   assert.match(componentFile, /animate-skeleton/)

@@ -5,6 +5,7 @@ import { PAGE_SIZE } from '@/lib/constants'
 import { IS_MOCK } from '@/lib/config'
 import { getEffectivePollStatus } from '@/lib/polls/status'
 import { getRatingGrade, sortPlayersForRating } from '@/lib/polls/rating'
+import { mapPollDetailRow, mapPollListRow } from '@/lib/queries/poll-row-mappers'
 import {
   mockGetPollList,
   mockGetPollById,
@@ -114,14 +115,6 @@ function isMissingColumnError(error: AnyRow): boolean {
   )
 }
 
-function normalizePlayer(player: PlayerRow | null): PlayerRow | null {
-  if (!player) return null
-  return {
-    ...player,
-    squad_status: player.squad_status ?? 'first_team',
-  }
-}
-
 async function getCreatorNamesById(ids: string[]): Promise<Map<string, string>> {
   const uniqueIds = Array.from(new Set(ids.filter(Boolean)))
   if (uniqueIds.length === 0) return new Map()
@@ -229,28 +222,11 @@ async function getPollListUncached(page = 0): Promise<PollListItem[]> {
     getRatingParticipantCounts(supabase, overallRatingPollIds),
   ])
 
-  return rows.map((row: AnyRow) => ({
-    id: row.id as string,
-    type: row.type as PollType,
-    title: row.title as string,
-    description: row.description as string | null,
-    status: getEffectivePollStatus({
-      status: row.status as PollStatus,
-      scheduled_at: row.scheduled_at as string | null,
-      closes_at: row.closes_at as string,
-    }, now),
-    thumbnail_url: row.thumbnail_url as string | null,
-    closes_at: row.closes_at as string,
-    scheduled_at: row.scheduled_at as string | null,
-    created_at: row.created_at as string,
-    player_id: row.player_id as string | null,
-    created_by: row.created_by as string | null,
-    creator_name: creatorNames.get(row.created_by as string) ?? null,
-    player: normalizePlayer(row.player as PlayerRow | null),
-    poll_options: (row.poll_options as PollOptionRow[]) ?? [],
-    vote_count: row.type === 'overall_rating'
-      ? ratingParticipantCounts.get(row.id as string) ?? 0
-      : (row.vote_count as { count: number }[])?.[0]?.count ?? 0,
+  return rows.map((row: AnyRow) => mapPollListRow(row, {
+    now,
+    creatorNames,
+    ratingParticipantCounts,
+    resolveStatus: getEffectivePollStatus,
   }))
 }
 
@@ -294,13 +270,6 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
   const options: PollOptionRow[] = ((data.poll_options as AnyRow[]) ?? [])
     .sort((a: AnyRow, b: AnyRow) => a.display_order - b.display_order)
 
-  const option_players: Record<string, PlayerRow> = {}
-  for (const opt of (data.poll_options as AnyRow[]) ?? []) {
-    if (opt.player_id && opt.option_player) {
-      option_players[opt.player_id] = normalizePlayer(opt.option_player as PlayerRow) as PlayerRow
-    }
-  }
-
   const creatorNames = await getCreatorNamesById(data.created_by ? [data.created_by as string] : [])
   const currentSeasonStats = await getCurrentSeasonStatsForOptions(
     supabase,
@@ -308,28 +277,11 @@ export async function getPollById(id: string): Promise<PollDetail | null> {
     options
   )
 
-  return {
-    id: data.id as string,
-    type: data.type as PollType,
-    title: data.title as string,
-    description: data.description as string | null,
-    status: getEffectivePollStatus({
-      status: data.status as PollStatus,
-      scheduled_at: data.scheduled_at as string | null,
-      closes_at: data.closes_at as string,
-    }),
-    thumbnail_url: data.thumbnail_url as string | null,
-    created_at: data.created_at as string | null,
-    scheduled_at: data.scheduled_at as string | null,
-    closes_at: data.closes_at as string,
-    player_id: data.player_id as string | null,
-    created_by: data.created_by as string | null,
-    creator_name: creatorNames.get(data.created_by as string) ?? null,
-    player: normalizePlayer(data.player as PlayerRow | null),
-    poll_options: options,
-    ...(Object.keys(option_players).length > 0 && { option_players }),
-    ...(Object.keys(currentSeasonStats).length > 0 && { current_season_stats: currentSeasonStats }),
-  }
+  return mapPollDetailRow(data, {
+    creatorNames,
+    currentSeasonStats,
+    resolveStatus: getEffectivePollStatus,
+  })
 }
 
 export async function getVoteCounts(pollId: string): Promise<VoteCountMap> {

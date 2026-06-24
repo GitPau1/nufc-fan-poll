@@ -8,7 +8,10 @@ import { uploadPollImage } from '@/lib/actions/images'
 import { trackEvent } from '@/lib/analytics/mixpanel'
 import { CroppedImageInput } from '@/components/images/BannerImageInput'
 import type { PollFormPlayer } from '@/lib/queries/polls'
-import type { PollType, Position } from '@/types/database'
+import { buildCreatePollOptions } from '@/lib/polls/create-form-options'
+import { uploadFreeChoiceImages, uploadThumbnailIfNeeded } from '@/lib/polls/create-form-uploads'
+import type { CreatePollType, FreeOption } from '@/lib/polls/create-form-options'
+import type { Position } from '@/types/database'
 import {
   Sheet,
   SheetContent,
@@ -17,8 +20,6 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 
-type FreeOption = { label: string; description: string; imageUrl: string }
-type CreatePollType = Extract<PollType, 'subject_options' | 'question_targets' | 'free_choice' | 'overall_rating'>
 type PlayerPickMode = 'single' | 'multiple'
 type PlayerFilter = 'all' | 'first_team' | 'loan' | 'u21'
 
@@ -102,105 +103,42 @@ export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
       poll_type: pollType,
     })
 
-    if (pollType === 'subject_options') {
-      const options = textOptions.map(option => option.trim()).filter(Boolean)
-      if (!selectedSubjectPlayerId) {
-        setMessage('대상 선수를 선택해주세요.')
-        return
-      }
-      if (options.length < 2) {
-        setMessage('선택지를 최소 2개 입력해주세요.')
-        return
-      }
-      fd.set('player_id', selectedSubjectPlayerId)
-      fd.set('options', JSON.stringify(options.map(label => ({ label }))))
-    } else if (pollType === 'free_choice') {
-      const options = freeOptions
-        .map((option, index) => ({
-          label: option.label.trim(),
-          description: option.description.trim() || null,
-          image_url: option.imageUrl.trim() || null,
-          imageField: `free_option_image_${index}`,
-        }))
-        .filter(option => option.label)
-      if (options.length < 2) {
-        setMessage('선택지를 최소 2개 입력해주세요.')
-        return
-      }
-      fd.set('options', JSON.stringify(options.map(option => ({
-        label: option.label,
-        description: option.description,
-        image_url: option.image_url,
-        imageField: option.imageField,
-      }))))
-      fd.delete('player_id')
-    } else {
-      const targetPlayerIds = selectedPlayerIds
+    const optionResult = buildCreatePollOptions({
+      pollType,
+      textOptions,
+      freeOptions,
+      selectedSubjectPlayerId,
+      selectedPlayerIds,
+      players,
+    })
 
-      if (targetPlayerIds.length < 2) {
-        setMessage('선수를 최소 2명 선택해주세요.')
-        return
-      }
-      fd.set('options', JSON.stringify(targetPlayerIds.map(id => {
-        const player = players.find(item => item.id === id)
-        return { label: player?.name ?? id, player_id: id }
-      })))
+    if (!optionResult.ok) {
+      setMessage(optionResult.message)
+      return
+    }
+
+    fd.set('options', JSON.stringify(optionResult.options))
+    if (optionResult.playerId) {
+      fd.set('player_id', optionResult.playerId)
+    } else {
       fd.delete('player_id')
     }
 
     fd.set('type', pollType)
 
     startTransition(async () => {
-      const thumbnailFile = fd.get('thumbnail_image_file') as File | null
-      fd.delete('thumbnail_image_file')
-      if (!String(fd.get('thumbnail_url') ?? '').trim() && thumbnailFile && thumbnailFile.size > 0) {
-        const thumbnailForm = new FormData()
-        thumbnailForm.set('file', thumbnailFile)
-        thumbnailForm.set('folder', 'poll-thumbnails')
-        thumbnailForm.set('preset', 'poll-thumbnail')
-        const uploadResult = await uploadPollImage(thumbnailForm)
-        if (uploadResult.error || !uploadResult.url) {
-          setMessage(uploadResult.error ?? '대표 이미지 업로드에 실패했습니다.')
-          return
-        }
-        fd.set('thumbnail_url', uploadResult.url)
+      const thumbnailResult = await uploadThumbnailIfNeeded(fd, uploadPollImage)
+      if (!thumbnailResult.ok) {
+        setMessage(thumbnailResult.message)
+        return
       }
 
       if (pollType === 'free_choice') {
-        const parsedOptions = JSON.parse(String(fd.get('options') ?? '[]')) as Array<{
-          label: string
-          description: string | null
-          image_url: string | null
-          imageField: string
-        }>
-        const uploadedOptions = []
-        for (const option of parsedOptions) {
-          const imageFile = fd.get(option.imageField) as File | null
-          fd.delete(option.imageField)
-          if (!option.image_url && imageFile && imageFile.size > 0) {
-            const imageForm = new FormData()
-            imageForm.set('file', imageFile)
-            imageForm.set('folder', 'poll-options')
-            imageForm.set('preset', 'poll-option')
-            const uploadResult = await uploadPollImage(imageForm)
-            if (uploadResult.error || !uploadResult.url) {
-              setMessage(uploadResult.error ?? '선택지 이미지 업로드에 실패했습니다.')
-              return
-            }
-            uploadedOptions.push({
-              label: option.label,
-              description: option.description,
-              image_url: uploadResult.url,
-            })
-          } else {
-            uploadedOptions.push({
-              label: option.label,
-              description: option.description,
-              image_url: option.image_url,
-            })
-          }
+        const freeChoiceImageResult = await uploadFreeChoiceImages(fd, uploadPollImage)
+        if (!freeChoiceImageResult.ok) {
+          setMessage(freeChoiceImageResult.message)
+          return
         }
-        fd.set('options', JSON.stringify(uploadedOptions))
       }
 
       const result = await createUserPoll(fd)

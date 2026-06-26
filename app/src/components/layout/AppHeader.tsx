@@ -10,10 +10,10 @@ type AppHeaderProps = {
 
 export function AppHeader({ auth, showAuth = true }: AppHeaderProps = {}) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#e1e7ef] bg-gradient-to-b from-white to-white/75 backdrop-blur">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-gradient-to-b from-white to-white/75 backdrop-blur">
       <div className="relative flex h-[62px] items-center justify-center px-4">
         <Link href="/" className="flex items-center">
-          <span className="text-[24px] font-black leading-[22.5px] text-[#2b2b2b]">
+          <span className="text-title-3 font-black text-foreground">
             NUFCVOTE
           </span>
         </Link>

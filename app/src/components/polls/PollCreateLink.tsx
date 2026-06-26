@@ -29,7 +29,7 @@ export function PollCreateLink() {
   if (!auth) return null
 
   return (
-    <Link href="/polls/create" prefetch={false} className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-[12px] font-bold text-primary-foreground">
+    <Link href="/polls/create" prefetch={false} className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-caption-1 font-bold text-primary-foreground">
       투표 만들기
     </Link>
   )

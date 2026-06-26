@@ -76,6 +76,26 @@ const config = {
       fontFamily: {
         sans: ["Pretendard Variable", "Pretendard", ...fontFamily.sans],
       },
+      fontSize: {
+        "display-1": ["56px", { lineHeight: "72px", letterSpacing: "-0.0319em" }],
+        "display-2": ["40px", { lineHeight: "52px", letterSpacing: "-0.0282em" }],
+        "title-1": ["36px", { lineHeight: "48px", letterSpacing: "-0.027em" }],
+        "title-2": ["28px", { lineHeight: "38px", letterSpacing: "-0.0236em" }],
+        "title-3": ["24px", { lineHeight: "32px", letterSpacing: "-0.023em" }],
+        "heading-1": ["22px", { lineHeight: "30px", letterSpacing: "-0.0194em" }],
+        "heading-2": ["20px", { lineHeight: "28px", letterSpacing: "-0.012em" }],
+        "headline-1": ["18px", { lineHeight: "26px", letterSpacing: "-0.002em" }],
+        "headline-2": ["17px", { lineHeight: "24px", letterSpacing: "0em" }],
+        "body-1-normal": ["16px", { lineHeight: "24px", letterSpacing: "0.0057em" }],
+        "body-1-reading": ["16px", { lineHeight: "26px", letterSpacing: "0.0057em" }],
+        "body-2-normal": ["15px", { lineHeight: "22px", letterSpacing: "0.0096em" }],
+        "body-2-reading": ["15px", { lineHeight: "24px", letterSpacing: "0.0096em" }],
+        "label-1-normal": ["14px", { lineHeight: "20px", letterSpacing: "0.0145em" }],
+        "label-1-reading": ["14px", { lineHeight: "22px", letterSpacing: "0.0145em" }],
+        "label-2": ["13px", { lineHeight: "18px", letterSpacing: "0.0194em" }],
+        "caption-1": ["12px", { lineHeight: "16px", letterSpacing: "0.0252em" }],
+        "caption-2": ["11px", { lineHeight: "14px", letterSpacing: "0.0311em" }],
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

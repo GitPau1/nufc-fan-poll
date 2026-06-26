@@ -114,21 +114,21 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
 
   if (polls.length === 0 && !loading) {
     return (
-      <div className="px-4 pt-4 animate-enter">
+      <div className="px-5 pt-4 animate-enter">
         <div className="mb-4 flex items-center justify-between gap-3">
           <PollTabs activeTab={activeTab} ongoingCount={0} closedCount={0} onChange={setActiveTab} />
           {headerRight}
         </div>
         <div className="flex flex-col items-center justify-center py-24 gap-2">
-          <p className="text-sm font-semibold text-foreground">투표가 없습니다</p>
-          <p className="text-xs text-muted-foreground">곧 새로운 투표가 공개될 예정입니다</p>
+          <p className="text-label-1-normal font-semibold text-foreground">투표가 없습니다</p>
+          <p className="text-caption-1 text-muted-foreground">곧 새로운 투표가 공개될 예정입니다</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-4 pt-4 pb-10 animate-enter">
+    <div className="px-5 pt-4 pb-10 animate-enter">
       {featuredPoll && <PollHeroCard poll={featuredPoll} />}
 
       {listPolls.length > 0 ? (
@@ -146,7 +146,7 @@ export function PollListClient({ initialPolls, headerRight }: PollListClientProp
             <PollTabs activeTab={activeTab} ongoingCount={ongoing.length} closedCount={closed.length} onChange={setActiveTab} />
           </div>
           <div className="flex flex-col items-center justify-center gap-2 py-20">
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-label-1-normal font-semibold text-foreground">
               {activeTab === 'all' ? '투표가 없습니다' : activeTab === 'ongoing' ? '진행 중인 투표가 없습니다' : '종료된 투표가 없습니다'}
             </p>
           </div>
@@ -176,20 +176,20 @@ function PollHeroCard({ poll }: { poll: PollListItem }) {
       className="relative block h-[252px] overflow-hidden rounded-lg bg-disabled"
     >
       <img src={getThumbnailUrl(poll)} alt="" className="h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121314]" />
+      <div className="banner-text-overlay absolute inset-0" />
       <div className="absolute inset-x-4 bottom-4 flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-[21px] items-center rounded-pill bg-primary/55 px-[9px] text-[10px] font-semibold leading-[15px] text-white backdrop-blur-[2px]">
+          <span className="inline-flex h-[21px] items-center rounded-pill bg-primary/55 px-[9px] text-caption-2 font-semibold text-white backdrop-blur-[2px]">
             {poll.status === 'active' ? formatTimeLeft(poll.closes_at) : getStatusLabel(poll)}
           </span>
-          <span className="inline-flex items-center gap-1 text-[11px] leading-[14px] text-white">
+          <span className="inline-flex items-center gap-1 text-caption-2 text-white">
             <Users className="h-3.5 w-3.5" />
             {poll.vote_count.toLocaleString()}명
           </span>
         </div>
-        <p className="truncate text-[17px] font-bold leading-5 text-white">{poll.title}</p>
+        <p className="truncate text-headline-2 font-bold text-white">{poll.title}</p>
         {poll.description && (
-          <p className="mt-1 truncate text-[12px] leading-[16.5px] text-[#c7c7c7]">{poll.description}</p>
+          <p className="mt-1 truncate text-caption-1 text-white/75">{poll.description}</p>
         )}
       </div>
     </Link>
@@ -222,7 +222,7 @@ function PollTabs({
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`h-8 flex-1 border-b px-2.5 pb-[13px] text-center text-[13px] font-bold leading-4 transition-colors ${selected ? 'border-primary text-primary' : 'border-border text-gray-3 hover:text-gray-2'}`}
+            className={`h-8 flex-1 border-b px-2.5 pb-3 text-center text-label-2 font-bold transition-colors ${selected ? 'border-primary text-primary' : 'border-border text-gray-3 hover:text-gray-2'}`}
           >
             {tab.label}
           </button>

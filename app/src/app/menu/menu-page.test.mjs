@@ -32,3 +32,13 @@ test('menu page renders auth-aware actions', () => {
   assert.match(actions, /isAdmin/)
   assert.match(actions, /href="\/admin"/)
 })
+
+test('menu page applies the mobile layout foundation', () => {
+  const file = source('app/menu/page.tsx')
+  const actions = source('app/menu/MenuActions.tsx')
+
+  assert.match(file, /bg-background px-5 pt-6 pb-24/)
+  assert.match(actions, /flex flex-col gap-2/)
+  assert.match(actions, /className="h-12 justify-start"/)
+  assert.doesNotMatch(file, /bg-\[#f4f4f5\]/)
+})

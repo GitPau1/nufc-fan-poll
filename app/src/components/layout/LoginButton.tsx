@@ -9,7 +9,7 @@ export function LoginButton() {
       <Button
         variant="outline"
         size="sm"
-        className="h-8 rounded-pill text-xs font-semibold border-primary text-primary hover:text-primary"
+        className="h-8 rounded-pill text-caption-1 font-semibold border-primary text-primary hover:text-primary"
       >
         로그인
       </Button>

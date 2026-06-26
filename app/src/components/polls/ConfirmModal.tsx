@@ -35,7 +35,7 @@ export function ConfirmModal({
         <div className="mx-auto w-10 h-1.5 rounded-full bg-muted mb-6" />
 
         <SheetHeader className="text-left mb-5">
-          <SheetTitle className="text-base">이 선택으로 투표하시겠어요?</SheetTitle>
+          <SheetTitle className="text-body-1-normal">이 선택으로 투표하시겠어요?</SheetTitle>
           <SheetDescription>제출 후에는 변경할 수 없습니다</SheetDescription>
         </SheetHeader>
 
@@ -45,8 +45,8 @@ export function ConfirmModal({
             <div className="w-2.5 h-2.5 rounded-full bg-primary" />
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground mb-0.5">내 선택</p>
-            <p className="text-sm font-semibold text-foreground">{selectedLabel}</p>
+            <p className="text-caption-2 text-muted-foreground mb-0.5">내 선택</p>
+            <p className="text-label-1-normal font-semibold text-foreground">{selectedLabel}</p>
           </div>
         </div>
 

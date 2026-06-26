@@ -74,17 +74,17 @@ function PollFeedCard({ poll }: { poll: PollListItem }) {
         <div className="flex min-w-0 flex-1 self-stretch">
           <div className="flex min-w-0 flex-1 flex-col justify-between">
             <div className="min-w-0">
-              <span className="inline-flex h-[21px] items-center rounded-pill bg-primary-dim px-[9px] text-[10px] font-semibold leading-[15px] text-primary-dark">
+              <span className="inline-flex h-[21px] items-center rounded-pill bg-primary-dim px-[9px] text-caption-2 font-semibold text-primary-dark">
                 {getStatusLabel(poll)}
               </span>
               <div className="pt-1.5">
-                <p className="truncate text-[15px] font-bold leading-5 text-foreground">{poll.title}</p>
-                <p className="mt-0.5 line-clamp-1 text-[12px] leading-[16.5px] text-gray-2">
+                <p className="truncate text-body-2-normal font-bold text-foreground">{poll.title}</p>
+                <p className="mt-0.5 line-clamp-1 text-caption-1 text-gray-2">
                   {poll.description || getOptionPreview(poll)}
                 </p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1 text-[11px] leading-[14px] text-gray-2">
+            <span className="inline-flex items-center gap-1 text-caption-2 text-gray-2">
               <Users className="h-3.5 w-3.5" />
               {poll.vote_count.toLocaleString()}명
             </span>

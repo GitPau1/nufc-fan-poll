@@ -22,6 +22,7 @@ test('app header uses the home header treatment by default', () => {
   assert.match(appHeaderSource, /backdrop-blur/)
   assert.match(appHeaderSource, /from-white/)
   assert.match(appHeaderSource, /justify-center/)
-  assert.match(appHeaderSource, /text-\[24px\]/)
+  assert.match(appHeaderSource, /text-title-3/)
+  assert.match(appHeaderSource, /border-border/)
   assert.match(appHeaderSource, /NUFCVOTE/)
 })

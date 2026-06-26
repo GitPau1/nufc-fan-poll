@@ -225,8 +225,8 @@ export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
   return (
     <>
       <form onSubmit={submit} className="space-y-3">
-        <section className="rounded-md border border-border bg-surface p-4 shadow-g200">
-          <p className="text-[13px] font-bold text-foreground">투표 유형</p>
+        <section className="rounded-lg border border-border bg-surface p-4 shadow-g200">
+          <p className="text-label-2 font-bold text-foreground">투표 유형</p>
           <div className="mt-3 grid gap-2">
             {POLL_TYPES.map(item => {
               const selected = item.type === pollType
@@ -237,16 +237,16 @@ export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
                   onClick={() => setPollType(item.type)}
                   className={`rounded-sm border px-3 py-3 text-left transition-opacity hover:opacity-70 ${selected ? 'border-primary bg-primary-dim' : 'border-border bg-surface'}`}
                 >
-                  <span className={`block text-[13px] font-black ${selected ? 'text-primary' : 'text-foreground'}`}>{item.label}</span>
-                  <span className="mt-1 block text-[12px] leading-snug text-muted-foreground">{item.description}</span>
+                  <span className={`block text-label-2 font-black ${selected ? 'text-primary' : 'text-foreground'}`}>{item.label}</span>
+                  <span className="mt-1 block text-caption-1 text-muted-foreground">{item.description}</span>
                 </button>
               )
             })}
           </div>
         </section>
 
-        <section className="space-y-2.5 rounded-md border border-border bg-surface p-4 shadow-g200">
-          <p className="text-[13px] font-bold text-foreground">기본 정보</p>
+        <section className="space-y-2.5 rounded-lg border border-border bg-surface p-4 shadow-g200">
+          <p className="text-label-2 font-bold text-foreground">기본 정보</p>
           <input name="title" required className="input-field" placeholder="투표 제목" />
           <input name="description" className="input-field" placeholder="설명(선택)" />
           <input name="thumbnail_url" className="input-field" placeholder="대표 이미지 URL(선택)" />
@@ -262,10 +262,10 @@ export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
         </section>
 
         {pollType === 'subject_options' ? (
-          <section className="space-y-2.5 rounded-md border border-border bg-surface p-4 shadow-g200">
+          <section className="space-y-2.5 rounded-lg border border-border bg-surface p-4 shadow-g200">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[13px] font-bold text-foreground">대상 선수</p>
-              <button type="button" onClick={() => openPlayerPicker('single')} className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-disabled px-2.5 text-[12px] font-bold text-foreground">
+              <p className="text-label-2 font-bold text-foreground">대상 선수</p>
+              <button type="button" onClick={() => openPlayerPicker('single')} className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-disabled px-2.5 text-caption-1 font-bold text-foreground">
                 <Users className="h-3.5 w-3.5" /> 선택
               </button>
             </div>
@@ -282,14 +282,14 @@ export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
               ))}
             </div>
             {textOptions.length < 5 && (
-              <button type="button" onClick={() => setTextOptions(prev => [...prev, ''])} className="inline-flex items-center gap-1 text-[12px] font-bold text-primary">
+              <button type="button" onClick={() => setTextOptions(prev => [...prev, ''])} className="inline-flex items-center gap-1 text-caption-1 font-bold text-primary">
                 <Plus className="h-3.5 w-3.5" /> 선택지 추가
               </button>
             )}
           </section>
         ) : pollType === 'free_choice' ? (
-          <section className="space-y-2.5 rounded-md border border-border bg-surface p-4 shadow-g200">
-            <p className="text-[13px] font-bold text-foreground">선택지</p>
+          <section className="space-y-2.5 rounded-lg border border-border bg-surface p-4 shadow-g200">
+            <p className="text-label-2 font-bold text-foreground">선택지</p>
             <div className="space-y-1.5">
               {freeOptions.map((option, index) => (
                 <div key={index} className="grid grid-cols-[1fr_32px] gap-1.5 rounded-md border border-border p-2">
@@ -328,26 +328,26 @@ export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
               ))}
             </div>
             {freeOptions.length < 8 && (
-              <button type="button" onClick={() => setFreeOptions(prev => [...prev, { label: '', description: '', imageUrl: '' }])} className="inline-flex items-center gap-1 text-[12px] font-bold text-primary">
+              <button type="button" onClick={() => setFreeOptions(prev => [...prev, { label: '', description: '', imageUrl: '' }])} className="inline-flex items-center gap-1 text-caption-1 font-bold text-primary">
                 <Plus className="h-3.5 w-3.5" /> 선택지 추가
               </button>
             )}
           </section>
         ) : (
-          <section className="space-y-2.5 rounded-md border border-border bg-surface p-4 shadow-g200">
+          <section className="space-y-2.5 rounded-lg border border-border bg-surface p-4 shadow-g200">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[13px] font-bold text-foreground">{pollType === 'overall_rating' ? '평가 대상 선수' : '후보 선수'}</p>
-                <p className="mt-0.5 text-[12px] text-muted-foreground">{selectedPlayers.length}명 선택됨</p>
+                <p className="text-label-2 font-bold text-foreground">{pollType === 'overall_rating' ? '평가 대상 선수' : '후보 선수'}</p>
+                <p className="mt-0.5 text-caption-1 text-muted-foreground">{selectedPlayers.length}명 선택됨</p>
               </div>
-              <button type="button" onClick={() => openPlayerPicker('multiple')} className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-disabled px-2.5 text-[12px] font-bold text-foreground">
+              <button type="button" onClick={() => openPlayerPicker('multiple')} className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-disabled px-2.5 text-caption-1 font-bold text-foreground">
                 <Users className="h-3.5 w-3.5" /> 선택
               </button>
             </div>
             {selectedPlayers.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {selectedPlayers.map(player => (
-                  <span key={player.id} className="rounded-pill bg-disabled px-2 py-1 text-[11px] font-bold text-foreground">
+                  <span key={player.id} className="rounded-pill bg-disabled px-2 py-1 text-caption-2 font-bold text-foreground">
                     {player.name}
                   </span>
                 ))}
@@ -358,7 +358,7 @@ export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
           </section>
         )}
 
-        {message && <p className="rounded-sm bg-negative-dim px-3 py-2 text-[12px] font-semibold text-negative">{message}</p>}
+        {message && <p className="rounded-sm bg-negative-dim px-3 py-2 text-caption-1 font-semibold text-negative">{message}</p>}
         <button type="submit" disabled={isPending} className="btn-primary">
           {isPending ? '생성 중...' : '투표 생성'}
         </button>
@@ -379,7 +379,7 @@ export function UserPollCreateForm({ players }: { players: PollFormPlayer[] }) {
 
 function EmptySelection({ label }: { label: string }) {
   return (
-    <div className="rounded-md border border-dashed border-border px-3 py-4 text-center text-[12px] font-semibold text-muted-foreground">
+    <div className="rounded-md border border-dashed border-border px-3 py-4 text-center text-caption-1 font-semibold text-muted-foreground">
       {label}
     </div>
   )
@@ -388,7 +388,7 @@ function EmptySelection({ label }: { label: string }) {
 function PlayerSummary({ player }: { player: PollFormPlayer }) {
   return (
     <div className="flex items-center gap-3 rounded-md border border-border bg-disabled px-3 py-2">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface text-[12px] font-black text-primary">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface text-caption-1 font-black text-primary">
         {player.photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={player.photo_url} alt="" className="h-full w-full object-cover" />
@@ -397,8 +397,8 @@ function PlayerSummary({ player }: { player: PollFormPlayer }) {
         )}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-[13px] font-black text-foreground">{player.name}</p>
-        <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">{getPlayerMeta(player)}</p>
+        <p className="truncate text-label-2 font-black text-foreground">{player.name}</p>
+        <p className="mt-0.5 text-caption-2 font-semibold text-muted-foreground">{getPlayerMeta(player)}</p>
       </div>
     </div>
   )
@@ -451,8 +451,8 @@ function PlayerPickerSheet({
         className="right-auto flex h-[82vh] max-h-[82vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-lg p-0"
       >
         <SheetHeader className="sr-only">
-          <SheetTitle className="text-[16px] font-black">선수 선택</SheetTitle>
-          <SheetDescription className="text-[12px]">
+          <SheetTitle className="text-body-1-normal font-black">선수 선택</SheetTitle>
+          <SheetDescription className="text-caption-1">
             {mode === 'single' ? '투표 대상 선수 1명을 선택합니다.' : '투표 후보로 올릴 선수를 선택합니다.'}
           </SheetDescription>
         </SheetHeader>
@@ -462,7 +462,7 @@ function PlayerPickerSheet({
             <input
               value={query}
               onChange={event => setQuery(event.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-[13px] font-semibold outline-none"
+              className="min-w-0 flex-1 bg-transparent text-label-2 font-semibold outline-none"
               placeholder="선수 검색"
             />
           </div>
@@ -474,7 +474,7 @@ function PlayerPickerSheet({
                   key={filter.id}
                   type="button"
                   onClick={() => setPlayerFilter(filter.id)}
-                  className={`shrink-0 rounded-pill border px-2.5 py-1 text-[11px] font-black transition-opacity hover:opacity-70 ${selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-surface text-muted-foreground'}`}
+                  className={`shrink-0 rounded-pill border px-2.5 py-1 text-caption-2 font-black transition-opacity hover:opacity-70 ${selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-surface text-muted-foreground'}`}
                 >
                   {filter.label}
                 </button>
@@ -484,12 +484,12 @@ function PlayerPickerSheet({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
           {positionGroups.length === 0 ? (
-            <p className="py-12 text-center text-[13px] font-semibold text-muted-foreground">검색 결과가 없습니다.</p>
+            <p className="py-12 text-center text-label-2 font-semibold text-muted-foreground">검색 결과가 없습니다.</p>
           ) : (
             <div className="space-y-4">
               {positionGroups.map(positionGroup => (
                 <section key={positionGroup.key} className="space-y-1.5">
-                  <p className="px-0.5 text-[12px] font-bold text-muted-foreground">{positionGroup.label}</p>
+                  <p className="px-0.5 text-caption-1 font-bold text-muted-foreground">{positionGroup.label}</p>
                   {positionGroup.players.map(player => {
                     const selected = selectedIds.includes(player.id)
                     return (
@@ -499,7 +499,7 @@ function PlayerPickerSheet({
                         onClick={() => onToggle(player.id)}
                         className={`flex w-full items-center gap-3 rounded-sm border px-3 py-2 text-left transition-opacity hover:opacity-70 ${selected ? 'border-primary bg-primary-dim' : 'border-border bg-surface'}`}
                       >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-black text-primary">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-caption-1 font-black text-primary">
                           {player.photo_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={player.photo_url} alt="" className="h-full w-full object-cover" />
@@ -508,8 +508,8 @@ function PlayerPickerSheet({
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] font-black text-foreground">{player.name}</p>
-                          <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">{getPlayerMeta(player)}</p>
+                          <p className="truncate text-label-2 font-black text-foreground">{player.name}</p>
+                          <p className="mt-0.5 text-caption-2 font-semibold text-muted-foreground">{getPlayerMeta(player)}</p>
                         </div>
                         <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border text-transparent'}`}>
                           <Check className="h-3.5 w-3.5" />

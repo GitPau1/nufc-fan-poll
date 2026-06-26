@@ -57,7 +57,7 @@ export function UserMenu({ avatarUrl, displayName }: UserMenuProps) {
       >
         <Avatar className="h-8 w-8">
           <AvatarImage src={avatarUrl} alt={displayName ?? 'profile'} />
-          <AvatarFallback className="bg-primary-dim text-primary-dark text-xs font-bold">
+          <AvatarFallback className="bg-primary-dim text-primary-dark text-caption-1 font-bold">
             {displayName?.[0]?.toUpperCase() ?? 'U'}
           </AvatarFallback>
         </Avatar>
@@ -68,14 +68,14 @@ export function UserMenu({ avatarUrl, displayName }: UserMenuProps) {
           <Link
             href="/my"
             onClick={() => setOpen(false)}
-            className="block px-4 py-2.5 text-[13px] font-medium text-foreground border-b border-border hover:bg-secondary"
+            className="block px-4 py-2.5 text-label-2 font-medium text-foreground border-b border-border hover:bg-secondary"
           >
             마이페이지
           </Link>
 
           <button
             onClick={handleLogout}
-            className="block w-full text-left px-4 py-2.5 text-[13px] font-medium text-negative hover:bg-negative-dim"
+            className="block w-full text-left px-4 py-2.5 text-label-2 font-medium text-negative hover:bg-negative-dim"
           >
             로그아웃
           </button>

@@ -20,7 +20,22 @@ test('result page omits sections that are not in the Figma result frame', () => 
 
 test('comments use the Figma thumbs-up reaction treatment', () => {
   assert.match(commentsSection, /ThumbsUp/)
+  assert.match(commentsSection, /function CommentReactionButton/)
+  assert.match(commentsSection, /text-caption-2/)
+  assert.match(commentsSection, /\.filter\(Boolean\)\.join\(' '\)/)
   assert.doesNotMatch(commentsSection, /Heart/)
+  assert.doesNotMatch(commentsSection, /text-caption-1 transition-all/)
+  assert.doesNotMatch(commentsSection, /cn\(\s*'mt-1\.5 inline-flex[\s\S]*text-caption-2/)
+})
+
+test('comment option badges use the compact caption component', () => {
+  assert.match(commentsSection, /function CommentOptionBadge/)
+  assert.match(commentsSection, /<CommentOptionBadge/)
+  assert.match(commentsSection, /px-\[9px\] py-\[3px\] text-caption-2 font-semibold/)
+  assert.match(commentsSection, /inline-flex items-center rounded-pill/)
+  assert.doesNotMatch(commentsSection, /<Badge/)
+  assert.doesNotMatch(commentsSection, /px-1\.5 py-0/)
+  assert.doesNotMatch(commentsSection, /text-caption-3/)
 })
 
 test('result page renders all options as Figma-style percentage bars', () => {
@@ -41,5 +56,6 @@ test('result page adds Figma-style option thumbnails only for image or player op
 
 test('comment composer keeps the Figma input proportions', () => {
   assert.match(commentsSection, /h-\[62px\]/)
-  assert.match(commentsSection, /rounded-\[16px\]/)
+  assert.match(commentsSection, /rounded-lg/)
+  assert.doesNotMatch(commentsSection, /rounded-\[16px\]/)
 })

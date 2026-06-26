@@ -61,7 +61,7 @@ export function LoginModal({ open, onClose, intent = 'prompt', triggerAction = '
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/45" />
           <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-32px)] max-w-[448px] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface p-5 shadow-w300 focus:outline-none">
-            <DialogPrimitive.Title className="text-center text-base font-bold text-foreground">
+            <DialogPrimitive.Title className="text-center text-body-1-normal font-bold text-foreground">
               NUFCVOTE 로그인
             </DialogPrimitive.Title>
             <DialogPrimitive.Description className="sr-only">
@@ -75,7 +75,7 @@ export function LoginModal({ open, onClose, intent = 'prompt', triggerAction = '
             >
               {IS_MOCK ? (
                 <>
-                  <span className="text-lg">⚡</span>
+                  <span className="text-headline-1">⚡</span>
                   데모로 바로 로그인
                 </>
               ) : (
@@ -115,7 +115,7 @@ export function LoginModal({ open, onClose, intent = 'prompt', triggerAction = '
             </div>
           )}
           <SheetHeader>
-            <SheetTitle className="text-base">
+            <SheetTitle className="text-body-1-normal">
               {isDirect ? 'NUFCVOTE 로그인' : '로그인이 필요해요'}
             </SheetTitle>
             <SheetDescription className={isDirect ? 'sr-only' : undefined}>
@@ -133,7 +133,7 @@ export function LoginModal({ open, onClose, intent = 'prompt', triggerAction = '
         >
           {IS_MOCK ? (
             <>
-              <span className="text-lg">⚡</span>
+              <span className="text-headline-1">⚡</span>
               데모로 바로 로그인
             </>
           ) : (

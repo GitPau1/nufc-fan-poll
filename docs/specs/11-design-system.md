@@ -60,19 +60,96 @@ Newcastle United 브랜드 색상을 적용한 커스텀 디자인 시스템.
 
 폰트: `'Pretendard Variable', Pretendard, -apple-system, sans-serif`
 
-LDSG 구분: **Title** (좁은 line-height, 제목·리스트 타이틀) / **Text** (넓은 line-height, 본문·버튼 라벨)
+Wanted Design Library의 역할 기반 타입 스케일을 따른다. 텍스트 토큰은 크기만이 아니라 **사용 맥락**을 포함한다.
 
-| 토큰 | px | line-height | 용도 |
-|------|----|-------------|------|
-| `title-xl` | 20px | 1.2 | 랜딩 헤드라인 |
-| `title-l` | 18px | 1.25 | 섹션 제목, 모달 타이틀 |
-| `title-m` | 16px | 1.3 | 서브 헤더, 카드 제목 |
-| `title-s` | 14px | 1.35 | 리스트 아이템 제목, 카드 제목 |
-| `title-xs` | 12px | 1.4 | 소형 라벨 |
-| `text-m` | 15px | 1.6 | 버튼 라벨, 옵션 텍스트 |
-| `text-s` | 14px | 1.65 | 본문, 댓글, 설명 |
-| `text-xs` | 12px | 1.5 | 부제, 메타 정보 |
-| `text-xxs` | 11px | 1.45 | section-label, 뱃지 |
+| 토큰 | px | line-height | letter-spacing | 용도 |
+|------|----|-------------|----------------|------|
+| `display-1` | 56px | 72px | -0.0319em | 가장 강한 시각 강조. 큰 히어로·프로모션 전용 |
+| `display-2` | 40px | 52px | -0.0282em | 두 번째 단계의 프로모션 헤드라인 |
+| `title-1` | 36px | 48px | -0.027em | 큰 화면의 주요 타이틀 |
+| `title-2` | 28px | 38px | -0.0236em | 중간 화면의 주요 타이틀 |
+| `title-3` | 24px | 32px | -0.023em | 작은 화면의 주요 타이틀 |
+| `heading-1` | 22px | 30px | -0.0194em | 섹션의 주요 제목 |
+| `heading-2` | 20px | 28px | -0.012em | 작은 화면 또는 좁은 영역의 섹션 제목 |
+| `headline-1` | 18px | 26px | -0.002em | 본문 상위 내용 강조, 카드 내 큰 제목 |
+| `headline-2` | 17px | 24px | 0em | 작은 화면의 본문 상위 강조 |
+| `body-1-normal` | 16px | 24px | 0.0057em | 일반 본문, 설정 항목, 짧은 설명 |
+| `body-1-reading` | 16px | 26px | 0.0057em | 긴 문단, 댓글 본문처럼 읽기 밀도가 높은 텍스트 |
+| `body-2-normal` | 15px | 22px | 0.0096em | 대체 본문, 옵션 텍스트, 버튼 라벨 |
+| `body-2-reading` | 15px | 24px | 0.0096em | 작은 크기의 긴 설명 문단 |
+| `label-1-normal` | 14px | 20px | 0.0145em | 폼 라벨, 리스트 보조 제목, 일반 라벨 |
+| `label-1-reading` | 14px | 22px | 0.0145em | 라벨 크기의 긴 안내 문구 |
+| `label-2` | 13px | 18px | 0.0194em | 낮은 위계의 라벨, 보조 UI 텍스트 |
+| `caption-1` | 12px | 16px | 0.0252em | 메타 정보, 보조 설명, 작은 버튼 라벨 |
+| `caption-2` | 11px | 14px | 0.0311em | 가장 낮은 위계의 메타, 뱃지, section-label |
+
+### 타이포그래피 적용 원칙
+
+- `display-*`와 `title-*`은 일반 앱 화면의 반복 UI에 쓰지 않고, 강한 마케팅·온보딩·상태 강조가 필요한 경우에만 쓴다.
+- 카드 제목, 모달 제목, 섹션 제목은 우선 `heading-*` 또는 `headline-*`에서 고른다.
+- 버튼 라벨과 투표 옵션처럼 짧고 조작 가능한 텍스트는 `body-2-normal`을 기본으로 한다.
+- 댓글, 안내문, 투표 설명처럼 줄이 길어지는 텍스트는 `body-1-reading` 또는 `body-2-reading`을 쓴다.
+- 폼 라벨과 보조 UI 텍스트는 `label-*`, 메타 정보와 뱃지는 `caption-*`을 쓴다.
+- 새로운 임의 `text-[Npx]` 조합을 만들기 전에 위 토큰 중 가장 가까운 역할을 먼저 선택한다.
+
+---
+
+## 레이아웃 / 그리드
+
+Wanted Design Library의 모바일 우선 그리드 원칙을 NUFC Vote 앱 셸에 맞게 적용한다. 데스크톱 12컬럼 그리드는 현재 MVP 범위 밖이며, 이 프로젝트의 기준은 `360px`부터 `480px`까지의 모바일 앱 화면이다.
+
+### 화면 기준
+
+| 기준 | 값 | 용도 |
+|------|----|------|
+| Android minimum | 360px | 최소 지원 폭 |
+| iOS baseline | 375px | 기본 설계 폭 |
+| App shell max | 480px | 현재 Next.js 앱의 최대 표시 폭 |
+
+### 페이지 마진
+
+| 토큰 | 값 | 용도 |
+|------|----|------|
+| `--layout-margin` | 16px | 일반 화면 좌우 기본 마진 |
+| `--layout-margin-comfort` | 20px | 그리드가 강조되는 화면, 넓은 호흡이 필요한 섹션 |
+| `--layout-full-bleed` | 0px | 표지 이미지, 하단 고정 CTA, bottom nav 같은 명확한 예외 |
+
+기본 페이지 컨텐츠는 `16px` 좌우 마진을 쓴다. `20px`는 Wanted의 모바일 그리드 감각을 따르되, 현재 앱의 `480px` 셸 안에서 여백이 과해지는 화면에는 강제하지 않는다.
+
+### 모바일 컬럼 그리드
+
+```css
+/* Mobile base grid */
+grid-template-columns: repeat(2, minmax(0, 1fr));
+column-gap: 16px;
+padding-inline: 16px;
+max-width: 480px;
+```
+
+- 모바일 기본 그리드는 2컬럼이다.
+- 컬럼 간격은 기본 `16px`, 여유가 필요한 그리드형 화면은 `20px`까지 허용한다.
+- `480px` 앱 셸 안에서도 기본은 2컬럼을 유지한다.
+- 3컬럼은 `season-stat-card`처럼 반복 요약 정보가 명확한 컴포넌트 내부에서만 사용한다.
+- 표지 이미지, 상세 상단 미디어, 하단 CTA처럼 화면의 가장자리까지 닿아야 하는 영역만 full-bleed를 허용한다.
+
+### 간격 스케일
+
+기본 간격은 4px 배수로 설계한다.
+
+| 토큰 | 값 | 용도 |
+|------|----|------|
+| `space-1` | 4px | 아이콘과 텍스트의 아주 작은 간격 |
+| `space-2` | 8px | 작은 컨트롤 내부 간격 |
+| `space-3` | 12px | 리스트 아이템 내부 간격 |
+| `space-4` | 16px | 페이지 기본 마진, 카드 내부 기본 padding |
+| `space-5` | 20px | 모바일 컬럼 그리드 여유 간격 |
+| `space-6` | 24px | 섹션 간격 |
+| `space-8` | 32px | 큰 섹션 간격 |
+| `space-10` | 40px | 화면 단위 상하 여백 |
+
+- `1px`과 `2px`는 border, hairline divider, 아이콘 optical alignment 보정에만 사용한다.
+- 임의의 `gap-[Npx]`, `px-[Npx]`는 새 컴포넌트 패턴으로 문서화하지 않는 한 만들지 않는다.
+- 컴포넌트 내부의 고정 포맷 레이아웃은 예외를 둘 수 있지만, 예외 값은 해당 컴포넌트 섹션에 명시한다.
 
 ---
 
@@ -82,8 +159,8 @@ LDSG 구분: **Title** (좁은 line-height, 제목·리스트 타이틀) / **Tex
 |------|-----|--------|
 | `--r-xs` | 8px | 스켈레톤 플레이스홀더, 작은 배지 |
 | `--r-sm` | 10px | 버튼, 입력창, 옵션 버튼 |
-| `--r-md` | 12px | 카드, 선수 정보 영역, 결과 카드 |
-| `--r-lg` | 16px | Bottom Sheet, 모달 상단 |
+| `--r-md` | 12px | 작은 패널, 내부 그룹, 보조 컨테이너 |
+| `--r-lg` | 16px | 카드 기본값, Bottom Sheet, 모달 상단 |
 | `--r-pill` | 9999px | Chip, Dot 인디케이터, 플로팅 버튼 |
 
 ---
@@ -185,7 +262,7 @@ font-size: 11px; font-weight: 600;
 ```css
 /* list-group */
 background: var(--c-surface);
-border-radius: var(--r-md);    /* 12px */
+border-radius: var(--r-lg);    /* 16px */
 overflow: hidden;
 box-shadow: var(--sh-g200);    /* on-gray 배경 위 */
 
@@ -230,7 +307,7 @@ background: var(--c-surface);
 /* feed shell */
 background: var(--c-surface);
 border: 1px solid var(--c-gray-4);
-border-radius: var(--r-md);
+border-radius: var(--r-lg);
 box-shadow: var(--sh-g200);
 
 /* post-card */
@@ -353,7 +430,7 @@ outline: none;
 
 ```css
 background: var(--c-surface);
-border-radius: var(--r-md);    /* 12px */
+border-radius: var(--r-lg);    /* 16px */
 overflow: hidden;
 box-shadow: var(--sh-g200);    /* on-gray 배경 위 */
 ```
@@ -365,7 +442,7 @@ box-shadow: var(--sh-g200);    /* on-gray 배경 위 */
 
 공통 규칙:
 - 이미지 영역은 항상 `1:1` 정사각형이다.
-- 카드 표면은 `--c-surface`, `border: 1px solid --c-gray-4`, `border-radius: --r-md`, `box-shadow: --sh-g200`.
+- 카드 표면은 `--c-surface`, `border: 1px solid --c-gray-4`, `border-radius: --r-lg`, `box-shadow: --sh-g200`.
 - 선택 상태는 `border-color: --c-primary` + `3px` inset ring + 우상단 primary check로 표시한다.
 - 사이드 카드는 같은 구조를 유지하고 opacity/scale만 낮춘다.
 - 이미지가 없으면 클럽 네이비 계열 fallback 배경과 2글자 이니셜을 사용한다.
@@ -470,7 +547,7 @@ color: var(--c-primary);
 ```css
 background: var(--c-surface);
 border: 1px solid var(--c-gray-4);
-border-radius: var(--r-md);
+border-radius: var(--r-lg);
 box-shadow: var(--sh-g200);
 ```
 
@@ -480,7 +557,7 @@ box-shadow: var(--sh-g200);
 
 ```css
 background: var(--c-surface);
-border-radius: var(--r-md);
+border-radius: var(--r-lg);
 box-shadow: var(--sh-g200);
 ```
 
@@ -497,7 +574,7 @@ gap: 8px;
 /* card */
 background: var(--c-surface);
 border: 1px solid var(--c-gray-4);
-border-radius: var(--r-md);
+border-radius: var(--r-lg);
 box-shadow: var(--sh-g200);
 padding: 12px 10px;
 text-align: center;
@@ -550,7 +627,7 @@ border-bottom: 3px solid var(--c-primary);
 /* group */
 background: var(--c-surface);
 border: 1px solid var(--c-gray-4);
-border-radius: var(--r-md);
+border-radius: var(--r-lg);
 ```
 
 선수 행 hover/pressed는 색을 바꾸지 않고 opacity로만 표현한다.
@@ -577,7 +654,7 @@ color: var(--c-primary-dark);
 ```css
 background: var(--c-surface);
 border: 1px solid var(--c-gray-4);
-border-radius: var(--r-md);
+border-radius: var(--r-lg);
 box-shadow: var(--sh-g200);
 
 /* picker */
@@ -610,7 +687,7 @@ theme: {
       // ... 위 토큰 그대로 매핑
     },
     borderRadius: {
-      'xs': '8px', 'sm': '10px', 'md': '12px', 'lg': '16px',
+      'xs': '8px', 'sm': '10px', 'md': '12px', 'lg': '16px', // cards use lg
     },
     boxShadow: {
       'w100': '0px 0px 2px rgba(0,0,0,.07), 0px 1px 2px rgba(0,0,0,.07)',

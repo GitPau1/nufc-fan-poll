@@ -79,7 +79,7 @@ export function MyPageClient({
       <div className="px-4 pt-6 pb-10 flex flex-col gap-5">
 
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <p className="text-caption-1 font-semibold text-muted-foreground uppercase mb-3">
             내 계정 정보
           </p>
 
@@ -87,7 +87,7 @@ export function MyPageClient({
             <CardContent className="flex items-center gap-4 p-4">
               <Avatar className="h-16 w-16">
                 <AvatarImage src={avatarUrl ?? undefined} />
-                <AvatarFallback className="bg-primary-dim text-primary-dark text-xl font-black">
+                <AvatarFallback className="bg-primary-dim text-primary-dark text-heading-2 font-black">
                   {initial}
                 </AvatarFallback>
               </Avatar>
@@ -102,7 +102,7 @@ export function MyPageClient({
                         if (e.key === 'Enter') handleSaveName()
                         if (e.key === 'Escape') cancelEdit()
                       }}
-                      className="text-base font-black text-foreground bg-transparent border-b-2 border-primary outline-none w-32 pb-0.5"
+                      className="text-body-1-normal font-black text-foreground bg-transparent border-b-2 border-primary outline-none w-32 pb-0.5"
                       autoFocus
                       maxLength={20}
                     />
@@ -121,7 +121,7 @@ export function MyPageClient({
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <p className="text-lg font-black text-foreground truncate">{nameValue}</p>
+                    <p className="text-headline-1 font-black text-foreground truncate">{nameValue}</p>
                       <button
                         onClick={startEdit}
                         className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
@@ -132,9 +132,9 @@ export function MyPageClient({
                   </div>
                 )}
 
-                <p className="mt-1 text-sm text-muted-foreground">{email}</p>
+                <p className="mt-1 text-label-1-normal text-muted-foreground">{email}</p>
                 {isMockMode && (
-                  <Badge variant="secondary" className="text-[10px] mt-1">데모 프로필</Badge>
+                  <Badge variant="secondary" className="text-caption-2 mt-1">데모 프로필</Badge>
                 )}
               </div>
             </CardContent>
@@ -145,12 +145,12 @@ export function MyPageClient({
 
         {/* 참여한 투표 */}
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <p className="text-caption-1 font-semibold text-muted-foreground uppercase mb-3">
             참여한 투표 · {participatedPolls.length}개
           </p>
 
           {participatedPolls.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
+            <p className="text-label-1-normal text-muted-foreground py-4 text-center">
               아직 참여한 투표가 없습니다
             </p>
           ) : (
@@ -162,14 +162,14 @@ export function MyPageClient({
                     <Link href={`/polls/${item.pollId}`} className="block active:bg-disabled transition-colors">
                       <div className="flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground leading-snug line-clamp-1">
+                          <p className="text-label-1-reading font-semibold text-foreground line-clamp-1">
                             {item.pollTitle}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className={cn('text-xs font-medium text-primary')}>
+                            <span className={cn('text-caption-1 font-medium text-primary')}>
                               {item.optionLabel}
                             </span>
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-caption-2 text-muted-foreground">
                               · {formatDate(item.votedAt)}
                             </span>
                           </div>
@@ -177,7 +177,7 @@ export function MyPageClient({
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <Badge
                             variant={item.pollStatus === 'closed' ? 'outline' : 'secondary'}
-                            className="text-[10px] pointer-events-none"
+                            className="text-caption-2 pointer-events-none"
                           >
                             {item.pollStatus === 'closed' ? '종료' : '진행 중'}
                           </Badge>

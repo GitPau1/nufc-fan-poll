@@ -132,22 +132,22 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
       <div className="flex-1 overflow-y-auto pb-[92px] animate-enter">
         <div className="relative h-[160px] overflow-hidden">
           <img src={coverUrl} alt={poll.title} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/45 to-black/85" />
+          <div className="banner-text-overlay absolute inset-0" />
           <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
             <div className="mb-2 flex items-center gap-1.5">
-              <Badge className="border-0 bg-white/20 text-[11px] font-semibold text-white backdrop-blur-sm pointer-events-none">전체 평가</Badge>
-              <Badge className="border-0 bg-primary text-[11px] font-semibold text-white hover:bg-primary pointer-events-none">{completedCount}/{totalRequired} 완료</Badge>
+              <Badge className="border-0 bg-white/20 text-caption-2 font-semibold text-white backdrop-blur-sm pointer-events-none">전체 평가</Badge>
+              <Badge className="border-0 bg-primary text-caption-2 font-semibold text-white hover:bg-primary pointer-events-none">{completedCount}/{totalRequired} 완료</Badge>
             </div>
-            <h1 className="text-[18px] font-black leading-tight text-white">{poll.title}</h1>
+            <h1 className="text-headline-1 font-black text-white">{poll.title}</h1>
           </div>
         </div>
 
         <div className="space-y-4 px-4 py-4">
           {poll.description && (
-            <p className="text-sm leading-relaxed text-muted-foreground">{poll.description}</p>
+            <p className="text-label-1-reading text-muted-foreground">{poll.description}</p>
           )}
           {errorMsg && (
-            <p className="text-sm font-medium text-destructive">{errorMsg}</p>
+            <p className="text-label-1-normal font-medium text-destructive">{errorMsg}</p>
           )}
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
@@ -157,7 +157,7 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
                 type="button"
                 onClick={() => index <= stepIndex && setStepIndex(index)}
                 className={cn(
-                  'rounded-full px-3 py-1.5 text-[12px] font-bold whitespace-nowrap',
+                  'rounded-full px-3 py-1.5 text-caption-1 font-bold whitespace-nowrap',
                   index === stepIndex ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'
                 )}
               >
@@ -169,10 +169,10 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
           {currentGroup && (
             <section className="space-y-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                <p className="text-caption-2 font-bold uppercase text-primary">
                   {POSITION_LABELS[currentGroup.position]}
                 </p>
-                <p className="mt-0.5 text-[13px] text-muted-foreground">
+                <p className="mt-0.5 text-label-2 text-muted-foreground">
                   각 선수에게 0~5점 등급을 선택해주세요. 코멘트는 선택입니다.
                 </p>
               </div>
@@ -190,9 +190,9 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
                           className="h-12 w-12 rounded-xl object-cover"
                         />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-black text-foreground">{player.name}</p>
-                          <p className="text-xs text-muted-foreground">{player.position} · #{player.squad_number ?? '-'}</p>
-                          <p className="mt-1 text-[11px] font-semibold text-muted-foreground">
+                          <p className="truncate text-label-1-normal font-black text-foreground">{player.name}</p>
+                          <p className="text-caption-1 text-muted-foreground">{player.position} · #{player.squad_number ?? '-'}</p>
+                          <p className="mt-1 text-caption-2 font-semibold text-muted-foreground">
                             출장 {stats?.appearances ?? 0} · 득점 {stats?.goals ?? 0} · 어시스트 {stats?.assists ?? 0}
                           </p>
                         </div>
@@ -207,11 +207,11 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
                               type="button"
                               onClick={() => setScore(player.id, option.score)}
                               className={cn(
-                                'rounded-lg border py-2 text-center text-[12px] font-black transition-colors',
+                                'rounded-lg border py-2 text-center text-caption-1 font-black transition-colors',
                                 selected ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground'
                               )}
                             >
-                              <span className="block text-[13px]">{option.grade}</span>
+                              <span className="block text-label-2">{option.grade}</span>
                             </button>
                           )
                         })}
@@ -236,11 +236,11 @@ export function OverallRatingPollClient({ poll, isAuthenticated }: OverallRating
 
       <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[480px] -translate-x-1/2 border-t bg-white/95 p-4 backdrop-blur">
         {isLastStep ? (
-          <Button className="h-12 w-full rounded-xl text-sm font-bold" disabled={isPending || completedCount !== totalRequired} onClick={handleSubmit}>
+          <Button className="h-12 w-full rounded-lg text-label-1-normal font-bold" disabled={isPending || completedCount !== totalRequired} onClick={handleSubmit}>
             {isPending ? <><Loader2 className="h-4 w-4 animate-spin" />제출 중...</> : '전체 평가 제출'}
           </Button>
         ) : (
-          <Button className="h-12 w-full rounded-xl text-sm font-bold" disabled={!currentComplete} onClick={handleNext}>
+          <Button className="h-12 w-full rounded-lg text-label-1-normal font-bold" disabled={!currentComplete} onClick={handleNext}>
             다음 포지션 평가
           </Button>
         )}

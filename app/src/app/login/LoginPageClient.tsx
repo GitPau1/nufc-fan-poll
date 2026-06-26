@@ -46,21 +46,21 @@ export function LoginPageClient() {
   return (
     <div className="min-h-[calc(100vh-56px)] flex flex-col items-center justify-center px-6 py-12">
       {/* 아이콘 */}
-      <div className="w-18 h-18 rounded-full bg-primary-dim flex items-center justify-center mb-5 text-4xl">
+      <div className="w-18 h-18 rounded-full bg-primary-dim flex items-center justify-center mb-5 text-title-1">
         ⚽
       </div>
 
-      <h1 className="text-[22px] font-black tracking-tight text-foreground text-center mb-2">
+      <h1 className="text-heading-1 font-black text-foreground text-center mb-2">
         NUFC Vote
       </h1>
-      <p className="text-sm text-muted-foreground text-center leading-relaxed mb-10">
+      <p className="text-label-1-reading text-muted-foreground text-center mb-10">
         팬들의 투표로 만드는<br />우리팀 이야기
       </p>
 
       <div className="w-full flex flex-col gap-3">
         <button
           onClick={handleLogin}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm bg-primary text-white font-bold text-[15px] shadow-w200 transition-opacity hover:opacity-70 active:opacity-50"
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm bg-primary text-white font-bold text-body-2-normal shadow-w200 transition-opacity hover:opacity-70 active:opacity-50"
         >
           <GoogleIcon color="white" />
           Google로 로그인
@@ -68,20 +68,20 @@ export function LoginPageClient() {
 
         <div className="flex items-center gap-3 py-1">
           <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-muted-foreground font-medium">처음 오셨나요?</span>
+          <span className="text-caption-1 text-muted-foreground font-medium">처음 오셨나요?</span>
           <div className="flex-1 h-px bg-border" />
         </div>
 
         <button
           onClick={handleSignUp}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm bg-surface border border-border text-foreground font-semibold text-[15px] transition-opacity hover:opacity-70 active:opacity-50"
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm bg-surface border border-border text-foreground font-semibold text-body-2-normal transition-opacity hover:opacity-70 active:opacity-50"
         >
           <GoogleIcon color="#41b6e6" />
           Google로 회원가입
         </button>
       </div>
 
-      <p className="text-[11px] text-muted-foreground text-center mt-7 leading-relaxed">
+      <p className="text-caption-2 text-muted-foreground text-center mt-7">
         가입하면 투표 참여 및 댓글 작성이 가능해요.<br />
         <span className="text-primary font-semibold">구글 계정으로만 가입해요.</span>
       </p>

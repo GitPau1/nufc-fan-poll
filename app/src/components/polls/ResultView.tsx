@@ -84,14 +84,14 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
     : null
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f4f4f5]">
+    <div className="flex min-h-screen flex-col bg-background">
       <div className="flex-1 overflow-y-auto hide-scrollbar animate-enter">
         <div className="bg-white">
           <header className="mx-auto flex h-[62px] w-full max-w-[480px] items-center px-4">
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex items-center gap-1.5 text-[14px] font-semibold leading-5 text-muted-foreground transition-opacity active:opacity-50"
+              className="flex items-center gap-1.5 text-label-1-normal font-semibold text-muted-foreground transition-opacity active:opacity-50"
             >
               <ChevronLeft className="h-4 w-4" />
               돌아가기
@@ -100,7 +100,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
         </div>
 
         <main className="mx-auto flex w-full max-w-[480px] flex-col gap-3 px-4 pb-8 pt-4">
-          <section className="overflow-hidden rounded-[16px] border border-border bg-surface">
+          <section className="overflow-hidden rounded-lg border border-border bg-surface">
             <img
               src={coverUrl}
               alt={poll.title}
@@ -109,10 +109,10 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
 
             <div className="px-4 pb-6 pt-2">
               <div className="flex flex-col items-center gap-1 pt-4 text-center">
-                <h1 className="break-keep text-[20px] font-bold leading-[23px] text-foreground">
+                <h1 className="break-keep text-heading-2 font-bold text-foreground">
                   {poll.title}
                 </h1>
-                <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[12px] leading-[17px] text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-caption-1 text-muted-foreground">
                   {pollDate && <span>{pollDate}</span>}
                   <span>{poll.creator_name ?? 'Admin'}</span>
                 </div>
@@ -122,12 +122,12 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
             <div className="mx-4 h-px bg-border" />
 
             <div className="flex flex-col items-center gap-5 py-5">
-              <p className="text-center text-[13px] font-semibold leading-4 tracking-[0.04em] text-gray-1">
+              <p className="text-center text-label-2 font-semibold text-gray-1">
                 {isClosed ? '최종 결과' : '현재 결과'}
               </p>
 
               {total === 0 ? (
-                <div className="mx-4 w-[calc(100%-32px)] rounded-[16px] bg-[#f4f4f5] p-5 text-center text-sm font-medium text-muted-foreground">
+                <div className="mx-4 w-[calc(100%-32px)] rounded-lg bg-disabled p-5 text-center text-label-1-normal font-medium text-muted-foreground">
                   아직 집계된 투표가 없습니다
                 </div>
               ) : (
@@ -138,12 +138,12 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                     return (
                       <div
                         key={item.option.id}
-                        className="relative min-h-[50px] overflow-hidden rounded-[100px] border border-border bg-surface"
+                        className="relative min-h-[50px] overflow-hidden rounded-pill border border-border bg-surface"
                       >
                         <div
                           className={cn(
-                            'absolute inset-y-0 left-0 rounded-l-[100px]',
-                            index === 0 ? 'bg-[#ccf0ff]' : 'bg-[#f4f4f5]'
+                            'absolute inset-y-0 left-0 rounded-l-pill',
+                            index === 0 ? 'bg-primary-dim' : 'bg-disabled'
                           )}
                           style={{ width: `${item.percent}%` }}
                         />
@@ -155,7 +155,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                         >
                           <div className="flex min-w-0 items-center gap-2">
                             {thumb ? (
-                              <div className="flex size-[40px] flex-shrink-0 items-center justify-center overflow-hidden rounded-[100px] bg-[#0c2340] text-[12px] font-bold text-white">
+                              <div className="flex size-[40px] flex-shrink-0 items-center justify-center overflow-hidden rounded-pill bg-primary-dark text-caption-1 font-bold text-white">
                                 {thumb.url ? (
                                   <img
                                     src={thumb.url}
@@ -169,7 +169,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                             ) : null}
                             <p
                               className={cn(
-                                'min-w-0 truncate break-keep text-[12px] leading-[22.5px]',
+                                'min-w-0 truncate break-keep text-caption-1',
                                 index === 0 ? 'font-semibold text-primary-dark' : 'font-medium text-muted-foreground'
                               )}
                             >
@@ -178,7 +178,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                           </div>
                           <span
                             className={cn(
-                              'flex-shrink-0 text-[12px] leading-[22.5px] tabular-nums',
+                              'flex-shrink-0 text-caption-1 tabular-nums',
                               index === 0 ? 'font-semibold text-primary-dark' : 'font-medium text-muted-foreground'
                             )}
                           >
@@ -191,7 +191,7 @@ export function ResultView({ poll, voteCounts, myOptionId, comments }: ResultVie
                 </div>
               )}
 
-              <div className="flex items-center justify-center gap-1 text-[12px] leading-5 text-muted-foreground">
+              <div className="flex items-center justify-center gap-1 text-caption-1 text-muted-foreground">
                 <Users className="h-3.5 w-3.5" />
                 <span>{total.toLocaleString()}명 참여</span>
               </div>

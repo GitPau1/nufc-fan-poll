@@ -24,8 +24,8 @@ export default async function MyFeedbackPage() {
       <PollPageHeader />
       <main className="min-h-[calc(100vh-62px)] bg-background px-4 pt-6 pb-24">
         <div className="mb-5">
-          <h1 className="text-[20px] font-black leading-[26px] text-foreground">피드백 남기기</h1>
-          <p className="mt-1 text-[13px] leading-[18px] text-muted-foreground">
+          <h1 className="text-heading-2 font-black text-foreground">피드백 남기기</h1>
+          <p className="mt-1 text-label-2 text-muted-foreground">
             NUFCVOTE를 쓰면서 느낀 점을 알려주세요.
           </p>
         </div>

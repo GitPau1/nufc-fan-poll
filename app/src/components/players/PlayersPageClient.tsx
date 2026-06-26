@@ -22,7 +22,7 @@ type PlayersPageClientProps = {
 }
 
 const positionTone: Record<string, string> = {
-  GK: 'bg-[rgba(65,182,230,0.12)] text-primary',
+  GK: 'bg-primary-dim text-primary',
   DEF: 'bg-positive-dim text-positive',
   MID: 'bg-primary-dim text-primary-dark',
   FWD: 'bg-negative-dim text-negative',
@@ -41,7 +41,7 @@ export function PlayersPageClient({ players }: PlayersPageClientProps) {
   }, [normalizedQuery, players])
 
   return (
-    <div className="px-4 pt-4 pb-10 animate-enter">
+    <div className="px-5 pt-4 pb-10 animate-enter">
       {players.length >= 2 && <PickOneSection players={players} />}
 
       <div className="mb-3 flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-3">
@@ -50,12 +50,12 @@ export function PlayersPageClient({ players }: PlayersPageClientProps) {
           value={query}
           onChange={event => setQuery(event.target.value)}
           placeholder="선수 검색"
-          className="h-full min-w-0 flex-1 bg-transparent text-[13px] font-medium text-foreground outline-none placeholder:text-gray-3"
+          className="h-full min-w-0 flex-1 bg-transparent text-label-2 font-medium text-foreground outline-none placeholder:text-gray-3"
         />
       </div>
 
-      <div className="overflow-hidden rounded-md border border-border bg-surface">
-        <div className="flex items-center justify-between border-b border-border px-3.5 pb-[9px] pt-3 text-[11px] font-medium tracking-[1.1px] text-gray-3">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="flex items-center justify-between border-b border-border px-3.5 pb-2 pt-3 text-caption-2 font-medium text-gray-3">
           <div className="flex items-center gap-[66px]">
             <span>순위</span>
             <span>이름</span>
@@ -71,8 +71,8 @@ export function PlayersPageClient({ players }: PlayersPageClientProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-1 py-20">
-            <p className="text-sm font-semibold text-foreground">검색 결과가 없습니다</p>
-            <p className="text-xs text-muted-foreground">다른 이름이나 포지션으로 찾아보세요</p>
+            <p className="text-label-1-normal font-semibold text-foreground">검색 결과가 없습니다</p>
+            <p className="text-caption-1 text-muted-foreground">다른 이름이나 포지션으로 찾아보세요</p>
           </div>
         )}
       </div>
@@ -271,12 +271,12 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
 
   return (
     <section className="mb-3 overflow-hidden rounded-lg border border-border bg-surface">
-      <div className="flex justify-center border-b border-border px-3.5 pb-[13px] pt-3">
-        <p className="whitespace-nowrap text-[16px] font-bold leading-6 tracking-[-0.4px] text-gray-1">
+      <div className="flex justify-center border-b border-border px-3.5 pb-3 pt-3">
+        <p className="whitespace-nowrap text-body-1-normal font-bold text-gray-1">
           여러분의 선택은?
         </p>
       </div>
-      <div className="flex items-center justify-center px-4 pt-3 text-[12px] font-semibold leading-[16.5px] text-gray-2">
+      <div className="flex items-center justify-center px-4 pt-3 text-caption-1 font-semibold text-gray-2">
         {getRemainingChoiceLabel(choiceStatusLoaded, remainingChoices)}
       </div>
 
@@ -297,7 +297,7 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
           isDimmed={(phase === 'confirming' && selectedCardKey === 'rightCard') || isPending}
           onClick={() => phase === 'centered' ? showNextMatchup() : selectCard('leftCard')}
         />
-        <div className={`absolute left-1/2 top-[72px] flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-pill bg-[#f5f5f6] text-[14px] font-medium leading-[23px] tracking-[-0.4px] text-[#ababab] transition-opacity duration-300 ${phase === 'centered' ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+        <div className={`absolute left-1/2 top-[72px] flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-pill bg-disabled text-label-1-normal font-medium text-gray-3 transition-opacity duration-300 ${phase === 'centered' ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           vs
         </div>
         <PickOneCard
@@ -309,7 +309,7 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
         />
       </div>
 
-      <p className="px-4 pb-4 pt-2 text-center text-[12px] leading-[16.5px] text-gray-2">
+      <p className="px-4 pb-4 pt-2 text-center text-caption-1 text-gray-2">
         {feedback ||
           (phase === 'centered'
           ? '한 번 더 누르면 다음 선택으로 넘어갑니다.'
@@ -318,7 +318,7 @@ function PickOneSection({ players }: { players: PlayerListItem[] }) {
       <Link
         href="/players/changes"
         onClick={() => trackEvent('player_rating_changes_clicked', { source_page: 'players' })}
-        className="mx-4 mb-4 flex h-10 items-center justify-center rounded-md bg-[#f4f4f5] text-[13px] font-bold text-gray-1 active:bg-disabled"
+        className="mx-4 mb-4 flex h-10 items-center justify-center rounded-md bg-disabled text-label-2 font-bold text-gray-1 active:bg-disabled"
       >
         이번주 변경 내역
       </Link>
@@ -411,21 +411,21 @@ function PickOneCard({
     <button
       type="button"
       onClick={onClick}
-      className={`absolute left-0 top-5 flex h-32 w-[calc((100%_-_49px)/2)] flex-col items-center justify-center gap-2.5 rounded-lg bg-[radial-gradient(circle_at_90%_-34%,rgba(207,217,230,0.22),rgba(25,34,50,0.22)_70%),radial-gradient(circle_at_25%_-95%,#191a1b_0%,#2e2d2d_50%,#434040_100%)] p-3 text-left transition-[transform,opacity,filter,box-shadow] duration-700 ease-in-out will-change-transform ${slotClass[card.slot]} ${isPicked ? 'shadow-[inset_0_0_0_3px_#32c2ff]' : ''} ${isDimmed ? 'opacity-[0.34] saturate-[0.35] duration-1000' : ''}`}
+      className={`absolute left-0 top-5 flex h-32 w-[calc((100%_-_49px)/2)] flex-col items-center justify-center gap-2.5 rounded-lg bg-gray-1 p-3 text-left transition-[transform,opacity,filter,box-shadow] duration-700 ease-in-out will-change-transform ${slotClass[card.slot]} ${isPicked ? 'ring-4 ring-inset ring-primary' : ''} ${isDimmed ? 'opacity-[0.34] saturate-[0.35] duration-1000' : ''}`}
       aria-label={`${player.name} 선택`}
     >
       <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-pill border border-border bg-background">
         {player.photoUrl ? (
           <img src={player.photoUrl} alt="" className="h-full w-full object-cover" />
         ) : (
-          <span className="text-[12px] font-semibold text-primary">{player.position}</span>
+          <span className="text-caption-1 font-semibold text-primary">{player.position}</span>
         )}
       </div>
       <div className="w-full text-center">
-        <p className="truncate text-[14px] font-semibold leading-[21px] text-white">
+        <p className="truncate text-label-1-reading font-semibold text-white">
           {player.name}
         </p>
-        <div className="flex items-center justify-center gap-3 text-[11px] leading-[16.5px] text-[#ebebeb]">
+        <div className="flex items-center justify-center gap-3 text-caption-2 text-disabled">
           <span>{player.position}</span>
           {player.seasons && <span className="truncate">{player.seasons}</span>}
         </div>
@@ -440,7 +440,7 @@ function PlayerRow({ player }: { player: PlayerListItem }) {
   return (
     <div className="flex h-[68px] items-center gap-2.5 px-3.5 py-2.5">
       <div className="relative h-6 w-6 flex-shrink-0">
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[13px] font-semibold leading-[22.5px] text-gray-2">
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-label-2 font-semibold text-gray-2">
           {player.rank}
         </span>
       </div>
@@ -449,21 +449,21 @@ function PlayerRow({ player }: { player: PlayerListItem }) {
         {player.photoUrl ? (
           <img src={player.photoUrl} alt="" className="h-full w-full object-cover" />
         ) : (
-          <span className="text-[12px] font-medium leading-[18px]">{player.position}</span>
+          <span className="text-caption-1 font-medium">{player.position}</span>
         )}
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-semibold leading-[21px] text-foreground">
+        <p className="truncate text-label-1-reading font-semibold text-foreground">
           {player.name}
         </p>
-        <div className="flex items-center gap-3 text-[11px] leading-[16.5px] text-gray-2">
+        <div className="flex items-center gap-3 text-caption-2 text-gray-2">
           <span>{player.position}</span>
           {player.seasons && <span className="truncate">{player.seasons}</span>}
         </div>
       </div>
 
-      <div className="w-8 flex-shrink-0 text-center text-[16px] font-semibold leading-[22.5px] text-foreground">
+      <div className="w-8 flex-shrink-0 text-center text-body-1-normal font-semibold text-foreground">
         {player.overall}
       </div>
     </div>

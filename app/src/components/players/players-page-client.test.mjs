@@ -26,7 +26,7 @@ test('players Pick One uses the approved card transition states', () => {
   assert.match(file, /enter-right/)
   assert.match(file, /requestAnimationFrame\(\(\) => \{\s*window\.setTimeout/s)
   assert.match(file, /한 번 더 누르면 다음 선택으로 넘어갑니다\./)
-  assert.match(file, /shadow-\[inset_0_0_0_3px_#32c2ff\]/)
+  assert.match(file, /ring-4 ring-inset ring-primary/)
   assert.doesNotMatch(file, /Target/)
   assert.doesNotMatch(file, /PickOneResult/)
 })
@@ -109,4 +109,20 @@ test('players Pick One shows remaining daily participation count', () => {
   assert.match(file, /확인 중/)
   assert.match(file, /로그인 후 참여 가능/)
   assert.doesNotMatch(file, /remainingChoices \?\? 5/)
+})
+
+test('players page applies the mobile layout foundation', () => {
+  const file = source('components/players/PlayersPageClient.tsx')
+
+  assert.match(file, /className="px-5 pt-4 pb-10 animate-enter"/)
+  assert.match(file, /mb-3 overflow-hidden rounded-lg border border-border bg-surface/)
+  assert.match(file, /overflow-hidden rounded-lg border border-border bg-surface/)
+  assert.doesNotMatch(file, /<div className="overflow-hidden rounded-md border border-border bg-surface">/)
+})
+
+test('players page uses foundation typography and color tokens', () => {
+  const file = source('components/players/PlayersPageClient.tsx')
+
+  assert.doesNotMatch(file, /text-\[[^\]]+\]|leading-\[[^\]]+\]|tracking-\[[^\]]+\]/)
+  assert.doesNotMatch(file, /bg-\[#|text-\[#|shadow-\[|ring-\[/)
 })

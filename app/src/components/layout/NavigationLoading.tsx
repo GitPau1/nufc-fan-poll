@@ -133,7 +133,7 @@ function SkeletonBlock({ className }: { className: string }) {
 
 function PollsSkeleton() {
   return (
-    <div aria-hidden="true" className="flex-1 px-4 pb-24 pt-4">
+    <div aria-hidden="true" className="flex-1 px-5 pb-24 pt-4">
       <div className="h-[252px] overflow-hidden rounded-lg bg-surface shadow-w200">
         <div className="h-full animate-skeleton bg-disabled" />
       </div>
@@ -164,7 +164,7 @@ function PollsSkeleton() {
 
 function PlayersSkeleton() {
   return (
-    <div aria-hidden="true" className="flex-1 px-4 pb-24 pt-4">
+    <div aria-hidden="true" className="flex-1 px-5 pb-24 pt-4">
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="flex justify-center border-b border-border px-3.5 pb-[13px] pt-3">
           <SkeletonBlock className="h-6 w-32 rounded-pill" />
@@ -173,7 +173,7 @@ function PlayersSkeleton() {
           <SkeletonBlock className="h-4 w-36 rounded-pill" />
         </div>
         <div className="relative h-[168px] px-4 pt-5">
-          <div className="flex gap-[49px]">
+          <div className="grid grid-cols-2 gap-5">
             <div className="flex h-32 flex-1 flex-col items-center justify-center gap-2.5 rounded-lg bg-disabled/70 p-3">
               <SkeletonBlock className="h-14 w-14 rounded-pill" />
               <SkeletonBlock className="h-4 w-20 rounded-pill" />
@@ -193,7 +193,7 @@ function PlayersSkeleton() {
         <SkeletonBlock className="h-4 flex-1 rounded-pill" />
       </div>
 
-      <div className="overflow-hidden rounded-md border border-border bg-surface">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="flex h-10 items-center justify-between border-b border-border px-3.5">
           <SkeletonBlock className="h-3 w-20 rounded-pill" />
           <SkeletonBlock className="h-3 w-12 rounded-pill" />
@@ -216,7 +216,7 @@ function PlayersSkeleton() {
 
 function MenuSkeleton() {
   return (
-    <div aria-hidden="true" className="flex-1 px-4 pb-24 pt-6">
+    <div aria-hidden="true" className="flex-1 px-5 pb-24 pt-6">
       <div className="mb-5">
         <SkeletonBlock className="h-7 w-16 rounded-pill" />
         <SkeletonBlock className="mt-2 h-4 w-64 max-w-full rounded-pill" />

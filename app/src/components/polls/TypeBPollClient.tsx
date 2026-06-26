@@ -95,29 +95,26 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
         {/* 커버 이미지 — 칩 → 제목 순서로 오버레이 */}
         <div className="relative h-[160px] overflow-hidden">
           <img src={coverUrl} alt={poll.title} className="w-full h-full object-cover" />
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.45) 50%, rgba(0,0,0,.85) 100%)' }}
-          />
+          <div className="banner-text-overlay absolute inset-0" />
           <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
             <div className="flex items-center gap-1.5 mb-2">
-              <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm text-[11px] font-semibold pointer-events-none">
+              <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm text-caption-2 font-semibold pointer-events-none">
                 선택
               </Badge>
               {daysLeft > 0 ? (
-                <Badge className="bg-primary text-white border-0 text-[11px] font-semibold hover:bg-primary pointer-events-none">
+                <Badge className="bg-primary text-white border-0 text-caption-2 font-semibold hover:bg-primary pointer-events-none">
                   D-{daysLeft} 마감
                 </Badge>
               ) : (
-                <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm text-[11px] font-semibold pointer-events-none">
+                <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm text-caption-2 font-semibold pointer-events-none">
                   마감
                 </Badge>
               )}
             </div>
             <div className="flex items-end justify-between gap-3">
-              <h1 className="min-w-0 flex-1 text-[18px] font-black text-white leading-tight">{poll.title}</h1>
+              <h1 className="min-w-0 flex-1 text-headline-1 font-black text-white">{poll.title}</h1>
               {poll.creator_name && (
-                <span className="max-w-[38%] truncate text-right text-[12px] font-bold text-white/80">{poll.creator_name}</span>
+                <span className="max-w-[38%] truncate text-right text-caption-1 font-bold text-white/80">{poll.creator_name}</span>
               )}
             </div>
           </div>
@@ -127,10 +124,10 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
         {(poll.description || errorMsg) && (
           <div className="px-4 pt-4 pb-0 flex flex-col gap-2">
             {poll.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{poll.description}</p>
+              <p className="text-label-1-reading text-muted-foreground">{poll.description}</p>
             )}
             {errorMsg && (
-              <p className="text-sm text-destructive font-medium">{errorMsg}</p>
+              <p className="text-label-1-normal text-destructive font-medium">{errorMsg}</p>
             )}
           </div>
         )}
@@ -182,7 +179,7 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
                 type="button"
                 onClick={() => !isCenter && isInteractive && setSelectedIdx(i)}
                 className={cn(
-                  'absolute top-0 overflow-hidden rounded-md border border-border bg-surface text-left shadow-g200',
+                  'absolute top-0 overflow-hidden rounded-lg border border-border bg-surface text-left shadow-g200',
                   'transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   isCenter && 'border-primary shadow-w200',
                   isCenter ? 'cursor-default' : 'cursor-pointer'
@@ -197,7 +194,7 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
                   pointerEvents: isInteractive ? 'auto' : 'none',
                 }}
               >
-                <div className="relative aspect-square w-full overflow-hidden bg-[#0c2340]">
+                <div className="relative aspect-square w-full overflow-hidden bg-primary-dark">
                   {thumbUrl ? (
                     <img
                       src={thumbUrl}
@@ -205,13 +202,13 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/30 to-[#0c2340] text-[38px] font-black text-white">
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/30 to-primary-dark text-title-1 font-black text-white">
                       {fallbackText}
                     </div>
                   )}
                   <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/35 to-transparent" />
                   {player?.squad_number != null && (
-                    <span className="absolute left-2.5 top-2.5 rounded-pill bg-white/95 px-2.5 py-1 text-[12px] font-black leading-none text-foreground shadow-g100">
+                    <span className="absolute left-2.5 top-2.5 rounded-pill bg-white/95 px-2.5 py-1 text-caption-1 font-black text-foreground shadow-g100">
                       #{player.squad_number}
                     </span>
                   )}
@@ -224,24 +221,24 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
 
                 <div className={cn('bg-surface px-3 py-2.5', isFreeChoice ? 'min-h-[92px]' : 'min-h-[62px]')}>
                   <p className={cn(
-                    'text-[15px] font-black leading-tight text-foreground',
+                    'text-body-2-normal font-black text-foreground',
                     isFreeChoice ? 'line-clamp-2' : 'line-clamp-1'
                   )}>
                     {option.label}
                   </p>
                   {isFreeChoice && option.description && (
-                    <p className="mt-1.5 line-clamp-2 text-[12px] font-medium leading-snug text-muted-foreground">
+                    <p className="mt-1.5 line-clamp-2 text-caption-1 font-medium text-muted-foreground">
                       {option.description}
                     </p>
                   )}
                   {!isFreeChoice && player && (
-                    <p className="mt-0.5 text-[12px] font-bold leading-tight text-muted-foreground">
+                    <p className="mt-0.5 text-caption-1 font-bold text-muted-foreground">
                       {player.position}
                     </p>
                   )}
                 </div>
                 {isCenter && (
-                  <div className="absolute inset-0 rounded-md ring-inset ring-[3px] ring-primary pointer-events-none" />
+                  <div className="absolute inset-0 rounded-lg ring-4 ring-inset ring-primary pointer-events-none" />
                 )}
               </button>
             )
@@ -289,13 +286,13 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
 
         {/* 선택된 선수 요약 */}
         <div className="mx-4 mt-4 rounded-md bg-disabled px-4 py-3">
-          <p className="text-xs text-muted-foreground mb-0.5">현재 선택</p>
-          <p className="text-sm font-bold text-foreground">{selectedOption?.label}</p>
+          <p className="text-caption-1 text-muted-foreground mb-0.5">현재 선택</p>
+          <p className="text-label-1-normal font-bold text-foreground">{selectedOption?.label}</p>
           {!isFreeChoice && selectedPlayer && (
-            <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{selectedPlayer.position}</p>
+            <p className="mt-1 text-caption-1 text-muted-foreground">{selectedPlayer.position}</p>
           )}
           {isFreeChoice && selectedOption?.description && (
-            <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{selectedOption.description}</p>
+            <p className="mt-1 text-caption-1 text-muted-foreground">{selectedOption.description}</p>
           )}
         </div>
       </div>
@@ -303,7 +300,7 @@ export function TypeBPollClient({ poll, isAuthenticated }: TypeBPollClientProps)
       {/* 하단 고정 제출 버튼 */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] p-4 bg-white/95 backdrop-blur border-t z-30">
         <Button
-          className="w-full h-12 text-sm font-bold"
+          className="w-full h-12 text-label-1-normal font-bold"
           disabled={isPending}
           onClick={handleSubmit}
         >
